@@ -27,12 +27,7 @@ interface Budget {
 const Index = () => {
   const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([
-    { category: "Food & Dining", amount: 500, spent: 0 },
-    { category: "Transportation", amount: 200, spent: 0 },
-    { category: "Shopping", amount: 300, spent: 0 },
-    { category: "Entertainment", amount: 150, spent: 0 },
-  ]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
 
   const handleAddExpense = (expense: {
     amount: number;
