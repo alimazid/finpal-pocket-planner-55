@@ -148,7 +148,7 @@ const Index = () => {
           {/* Middle Column - Budgets */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Budget Overview</h2>
-            <div className="flex gap-4 overflow-x-auto pb-4 min-h-[300px]">
+            <div className="flex gap-4 overflow-x-auto pb-4 min-h-[300px] scrollbar-hide">
               {budgets.map((budget, index) => (
                 <div
                   key={budget.category}
