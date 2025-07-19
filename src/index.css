@@ -8,45 +8,45 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 248 250 252;
-    --foreground: 216 29% 15%;
+    --background: 250 250 250;
+    --foreground: 225 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 216 29% 15%;
+    --card-foreground: 225 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 216 29% 15%;
+    --popover-foreground: 225 15% 15%;
 
-    --primary: 214 84% 56%;
+    --primary: 262 83% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 216 29% 15%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 225 15% 15%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 225 8% 50%;
 
-    --accent: 142 76% 36%;
+    --accent: 142 69% 58%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 214 84% 56%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 262 83% 58%;
 
-    --success: 142 76% 36%;
+    --success: 142 69% 58%;
     --success-foreground: 0 0% 100%;
     
-    --warning: 45 93% 47%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(214 84% 56%), hsl(142 76% 36%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 14% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(285 85% 68%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(240 5% 98%));
     
-    --shadow-soft: 0 4px 6px -1px hsl(220 13% 91% / 0.1), 0 2px 4px -1px hsl(220 13% 91% / 0.06);
-    --shadow-medium: 0 10px 15px -3px hsl(220 13% 91% / 0.1), 0 4px 6px -2px hsl(220 13% 91% / 0.05);
+    --shadow-soft: 0 4px 6px -1px hsl(262 83% 58% / 0.08), 0 2px 4px -1px hsl(262 83% 58% / 0.04);
+    --shadow-medium: 0 10px 15px -3px hsl(262 83% 58% / 0.1), 0 4px 6px -2px hsl(262 83% 58% / 0.06);
     
     --radius: 0.75rem;
 
