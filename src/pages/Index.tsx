@@ -196,7 +196,10 @@ const Index = () => {
         </div>
 
         {/* Floating Expense Button */}
-        <FloatingExpenseButton onAddExpense={handleAddExpense} />
+        <FloatingExpenseButton 
+          onAddExpense={handleAddExpense} 
+          availableCategories={budgets.map(budget => budget.category)}
+        />
       </div>
     </div>
   );

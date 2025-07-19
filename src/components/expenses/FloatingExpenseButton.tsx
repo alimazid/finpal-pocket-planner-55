@@ -11,9 +11,10 @@ interface FloatingExpenseButtonProps {
     category: string;
     date: string;
   }) => void;
+  availableCategories: string[];
 }
 
-export function FloatingExpenseButton({ onAddExpense }: FloatingExpenseButtonProps) {
+export function FloatingExpenseButton({ onAddExpense, availableCategories }: FloatingExpenseButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleAddExpense = (expense: {
@@ -45,7 +46,7 @@ export function FloatingExpenseButton({ onAddExpense }: FloatingExpenseButtonPro
           </DialogDescription>
         </DialogHeader>
         
-        <ExpenseForm onAddExpense={handleAddExpense} />
+        <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} />
       </DialogContent>
     </Dialog>
   );

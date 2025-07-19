@@ -6,17 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 
-const categories = [
-  "Food & Dining",
-  "Transportation",
-  "Shopping",
-  "Entertainment",
-  "Bills & Utilities",
-  "Healthcare",
-  "Education",
-  "Travel",
-  "Other"
-];
 
 interface ExpenseFormProps {
   onAddExpense: (expense: {
@@ -25,9 +14,10 @@ interface ExpenseFormProps {
     category: string;
     date: string;
   }) => void;
+  availableCategories: string[];
 }
 
-export function ExpenseForm({ onAddExpense }: ExpenseFormProps) {
+export function ExpenseForm({ onAddExpense, availableCategories }: ExpenseFormProps) {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -88,10 +78,10 @@ export function ExpenseForm({ onAddExpense }: ExpenseFormProps) {
             <Label htmlFor="category">Category</Label>
             <Select value={category} onValueChange={setCategory} required>
               <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder={availableCategories.length > 0 ? "Select a category" : "No budgets available"} />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((cat) => (
+                {availableCategories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
                   </SelectItem>
