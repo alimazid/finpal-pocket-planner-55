@@ -120,6 +120,26 @@ const Index = () => {
     });
   };
 
+  const handleTransactionDelete = (transactionId: string) => {
+    const transaction = transactions.find(t => t.id === transactionId);
+    
+    if (transaction && transaction.type === 'expense') {
+      // Update budget spent amount (reduce it)
+      setBudgets(prev => prev.map(budget => 
+        budget.category === transaction.category
+          ? { ...budget, spent: budget.spent - transaction.amount }
+          : budget
+      ));
+    }
+    
+    setTransactions(prev => prev.filter(t => t.id !== transactionId));
+    
+    toast({
+      title: "Transaction Deleted",
+      description: `Transaction "${transaction?.description}" has been removed`,
+    });
+  };
+
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -191,7 +211,10 @@ const Index = () => {
 
           {/* Right Column - Recent Transactions */}
           <div>
-            <TransactionList transactions={transactions} />
+            <TransactionList 
+              transactions={transactions} 
+              onDeleteTransaction={handleTransactionDelete}
+            />
           </div>
         </div>
 
