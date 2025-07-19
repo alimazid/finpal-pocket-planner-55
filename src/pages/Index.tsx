@@ -196,7 +196,7 @@ const Index = () => {
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatsCard
             title="Total Expenses"
             value={`$${totalExpenses.toFixed(2)}`}
