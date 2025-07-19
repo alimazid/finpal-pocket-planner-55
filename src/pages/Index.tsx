@@ -85,11 +85,16 @@ const Index = () => {
   };
 
   const handleBudgetDelete = (category: string) => {
+    // Count how many transactions will be deleted
+    const relatedTransactions = transactions.filter(t => t.category === category);
+    const transactionCount = relatedTransactions.length;
+    
     setBudgets(prev => prev.filter(budget => budget.category !== category));
+    setTransactions(prev => prev.filter(transaction => transaction.category !== category));
     
     toast({
       title: "Budget Deleted",
-      description: `Budget for ${category} has been removed`,
+      description: `Budget for ${category}${transactionCount > 0 ? ` and ${transactionCount} related transaction${transactionCount === 1 ? '' : 's'}` : ''} removed`,
     });
   };
 
