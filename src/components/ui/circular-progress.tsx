@@ -50,7 +50,7 @@ export function CircularProgress({
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-sm font-semibold">{Math.round(value)}%</span>
+        <span className="text-lg font-bold">{Math.round(value)}%</span>
       </div>
     </div>
   );

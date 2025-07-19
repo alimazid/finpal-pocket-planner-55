@@ -28,28 +28,28 @@ export function BudgetCard({ category, spent, budget, onEdit }: BudgetCardProps)
           </Button>
         )}
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center space-y-4 h-full">
+      <CardContent className="flex flex-col items-center justify-center space-y-6 h-full p-4">
         <CircularProgress 
           value={Math.min(percentage, 100)}
-          size={100}
-          strokeWidth={8}
+          size={120}
+          strokeWidth={10}
         />
-        <div className="text-center space-y-2">
-          <div className="flex justify-between text-sm w-full">
+        <div className="text-center space-y-3 w-full">
+          <div className="flex justify-between text-base w-full">
             <span className="text-muted-foreground">Spent:</span>
-            <span className={`font-medium ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
+            <span className={`font-semibold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
               ${spent.toFixed(2)}
             </span>
           </div>
-          <div className="flex justify-between text-sm w-full">
+          <div className="flex justify-between text-base w-full">
             <span className="text-muted-foreground">Budget:</span>
-            <span className="font-medium">${budget.toFixed(2)}</span>
+            <span className="font-semibold">${budget.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm w-full">
+          <div className="flex justify-between text-base w-full">
             <span className="text-muted-foreground">
               {remaining >= 0 ? 'Remaining:' : 'Over:'}
             </span>
-            <span className={`font-medium ${remaining >= 0 ? 'text-success' : 'text-destructive'}`}>
+            <span className={`font-semibold ${remaining >= 0 ? 'text-success' : 'text-destructive'}`}>
               ${Math.abs(remaining).toFixed(2)}
             </span>
           </div>
