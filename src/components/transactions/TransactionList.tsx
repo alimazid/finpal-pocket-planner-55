@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Calendar, DollarSign, Trash2 } from "lucide-react";
+import { Calendar, DollarSign, Trash2, Check, X } from "lucide-react";
+import { useState } from "react";
 
 interface Transaction {
   id: string;
@@ -17,9 +19,12 @@ interface Transaction {
 interface TransactionListProps {
   transactions: Transaction[];
   onDeleteTransaction?: (id: string) => void;
+  onUpdateTransaction?: (id: string, newAmount: number) => void;
 }
 
-export function TransactionList({ transactions, onDeleteTransaction }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction }: TransactionListProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -41,6 +46,29 @@ export function TransactionList({ transactions, onDeleteTransaction }: Transacti
       'Other': 'bg-gray-100 text-gray-800',
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
+  };
+
+  const handleAmountEdit = (transaction: Transaction) => {
+    setEditingId(transaction.id);
+    setEditAmount(transaction.amount.toString());
+  };
+
+  const handleAmountSave = (transactionId: string) => {
+    const newAmount = parseFloat(editAmount);
+    if (!isNaN(newAmount) && newAmount > 0 && onUpdateTransaction) {
+      onUpdateTransaction(transactionId, newAmount);
+    } else {
+      const transaction = transactions.find(t => t.id === transactionId);
+      if (transaction) {
+        setEditAmount(transaction.amount.toString());
+      }
+    }
+    setEditingId(null);
+  };
+
+  const handleAmountCancel = () => {
+    setEditingId(null);
+    setEditAmount("");
   };
 
   return (
@@ -81,12 +109,39 @@ export function TransactionList({ transactions, onDeleteTransaction }: Transacti
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <p className={`font-semibold ${
-                        transaction.type === 'expense' ? 'text-destructive' : 'text-success'
-                      }`}>
-                        {transaction.type === 'expense' ? '-' : '+'}
-                        ${transaction.amount.toFixed(2)}
-                      </p>
+                      {editingId === transaction.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            className="w-20 h-8 text-right"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleAmountSave(transaction.id);
+                              if (e.key === 'Escape') handleAmountCancel();
+                            }}
+                            autoFocus
+                          />
+                          <Button size="sm" variant="ghost" onClick={() => handleAmountSave(transaction.id)} className="h-8 w-8 p-0">
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={handleAmountCancel} className="h-8 w-8 p-0">
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <p 
+                          className={`font-semibold cursor-pointer hover:text-primary transition-colors ${
+                            transaction.type === 'expense' ? 'text-destructive' : 'text-success'
+                          }`}
+                          onClick={() => onUpdateTransaction && handleAmountEdit(transaction)}
+                        >
+                          {transaction.type === 'expense' ? '-' : '+'}
+                          ${transaction.amount.toFixed(2)}
+                        </p>
+                      )}
                     </div>
                     {onDeleteTransaction && (
                       <AlertDialog>

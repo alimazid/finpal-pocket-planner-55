@@ -140,6 +140,34 @@ const Index = () => {
     });
   };
 
+  const handleTransactionUpdate = (transactionId: string, newAmount: number) => {
+    const transaction = transactions.find(t => t.id === transactionId);
+    
+    if (transaction && transaction.type === 'expense') {
+      const oldAmount = transaction.amount;
+      const amountDifference = newAmount - oldAmount;
+      
+      // Update budget spent amount
+      setBudgets(prev => prev.map(budget => 
+        budget.category === transaction.category
+          ? { ...budget, spent: budget.spent + amountDifference }
+          : budget
+      ));
+    }
+    
+    // Update the transaction
+    setTransactions(prev => prev.map(t => 
+      t.id === transactionId
+        ? { ...t, amount: newAmount }
+        : t
+    ));
+    
+    toast({
+      title: "Transaction Updated",
+      description: `Amount updated to $${newAmount.toFixed(2)}`,
+    });
+  };
+
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -214,6 +242,7 @@ const Index = () => {
             <TransactionList 
               transactions={transactions} 
               onDeleteTransaction={handleTransactionDelete}
+              onUpdateTransaction={handleTransactionUpdate}
             />
           </div>
         </div>
