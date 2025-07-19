@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
-import { FloatingExpenseButton } from "@/components/expenses/FloatingExpenseButton";
+import { AddTransactionCard } from "@/components/transactions/AddTransactionCard";
 import { BudgetCard } from "@/components/budget/BudgetCard";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
@@ -239,19 +239,20 @@ const Index = () => {
 
           {/* Right Column - Recent Transactions */}
           <div>
-            <TransactionList 
-              transactions={transactions} 
-              onDeleteTransaction={handleTransactionDelete}
-              onUpdateTransaction={handleTransactionUpdate}
-            />
+            <div className="space-y-4">
+              <TransactionList 
+                transactions={transactions}
+                onDeleteTransaction={handleTransactionDelete}
+                onUpdateTransaction={handleTransactionUpdate}
+              />
+              <AddTransactionCard 
+                onAddExpense={handleAddExpense} 
+                availableCategories={budgets.map(budget => budget.category)}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Floating Expense Button */}
-        <FloatingExpenseButton 
-          onAddExpense={handleAddExpense} 
-          availableCategories={budgets.map(budget => budget.category)}
-        />
       </div>
     </div>
   );
