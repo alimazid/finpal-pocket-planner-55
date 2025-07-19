@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Target, Check, X } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Edit, Target, Check, X, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface BudgetCardProps {
@@ -12,9 +13,10 @@ interface BudgetCardProps {
   onEdit?: () => void;
   onBudgetUpdate?: (newBudget: number) => void;
   onCategoryUpdate?: (newCategory: string) => void;
+  onDelete?: () => void;
 }
 
-export function BudgetCard({ category, spent, budget, onEdit, onBudgetUpdate, onCategoryUpdate }: BudgetCardProps) {
+export function BudgetCard({ category, spent, budget, onEdit, onBudgetUpdate, onCategoryUpdate, onDelete }: BudgetCardProps) {
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [editBudget, setEditBudget] = useState(budget.toString());
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -86,11 +88,36 @@ export function BudgetCard({ category, spent, budget, onEdit, onBudgetUpdate, on
             </span>
           )}
         </CardTitle>
-        {onEdit && (
-          <Button variant="ghost" size="sm" onClick={onEdit}>
-            <Edit className="h-4 w-4" />
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          {onEdit && (
+            <Button variant="ghost" size="sm" onClick={onEdit}>
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Budget</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete the budget for "{category}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center space-y-6 h-full p-4">
         <CircularProgress 

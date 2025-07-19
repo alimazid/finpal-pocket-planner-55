@@ -82,6 +82,15 @@ const Index = () => {
     ));
   };
 
+  const handleBudgetDelete = (category: string) => {
+    setBudgets(prev => prev.filter(budget => budget.category !== category));
+    
+    toast({
+      title: "Budget Deleted",
+      description: `Budget for ${category} has been removed`,
+    });
+  };
+
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -149,6 +158,7 @@ const Index = () => {
                   budget={budget.amount}
                   onBudgetUpdate={(newBudget) => handleBudgetUpdate(budget.category, newBudget)}
                   onCategoryUpdate={(newCategory) => handleCategoryUpdate(budget.category, newCategory)}
+                  onDelete={() => handleBudgetDelete(budget.category)}
                 />
               ))}
             </div>
