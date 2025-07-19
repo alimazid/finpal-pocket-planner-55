@@ -46,7 +46,7 @@ export function FloatingExpenseButton({ onAddExpense, availableCategories }: Flo
           </DialogDescription>
         </DialogHeader>
         
-        <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} />
+        <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} />
       </DialogContent>
     </Dialog>
   );

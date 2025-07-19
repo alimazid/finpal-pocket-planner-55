@@ -15,9 +15,10 @@ interface ExpenseFormProps {
     date: string;
   }) => void;
   availableCategories: string[];
+  showCard?: boolean;
 }
 
-export function ExpenseForm({ onAddExpense, availableCategories }: ExpenseFormProps) {
+export function ExpenseForm({ onAddExpense, availableCategories, showCard = true }: ExpenseFormProps) {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -37,6 +38,57 @@ export function ExpenseForm({ onAddExpense, availableCategories }: ExpenseFormPr
     }
   };
 
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="amount">Amount</Label>
+        <Input
+          id="amount"
+          type="number"
+          step="0.01"
+          placeholder="0.00"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="mt-1"
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Input
+          id="description"
+          placeholder="What did you spend on?"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="mt-1"
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="category">Category</Label>
+        <Select value={category} onValueChange={setCategory} required>
+          <SelectTrigger className="mt-1">
+            <SelectValue placeholder={availableCategories.length > 0 ? "Select a category" : "No budgets available"} />
+          </SelectTrigger>
+          <SelectContent>
+            {availableCategories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity">
+        Add Expense
+      </Button>
+    </form>
+  );
+
+  if (!showCard) {
+    return formContent;
+  }
+
   return (
     <Card className="bg-gradient-card shadow-soft">
       <CardHeader>
@@ -49,50 +101,7 @@ export function ExpenseForm({ onAddExpense, availableCategories }: ExpenseFormPr
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="amount">Amount</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="mt-1"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              placeholder="What did you spend on?"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-1"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder={availableCategories.length > 0 ? "Select a category" : "No budgets available"} />
-              </SelectTrigger>
-              <SelectContent>
-                {availableCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity">
-            Add Expense
-          </Button>
-        </form>
+        {formContent}
       </CardContent>
     </Card>
   );
