@@ -59,6 +59,14 @@ const Index = () => {
     });
   };
 
+  const handleBudgetUpdate = (category: string, newBudget: number) => {
+    setBudgets(prev => prev.map(budget => 
+      budget.category === category
+        ? { ...budget, amount: newBudget }
+        : budget
+    ));
+  };
+
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -124,6 +132,7 @@ const Index = () => {
                   category={budget.category}
                   spent={budget.spent}
                   budget={budget.amount}
+                  onBudgetUpdate={(newBudget) => handleBudgetUpdate(budget.category, newBudget)}
                 />
               ))}
             </div>
