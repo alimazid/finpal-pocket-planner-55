@@ -200,10 +200,10 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
             {onAddExpense && availableCategories && (
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <div className="flex items-center justify-center p-6 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Plus className="h-6 w-6 text-primary" />
+                  <div className="flex items-center justify-center p-3 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30 min-h-[72px]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Plus className="h-5 w-5 text-primary" />
                       </div>
                       <span className="text-base font-medium text-muted-foreground">Add Transaction</span>
                     </div>
