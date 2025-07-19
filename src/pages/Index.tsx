@@ -67,6 +67,21 @@ const Index = () => {
     ));
   };
 
+  const handleCategoryUpdate = (oldCategory: string, newCategory: string) => {
+    setBudgets(prev => prev.map(budget => 
+      budget.category === oldCategory
+        ? { ...budget, category: newCategory }
+        : budget
+    ));
+    
+    // Update transactions with the new category name
+    setTransactions(prev => prev.map(transaction => 
+      transaction.category === oldCategory
+        ? { ...transaction, category: newCategory }
+        : transaction
+    ));
+  };
+
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -133,6 +148,7 @@ const Index = () => {
                   spent={budget.spent}
                   budget={budget.amount}
                   onBudgetUpdate={(newBudget) => handleBudgetUpdate(budget.category, newBudget)}
+                  onCategoryUpdate={(newCategory) => handleCategoryUpdate(budget.category, newCategory)}
                 />
               ))}
             </div>

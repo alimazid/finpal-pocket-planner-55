@@ -11,11 +11,14 @@ interface BudgetCardProps {
   budget: number;
   onEdit?: () => void;
   onBudgetUpdate?: (newBudget: number) => void;
+  onCategoryUpdate?: (newCategory: string) => void;
 }
 
-export function BudgetCard({ category, spent, budget, onEdit, onBudgetUpdate }: BudgetCardProps) {
+export function BudgetCard({ category, spent, budget, onEdit, onBudgetUpdate, onCategoryUpdate }: BudgetCardProps) {
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [editBudget, setEditBudget] = useState(budget.toString());
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [editCategory, setEditCategory] = useState(category);
   
   const percentage = (spent / budget) * 100;
   const isOverBudget = spent > budget;
@@ -36,12 +39,52 @@ export function BudgetCard({ category, spent, budget, onEdit, onBudgetUpdate }: 
     setIsEditingBudget(false);
   };
 
+  const handleCategorySave = () => {
+    if (editCategory.trim() && onCategoryUpdate) {
+      onCategoryUpdate(editCategory.trim());
+    } else {
+      setEditCategory(category);
+    }
+    setIsEditingCategory(false);
+  };
+
+  const handleCategoryCancel = () => {
+    setEditCategory(category);
+    setIsEditingCategory(false);
+  };
+
   return (
     <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200 aspect-square">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />
-          {category}
+          {isEditingCategory ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                className="h-8 text-base font-semibold"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCategorySave();
+                  if (e.key === 'Escape') handleCategoryCancel();
+                }}
+                autoFocus
+              />
+              <Button size="sm" variant="ghost" onClick={handleCategorySave} className="h-8 w-8 p-0">
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleCategoryCancel} className="h-8 w-8 p-0">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <span 
+              className="cursor-pointer hover:text-primary transition-colors"
+              onClick={() => setIsEditingCategory(true)}
+            >
+              {category}
+            </span>
+          )}
         </CardTitle>
         {onEdit && (
           <Button variant="ghost" size="sm" onClick={onEdit}>
