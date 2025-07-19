@@ -4,6 +4,7 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { BudgetCard } from "@/components/budget/BudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { DollarSign, TrendingUp, Target, CreditCard } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 
 interface Transaction {
@@ -70,9 +71,12 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-gradient-primary text-white p-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Financial Dashboard</h1>
-          <p className="text-blue-100">Track your expenses, manage budgets, and stay on top of your finances</p>
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Financial Dashboard</h1>
+            <p className="text-primary-foreground/80">Track your expenses, manage budgets, and stay on top of your finances</p>
+          </div>
+          <ThemeToggle />
         </div>
       </div>
 
