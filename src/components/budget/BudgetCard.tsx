@@ -37,7 +37,7 @@ export function BudgetCard({ category, spent, budget, onEdit, onBudgetUpdate }: 
   };
 
   return (
-    <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200 aspect-square">
+    <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200 aspect-square w-64 h-64">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />

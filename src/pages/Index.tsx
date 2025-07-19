@@ -67,6 +67,29 @@ const Index = () => {
     ));
   };
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    
+    if (dragIndex === dropIndex) return;
+    
+    setBudgets(prev => {
+      const newBudgets = [...prev];
+      const draggedItem = newBudgets[dragIndex];
+      newBudgets.splice(dragIndex, 1);
+      newBudgets.splice(dropIndex, 0, draggedItem);
+      return newBudgets;
+    });
+  };
+
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -125,15 +148,23 @@ const Index = () => {
           {/* Middle Column - Budgets */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Budget Overview</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {budgets.map((budget) => (
-                <BudgetCard
+            <div className="flex gap-4 overflow-x-auto pb-4 min-h-[300px]">
+              {budgets.map((budget, index) => (
+                <div
                   key={budget.category}
-                  category={budget.category}
-                  spent={budget.spent}
-                  budget={budget.amount}
-                  onBudgetUpdate={(newBudget) => handleBudgetUpdate(budget.category, newBudget)}
-                />
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index)}
+                  className="flex-shrink-0 cursor-move"
+                >
+                  <BudgetCard
+                    category={budget.category}
+                    spent={budget.spent}
+                    budget={budget.amount}
+                    onBudgetUpdate={(newBudget) => handleBudgetUpdate(budget.category, newBudget)}
+                  />
+                </div>
               ))}
             </div>
           </div>
