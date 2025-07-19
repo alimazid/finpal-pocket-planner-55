@@ -31,8 +31,8 @@ export function BudgetCard({ category, spent, budget, onEdit }: BudgetCardProps)
       <CardContent className="flex flex-col items-center justify-center space-y-6 h-full p-4">
         <CircularProgress 
           value={Math.min(percentage, 100)}
-          size={120}
-          strokeWidth={10}
+          size={140}
+          strokeWidth={12}
         />
         <div className="text-center space-y-3 w-full">
           <div className="flex justify-between text-base w-full">
