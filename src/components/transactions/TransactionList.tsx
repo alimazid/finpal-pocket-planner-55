@@ -4,7 +4,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Calendar, DollarSign, Trash2, Check, X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar, DollarSign, Trash2, Check, X, Plus } from "lucide-react";
+import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { useState } from "react";
 
 interface Transaction {
@@ -20,11 +22,19 @@ interface TransactionListProps {
   transactions: Transaction[];
   onDeleteTransaction?: (id: string) => void;
   onUpdateTransaction?: (id: string, newAmount: number) => void;
+  onAddExpense?: (expense: {
+    amount: number;
+    description: string;
+    category: string;
+    date: string;
+  }) => void;
+  availableCategories?: string[];
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onAddExpense, availableCategories }: TransactionListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -69,6 +79,18 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
   const handleAmountCancel = () => {
     setEditingId(null);
     setEditAmount("");
+  };
+
+  const handleAddExpense = (expense: {
+    amount: number;
+    description: string;
+    category: string;
+    date: string;
+  }) => {
+    if (onAddExpense) {
+      onAddExpense(expense);
+    }
+    setIsAddDialogOpen(false);
   };
 
   return (
@@ -172,6 +194,33 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                   </div>
                 </div>
               ))
+            )}
+            
+            {/* Add Transaction Card */}
+            {onAddExpense && availableCategories && (
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <div className="flex items-center justify-center p-6 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Plus className="h-6 w-6 text-primary" />
+                      </div>
+                      <span className="text-base font-medium text-muted-foreground">Add Transaction</span>
+                    </div>
+                  </div>
+                </DialogTrigger>
+                
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Expense</DialogTitle>
+                    <DialogDescription>
+                      Track your spending by adding a new expense.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} />
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </ScrollArea>
