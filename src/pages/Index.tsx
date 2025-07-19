@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
@@ -16,27 +17,305 @@ import { LogOut } from "lucide-react";
 
 interface Transaction {
   id: string;
+  user_id: string;
   amount: number;
   description: string;
   category: string;
   date: string;
   type: 'expense' | 'income';
+  created_at: string;
+  updated_at: string;
 }
 
 interface Budget {
+  id: string;
+  user_id: string;
   category: string;
   amount: number;
   spent: number;
+  created_at: string;
+  updated_at: string;
 }
 
 const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Fetch budgets
+  const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
+    queryKey: ['budgets', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('budgets')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Budget[];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch transactions
+  const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+    queryKey: ['transactions', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Transaction[];
+    },
+    enabled: !!user,
+  });
+
+  // Add expense mutation
+  const addExpenseMutation = useMutation({
+    mutationFn: async (expense: {
+      amount: number;
+      description: string;
+      category: string;
+      date: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert([{
+          user_id: user!.id,
+          amount: expense.amount,
+          description: expense.description,
+          category: expense.category,
+          date: expense.date,
+          type: 'expense',
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (newTransaction) => {
+      // Update budget spent amount
+      const budget = budgets?.find(b => b.category === newTransaction.category);
+      if (budget) {
+        await supabase
+          .from('budgets')
+          .update({ spent: budget.spent + newTransaction.amount })
+          .eq('id', budget.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      toast({
+        title: "Expense Added",
+        description: `$${newTransaction.amount.toFixed(2)} spent on ${newTransaction.category}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add expense",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Add budget mutation
+  const addBudgetMutation = useMutation({
+    mutationFn: async ({ category, amount }: { category: string; amount: number }) => {
+      const { data, error } = await supabase
+        .from('budgets')
+        .insert([{
+          user_id: user!.id,
+          category,
+          amount,
+          spent: 0,
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (newBudget) => {
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      toast({
+        title: "Budget Created",
+        description: `Budget for ${newBudget.category} ($${newBudget.amount.toFixed(2)}) has been added`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message?.includes('unique_user_category') 
+          ? "A budget for this category already exists"
+          : "Failed to create budget",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update budget mutation
+  const updateBudgetMutation = useMutation({
+    mutationFn: async ({ budgetId, amount }: { budgetId: string; amount: number }) => {
+      const { data, error } = await supabase
+        .from('budgets')
+        .update({ amount })
+        .eq('id', budgetId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+    },
+  });
+
+  // Delete budget mutation
+  const deleteBudgetMutation = useMutation({
+    mutationFn: async (budgetId: string) => {
+      const budget = budgets?.find(b => b.id === budgetId);
+      
+      // Delete related transactions first
+      await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user!.id)
+        .eq('category', budget!.category);
+
+      // Delete budget
+      const { error } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('id', budgetId);
+      
+      if (error) throw error;
+      return { budget };
+    },
+    onSuccess: ({ budget }) => {
+      const relatedTransactions = transactions?.filter(t => t.category === budget.category) || [];
+      
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+
+      toast({
+        title: "Budget Deleted",
+        description: `Budget for ${budget.category}${relatedTransactions.length > 0 ? ` and ${relatedTransactions.length} related transaction${relatedTransactions.length === 1 ? '' : 's'}` : ''} removed`,
+      });
+    },
+  });
+
+  // Delete transaction mutation
+  const deleteTransactionMutation = useMutation({
+    mutationFn: async (transactionId: string) => {
+      const transaction = transactions?.find(t => t.id === transactionId);
+      
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', transactionId);
+      
+      if (error) throw error;
+      return transaction;
+    },
+    onSuccess: async (transaction) => {
+      if (transaction && transaction.type === 'expense') {
+        // Update budget spent amount
+        const budget = budgets?.find(b => b.category === transaction.category);
+        if (budget) {
+          await supabase
+            .from('budgets')
+            .update({ spent: budget.spent - transaction.amount })
+            .eq('id', budget.id);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      toast({
+        title: "Transaction Deleted",
+        description: `Transaction "${transaction?.description}" has been removed`,
+      });
+    },
+  });
+
+  // Update transaction mutation
+  const updateTransactionMutation = useMutation({
+    mutationFn: async ({ transactionId, amount }: { transactionId: string; amount: number }) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .update({ amount })
+        .eq('id', transactionId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (updatedTransaction) => {
+      const oldTransaction = transactions?.find(t => t.id === updatedTransaction.id);
+      
+      if (oldTransaction && oldTransaction.type === 'expense') {
+        const budget = budgets?.find(b => b.category === oldTransaction.category);
+        if (budget) {
+          const amountDifference = updatedTransaction.amount - oldTransaction.amount;
+          await supabase
+            .from('budgets')
+            .update({ spent: budget.spent + amountDifference })
+            .eq('id', budget.id);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      toast({
+        title: "Transaction Updated",
+        description: `Amount updated to $${updatedTransaction.amount.toFixed(2)}`,
+      });
+    },
+  });
+
+  // Update category mutation
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ budgetId, newCategory }: { budgetId: string; newCategory: string }) => {
+      const budget = budgets?.find(b => b.id === budgetId);
+      
+      // Update budget category
+      const { data, error } = await supabase
+        .from('budgets')
+        .update({ category: newCategory })
+        .eq('id', budgetId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      // Update related transactions
+      await supabase
+        .from('transactions')
+        .update({ category: newCategory })
+        .eq('user_id', user!.id)
+        .eq('category', budget!.category);
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+    },
+  });
 
   useEffect(() => {
     // Set up auth state listener
@@ -80,7 +359,7 @@ const Index = () => {
     }
   };
 
-  if (loading) {
+  if (loading || budgetsLoading || transactionsLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -94,145 +373,6 @@ const Index = () => {
   if (!user) {
     return null; // Will redirect to auth page
   }
-
-  const handleAddExpense = (expense: {
-    amount: number;
-    description: string;
-    category: string;
-    date: string;
-  }) => {
-    const newTransaction: Transaction = {
-      id: Date.now().toString(),
-      ...expense,
-      type: 'expense'
-    };
-    
-    setTransactions(prev => [newTransaction, ...prev]);
-    
-    // Update budget spent amount
-    setBudgets(prev => prev.map(budget => 
-      budget.category === expense.category
-        ? { ...budget, spent: budget.spent + expense.amount }
-        : budget
-    ));
-
-    toast({
-      title: "Expense Added",
-      description: `$${expense.amount.toFixed(2)} spent on ${expense.category}`,
-    });
-  };
-
-  const handleBudgetUpdate = (category: string, newBudget: number) => {
-    setBudgets(prev => prev.map(budget => 
-      budget.category === category
-        ? { ...budget, amount: newBudget }
-        : budget
-    ));
-  };
-
-  const handleCategoryUpdate = (oldCategory: string, newCategory: string) => {
-    setBudgets(prev => prev.map(budget => 
-      budget.category === oldCategory
-        ? { ...budget, category: newCategory }
-        : budget
-    ));
-    
-    // Update transactions with the new category name
-    setTransactions(prev => prev.map(transaction => 
-      transaction.category === oldCategory
-        ? { ...transaction, category: newCategory }
-        : transaction
-    ));
-  };
-
-  const handleBudgetDelete = (category: string) => {
-    // Count how many transactions will be deleted
-    const relatedTransactions = transactions.filter(t => t.category === category);
-    const transactionCount = relatedTransactions.length;
-    
-    setBudgets(prev => prev.filter(budget => budget.category !== category));
-    setTransactions(prev => prev.filter(transaction => transaction.category !== category));
-    
-    toast({
-      title: "Budget Deleted",
-      description: `Budget for ${category}${transactionCount > 0 ? ` and ${transactionCount} related transaction${transactionCount === 1 ? '' : 's'}` : ''} removed`,
-    });
-  };
-
-  const handleAddBudget = (category: string, amount: number) => {
-    // Check if category already exists
-    const existingBudget = budgets.find(budget => budget.category.toLowerCase() === category.toLowerCase());
-    
-    if (existingBudget) {
-      toast({
-        title: "Category Exists",
-        description: `A budget for "${category}" already exists`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newBudget: Budget = {
-      category,
-      amount,
-      spent: 0
-    };
-
-    setBudgets(prev => [...prev, newBudget]);
-    
-    toast({
-      title: "Budget Created",
-      description: `Budget for ${category} ($${amount.toFixed(2)}) has been added`,
-    });
-  };
-
-  const handleTransactionDelete = (transactionId: string) => {
-    const transaction = transactions.find(t => t.id === transactionId);
-    
-    if (transaction && transaction.type === 'expense') {
-      // Update budget spent amount (reduce it)
-      setBudgets(prev => prev.map(budget => 
-        budget.category === transaction.category
-          ? { ...budget, spent: budget.spent - transaction.amount }
-          : budget
-      ));
-    }
-    
-    setTransactions(prev => prev.filter(t => t.id !== transactionId));
-    
-    toast({
-      title: "Transaction Deleted",
-      description: `Transaction "${transaction?.description}" has been removed`,
-    });
-  };
-
-  const handleTransactionUpdate = (transactionId: string, newAmount: number) => {
-    const transaction = transactions.find(t => t.id === transactionId);
-    
-    if (transaction && transaction.type === 'expense') {
-      const oldAmount = transaction.amount;
-      const amountDifference = newAmount - oldAmount;
-      
-      // Update budget spent amount
-      setBudgets(prev => prev.map(budget => 
-        budget.category === transaction.category
-          ? { ...budget, spent: budget.spent + amountDifference }
-          : budget
-      ));
-    }
-    
-    // Update the transaction
-    setTransactions(prev => prev.map(t => 
-      t.id === transactionId
-        ? { ...t, amount: newAmount }
-        : t
-    ));
-    
-    toast({
-      title: "Transaction Updated",
-      description: `Amount updated to $${newAmount.toFixed(2)}`,
-    });
-  };
 
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
@@ -296,16 +436,16 @@ const Index = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {budgets.map((budget) => (
                 <BudgetCard
-                  key={budget.category}
+                  key={budget.id}
                   category={budget.category}
                   spent={budget.spent}
                   budget={budget.amount}
-                  onBudgetUpdate={(newBudget) => handleBudgetUpdate(budget.category, newBudget)}
-                  onCategoryUpdate={(newCategory) => handleCategoryUpdate(budget.category, newCategory)}
-                  onDelete={() => handleBudgetDelete(budget.category)}
+                  onBudgetUpdate={(newBudget) => updateBudgetMutation.mutate({ budgetId: budget.id, amount: newBudget })}
+                  onCategoryUpdate={(newCategory) => updateCategoryMutation.mutate({ budgetId: budget.id, newCategory })}
+                  onDelete={() => deleteBudgetMutation.mutate(budget.id)}
                 />
               ))}
-              <AddBudgetCard onAddBudget={handleAddBudget} />
+              <AddBudgetCard onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })} />
             </div>
           </div>
 
@@ -313,9 +453,9 @@ const Index = () => {
           <div>
             <TransactionList 
               transactions={transactions}
-              onDeleteTransaction={handleTransactionDelete}
-              onUpdateTransaction={handleTransactionUpdate}
-              onAddExpense={handleAddExpense}
+              onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
+              onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
+              onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
               availableCategories={budgets.map(budget => budget.category)}
             />
           </div>
