@@ -2,6 +2,7 @@ import { useState } from "react";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { BudgetCard } from "@/components/budget/BudgetCard";
+import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { DollarSign, TrendingUp, Target, CreditCard } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -91,6 +92,33 @@ const Index = () => {
     });
   };
 
+  const handleAddBudget = (category: string, amount: number) => {
+    // Check if category already exists
+    const existingBudget = budgets.find(budget => budget.category.toLowerCase() === category.toLowerCase());
+    
+    if (existingBudget) {
+      toast({
+        title: "Category Exists",
+        description: `A budget for "${category}" already exists`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newBudget: Budget = {
+      category,
+      amount,
+      spent: 0
+    };
+
+    setBudgets(prev => [...prev, newBudget]);
+    
+    toast({
+      title: "Budget Created",
+      description: `Budget for ${category} ($${amount.toFixed(2)}) has been added`,
+    });
+  };
+
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -161,6 +189,7 @@ const Index = () => {
                   onDelete={() => handleBudgetDelete(budget.category)}
                 />
               ))}
+              <AddBudgetCard onAddBudget={handleAddBudget} />
             </div>
           </div>
 
