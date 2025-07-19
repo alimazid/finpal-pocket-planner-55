@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { FloatingExpenseButton } from "@/components/expenses/FloatingExpenseButton";
 import { BudgetCard } from "@/components/budget/BudgetCard";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
@@ -168,13 +169,8 @@ const Index = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Add Expense */}
-          <div className="space-y-6">
-            <ExpenseForm onAddExpense={handleAddExpense} />
-          </div>
-
-          {/* Middle Column - Budgets */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Budgets */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground">Budget Overview</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -198,6 +194,9 @@ const Index = () => {
             <TransactionList transactions={transactions} />
           </div>
         </div>
+
+        {/* Floating Expense Button */}
+        <FloatingExpenseButton onAddExpense={handleAddExpense} />
       </div>
     </div>
   );
