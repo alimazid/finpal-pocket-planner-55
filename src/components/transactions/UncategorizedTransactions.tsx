@@ -93,9 +93,6 @@ export function UncategorizedTransactions({
             {uncategorizedTransactions.length}
           </Badge>
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          These transactions don't have a category assigned. Categorize them to track your budget properly.
-        </p>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
