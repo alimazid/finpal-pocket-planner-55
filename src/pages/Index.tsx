@@ -11,7 +11,7 @@ import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
-import { DollarSign, TrendingUp, Target, CreditCard } from "lucide-react";
+import { DollarSign, TrendingUp, Target, CreditCard, Calendar } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -443,14 +443,20 @@ const Index = () => {
         <BudgetSummary budgets={budgets} />
 
         {/* Recent Transactions */}
-        <TransactionList 
-          transactions={transactions}
-          onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
-          onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
-          onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
-          onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
-          availableCategories={budgets.map(budget => budget.category)}
-        />
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            Recent Transactions
+          </h2>
+          <TransactionList 
+            transactions={transactions}
+            onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
+            onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
+            onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
+            onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
+            availableCategories={budgets.map(budget => budget.category)}
+          />
+        </div>
 
         {/* Budget Overview */}
         <div className="space-y-4">

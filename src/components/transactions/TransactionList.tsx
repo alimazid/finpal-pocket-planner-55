@@ -115,182 +115,170 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
   };
 
   return (
-    <Card className="bg-gradient-card shadow-soft">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-primary" />
-          Recent Transactions
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px]">
-          <div className="space-y-3">
-            {transactions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <DollarSign className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No transactions yet</p>
-                <p className="text-sm">Add your first expense to get started</p>
-              </div>
-            ) : (
-              transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                    !transaction.category 
-                      ? 'bg-red-50 border-red-200 hover:bg-red-100/50 dark:bg-red-950/20 dark:border-red-800/50 dark:hover:bg-red-900/30' 
-                      : 'bg-card hover:bg-muted/30'
-                  }`}
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium text-foreground">
-                        {transaction.description}
-                      </p>
-                      {editingCategoryId === transaction.id && availableCategories ? (
-                        <div className="flex items-center gap-2">
-                          <Select
-                            value={transaction.category || ""}
-                            onValueChange={(value) => handleCategoryChange(transaction.id, value)}
-                            onOpenChange={(open) => {
-                              if (!open) handleCategoryCancel();
-                            }}
-                            defaultOpen={true}
-                          >
-                            <SelectTrigger className="w-32 h-6 text-xs bg-background border">
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-background border shadow-lg z-50">
-                              {availableCategories.map((category) => (
-                                <SelectItem key={category} value={category} className="hover:bg-muted">
-                                  {category}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button size="sm" variant="ghost" onClick={handleCategoryCancel} className="h-6 w-6 p-0">
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ) : transaction.category ? (
-                        <Badge 
-                          variant="secondary" 
-                          className={`${getCategoryColor(transaction.category)} ${
-                            onUpdateTransactionCategory ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
-                          }`}
-                          onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
-                        >
-                          {transaction.category}
-                        </Badge>
-                      ) : (
-                        <Badge 
-                          variant="outline" 
-                          className="border-red-300 text-red-600 bg-red-50 cursor-pointer hover:bg-red-100 transition-colors dark:border-red-700 dark:text-red-400 dark:bg-red-950/20 dark:hover:bg-red-900/30"
-                          onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
-                        >
-                          No Category
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(transaction.date)}
-                    </p>
-                  </div>
+    <div className="space-y-3">
+      {transactions.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground bg-gradient-card rounded-lg">
+          <DollarSign className="h-12 w-12 mx-auto mb-2 opacity-50" />
+          <p>No transactions yet</p>
+          <p className="text-sm">Add your first expense to get started</p>
+        </div>
+      ) : (
+        transactions.map((transaction) => (
+          <div
+            key={transaction.id}
+            className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border transition-colors gap-3 ${
+              !transaction.category 
+                ? 'bg-red-50 border-red-200 hover:bg-red-100/50 dark:bg-red-950/20 dark:border-red-800/50 dark:hover:bg-red-900/30' 
+                : 'bg-gradient-card hover:bg-muted/30'
+            }`}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <p className="font-medium text-foreground truncate">
+                  {transaction.description}
+                </p>
+                {editingCategoryId === transaction.id && availableCategories ? (
                   <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      {editingId === transaction.id ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={editAmount}
-                            onChange={(e) => setEditAmount(e.target.value)}
-                            className="w-20 h-8 text-right"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleAmountSave(transaction.id);
-                              if (e.key === 'Escape') handleAmountCancel();
-                            }}
-                            autoFocus
-                          />
-                          <Button size="sm" variant="ghost" onClick={() => handleAmountSave(transaction.id)} className="h-8 w-8 p-0">
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={handleAmountCancel} className="h-8 w-8 p-0">
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <p 
-                          className={`font-semibold cursor-pointer hover:text-primary transition-colors ${
-                            transaction.type === 'expense' ? 'text-destructive' : 'text-success'
-                          }`}
-                          onClick={() => onUpdateTransaction && handleAmountEdit(transaction)}
-                        >
-                          {transaction.type === 'expense' ? '-' : '+'}
-                          ${transaction.amount.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-                    {onDeleteTransaction && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this transaction for "{transaction.description}" (${transaction.amount.toFixed(2)})? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => onDeleteTransaction(transaction.id)} 
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
+                    <Select
+                      value={transaction.category || ""}
+                      onValueChange={(value) => handleCategoryChange(transaction.id, value)}
+                      onOpenChange={(open) => {
+                        if (!open) handleCategoryCancel();
+                      }}
+                      defaultOpen={true}
+                    >
+                      <SelectTrigger className="w-32 h-8 text-xs bg-background border">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-lg z-50">
+                        {availableCategories.map((category) => (
+                          <SelectItem key={category} value={category} className="hover:bg-muted">
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button size="sm" variant="ghost" onClick={handleCategoryCancel} className="h-8 w-8 p-0">
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
-                </div>
-              ))
-            )}
-            
-            {/* Add Transaction Card */}
-            {onAddExpense && availableCategories && (
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <div className="flex items-center justify-center p-3 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30 min-h-[72px]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Plus className="h-5 w-5 text-primary" />
-                      </div>
-                      <span className="text-base font-medium text-muted-foreground">Add Transaction</span>
-                    </div>
+                ) : transaction.category ? (
+                  <Badge 
+                    variant="secondary" 
+                    className={`${getCategoryColor(transaction.category)} ${
+                      onUpdateTransactionCategory ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+                    } flex-shrink-0`}
+                    onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
+                  >
+                    {transaction.category}
+                  </Badge>
+                ) : (
+                  <Badge 
+                    variant="outline" 
+                    className="border-red-300 text-red-600 bg-red-50 cursor-pointer hover:bg-red-100 transition-colors dark:border-red-700 dark:text-red-400 dark:bg-red-950/20 dark:hover:bg-red-900/30 flex-shrink-0"
+                    onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
+                  >
+                    No Category
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {formatDate(transaction.date)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+              <div className="text-left sm:text-right">
+                {editingId === transaction.id ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editAmount}
+                      onChange={(e) => setEditAmount(e.target.value)}
+                      className="w-24 h-8 text-right"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleAmountSave(transaction.id);
+                        if (e.key === 'Escape') handleAmountCancel();
+                      }}
+                      autoFocus
+                    />
+                    <Button size="sm" variant="ghost" onClick={() => handleAmountSave(transaction.id)} className="h-8 w-8 p-0">
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={handleAmountCancel} className="h-8 w-8 p-0">
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                </DialogTrigger>
-                
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Add New Expense</DialogTitle>
-                    <DialogDescription>
-                      Track your spending by adding a new expense.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} />
-                </DialogContent>
-              </Dialog>
-            )}
+                ) : (
+                  <p 
+                    className={`font-semibold cursor-pointer hover:text-primary transition-colors ${
+                      transaction.type === 'expense' ? 'text-destructive' : 'text-success'
+                    }`}
+                    onClick={() => onUpdateTransaction && handleAmountEdit(transaction)}
+                  >
+                    {transaction.type === 'expense' ? '-' : '+'}
+                    ${transaction.amount.toFixed(2)}
+                  </p>
+                )}
+              </div>
+              {onDeleteTransaction && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive flex-shrink-0">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this transaction for "{transaction.description}" (${transaction.amount.toFixed(2)})? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => onDeleteTransaction(transaction.id)} 
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+        ))
+      )}
+      
+      {/* Add Transaction Card */}
+      {onAddExpense && availableCategories && (
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <div className="flex items-center justify-center p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30 min-h-[80px]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Plus className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-base font-medium text-muted-foreground">Add Transaction</span>
+              </div>
+            </div>
+          </DialogTrigger>
+          
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add New Expense</DialogTitle>
+              <DialogDescription>
+                Track your spending by adding a new expense.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} />
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
   );
 }
