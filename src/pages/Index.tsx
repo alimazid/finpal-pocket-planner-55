@@ -422,11 +422,8 @@ const Index = () => {
       <div className="bg-gradient-primary border-b border-primary/20">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-white font-medium">Financial Dashboard</span>
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-white" />
             </div>
             <div className="flex items-center gap-2">
               <AlertDialog>
@@ -434,11 +431,10 @@ const Index = () => {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-white border-white/20 hover:bg-white/10"
+                    className="text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0"
                     disabled={transactions.length === 0}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Clear All
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -460,9 +456,8 @@ const Index = () => {
                 </AlertDialogContent>
               </AlertDialog>
               <ThemeToggle />
-              <Button variant="outline" size="sm" onClick={handleSignOut} className="text-white border-white/20 hover:bg-white/10">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0">
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
