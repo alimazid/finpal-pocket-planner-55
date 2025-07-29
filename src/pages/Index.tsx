@@ -15,7 +15,8 @@ import { DollarSign, TrendingUp, Target, CreditCard, Calendar } from "lucide-rea
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { LogOut, Trash2 } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -310,6 +311,35 @@ const Index = () => {
     },
   });
 
+  // Clear all transactions mutation
+  const clearAllTransactionsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user!.id);
+      
+      if (error) throw error;
+      return transactions.length;
+    },
+    onSuccess: (transactionCount) => {
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      toast({
+        title: "All Transactions Cleared",
+        description: `${transactionCount} transaction${transactionCount === 1 ? '' : 's'} have been removed`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to clear transactions",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -388,19 +418,53 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-gradient-primary text-white p-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Financial Dashboard</h1>
-            <p className="text-primary-foreground/80">Track your expenses, manage budgets, and stay on top of your finances</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="outline" size="sm" onClick={handleSignOut} className="text-white border-white/20 hover:bg-white/10">
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+      {/* Action Bar */}
+      <div className="bg-gradient-primary border-b border-primary/20">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-white font-medium">Financial Dashboard</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-white border-white/20 hover:bg-white/10"
+                    disabled={transactions.length === 0}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear All
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear All Transactions</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete all {transactions.length} transaction{transactions.length === 1 ? '' : 's'}? This action cannot be undone and will reset all budget spending calculations.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => clearAllTransactionsMutation.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Clear All Transactions
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <ThemeToggle />
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="text-white border-white/20 hover:bg-white/10">
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </div>
