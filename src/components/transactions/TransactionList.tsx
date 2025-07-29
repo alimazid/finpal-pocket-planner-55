@@ -14,7 +14,7 @@ interface Transaction {
   id: string;
   amount: number;
   description: string;
-  category: string;
+  category: string | null;
   date: string;
   type: 'expense' | 'income';
 }
@@ -27,7 +27,7 @@ interface TransactionListProps {
   onAddExpense?: (expense: {
     amount: number;
     description: string;
-    category: string;
+    category: string | null;
     date: string;
   }) => void;
   availableCategories?: string[];
@@ -105,7 +105,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
   const handleAddExpense = (expense: {
     amount: number;
     description: string;
-    category: string;
+    category: string | null;
     date: string;
   }) => {
     if (onAddExpense) {
@@ -135,7 +135,11 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
               transactions.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors"
+                  className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                    !transaction.category 
+                      ? 'bg-red-50 border-red-200 hover:bg-red-100/50 dark:bg-red-950/20 dark:border-red-800/50 dark:hover:bg-red-900/30' 
+                      : 'bg-card hover:bg-muted/30'
+                  }`}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -145,19 +149,19 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                       {editingCategoryId === transaction.id && availableCategories ? (
                         <div className="flex items-center gap-2">
                           <Select
-                            value={transaction.category}
+                            value={transaction.category || ""}
                             onValueChange={(value) => handleCategoryChange(transaction.id, value)}
                             onOpenChange={(open) => {
                               if (!open) handleCategoryCancel();
                             }}
                             defaultOpen={true}
                           >
-                            <SelectTrigger className="w-32 h-6 text-xs">
+                            <SelectTrigger className="w-32 h-6 text-xs bg-background border">
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-background border shadow-lg z-50">
                               {availableCategories.map((category) => (
-                                <SelectItem key={category} value={category}>
+                                <SelectItem key={category} value={category} className="hover:bg-muted">
                                   {category}
                                 </SelectItem>
                               ))}
@@ -167,7 +171,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                             <X className="h-3 w-3" />
                           </Button>
                         </div>
-                      ) : (
+                      ) : transaction.category ? (
                         <Badge 
                           variant="secondary" 
                           className={`${getCategoryColor(transaction.category)} ${
@@ -176,6 +180,14 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                           onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
                         >
                           {transaction.category}
+                        </Badge>
+                      ) : (
+                        <Badge 
+                          variant="outline" 
+                          className="border-red-300 text-red-600 bg-red-50 cursor-pointer hover:bg-red-100 transition-colors dark:border-red-700 dark:text-red-400 dark:bg-red-950/20 dark:hover:bg-red-900/30"
+                          onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
+                        >
+                          No Category
                         </Badge>
                       )}
                     </div>

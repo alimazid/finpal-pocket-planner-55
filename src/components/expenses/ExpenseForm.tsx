@@ -11,7 +11,7 @@ interface ExpenseFormProps {
   onAddExpense: (expense: {
     amount: number;
     description: string;
-    category: string;
+    category: string | null;
     date: string;
   }) => void;
   availableCategories: string[];
@@ -25,11 +25,11 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount && description && category) {
+    if (amount && description) {
       onAddExpense({
         amount: parseFloat(amount),
         description,
-        category,
+        category: category || null,
         date: new Date().toISOString().split('T')[0]
       });
       setAmount("");
@@ -65,14 +65,14 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
         />
       </div>
       <div>
-        <Label htmlFor="category">Category</Label>
-        <Select value={category} onValueChange={setCategory} required>
+        <Label htmlFor="category">Category (Optional)</Label>
+        <Select value={category} onValueChange={setCategory}>
           <SelectTrigger className="mt-1">
-            <SelectValue placeholder={availableCategories.length > 0 ? "Select a category" : "No budgets available"} />
+            <SelectValue placeholder={availableCategories.length > 0 ? "Select a category (optional)" : "No budgets available - will be uncategorized"} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background border shadow-lg z-50">
             {availableCategories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
+              <SelectItem key={cat} value={cat} className="hover:bg-muted">
                 {cat}
               </SelectItem>
             ))}

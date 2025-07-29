@@ -446,7 +446,7 @@ const Index = () => {
               transactions={transactions}
               onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
               onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
-              onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
+              onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
               onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
               availableCategories={budgets.map(budget => budget.category)}
             />
