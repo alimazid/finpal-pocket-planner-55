@@ -11,8 +11,8 @@ import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
-import { DollarSign, TrendingUp, Target, CreditCard, Calendar } from "lucide-react";
-
+import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -492,11 +492,22 @@ const Index = () => {
         </div>
 
         {/* Uncategorized Transactions */}
-        <UncategorizedTransactions 
-          transactions={transactions}
-          availableCategories={budgets.map(budget => budget.category)}
-          onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
-        />
+        {transactions.filter(t => !t.category).length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Uncategorized Transactions
+              <Badge variant="secondary" className="ml-auto bg-warning/10 text-warning border-warning/20">
+                {transactions.filter(t => !t.category).length}
+              </Badge>
+            </h2>
+            <UncategorizedTransactions 
+              transactions={transactions}
+              availableCategories={budgets.map(budget => budget.category)}
+              onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
+            />
+          </div>
+        )}
 
         {/* Budget Summary */}
         <BudgetSummary budgets={budgets} />
