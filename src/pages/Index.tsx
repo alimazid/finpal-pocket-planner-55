@@ -12,7 +12,7 @@ import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import { DollarSign, TrendingUp, Target, CreditCard, Calendar } from "lucide-react";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -455,7 +455,7 @@ const Index = () => {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              <ThemeToggle className="text-white border-white/20 hover:bg-white/10 w-9 h-9" />
+              
               <Button variant="outline" size="sm" onClick={handleSignOut} className="text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0">
                 <LogOut className="w-4 h-4" />
               </Button>
