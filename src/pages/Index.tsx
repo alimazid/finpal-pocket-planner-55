@@ -442,37 +442,32 @@ const Index = () => {
         {/* Budget Summary */}
         <BudgetSummary budgets={budgets} />
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Budgets */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Budget Overview</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {budgets.map((budget) => (
-                <BudgetCard
-                  key={budget.id}
-                  category={budget.category}
-                  spent={budget.spent}
-                  budget={budget.amount}
-                  onBudgetUpdate={(newBudget) => updateBudgetMutation.mutate({ budgetId: budget.id, amount: newBudget })}
-                  onCategoryUpdate={(newCategory) => updateCategoryMutation.mutate({ budgetId: budget.id, newCategory })}
-                  onDelete={() => deleteBudgetMutation.mutate(budget.id)}
-                />
-              ))}
-              <AddBudgetCard onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })} />
-            </div>
-          </div>
+        {/* Recent Transactions */}
+        <TransactionList 
+          transactions={transactions}
+          onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
+          onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
+          onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
+          onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
+          availableCategories={budgets.map(budget => budget.category)}
+        />
 
-          {/* Right Column - Recent Transactions */}
-          <div>
-            <TransactionList 
-              transactions={transactions}
-              onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
-              onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
-              onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
-              onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
-              availableCategories={budgets.map(budget => budget.category)}
-            />
+        {/* Budget Overview */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-foreground">Budget Overview</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {budgets.map((budget) => (
+              <BudgetCard
+                key={budget.id}
+                category={budget.category}
+                spent={budget.spent}
+                budget={budget.amount}
+                onBudgetUpdate={(newBudget) => updateBudgetMutation.mutate({ budgetId: budget.id, amount: newBudget })}
+                onCategoryUpdate={(newCategory) => updateCategoryMutation.mutate({ budgetId: budget.id, newCategory })}
+                onDelete={() => deleteBudgetMutation.mutate(budget.id)}
+              />
+            ))}
+            <AddBudgetCard onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })} />
           </div>
         </div>
 
