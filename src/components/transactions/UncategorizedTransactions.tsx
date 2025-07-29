@@ -99,10 +99,10 @@ export function UncategorizedTransactions({
           {uncategorizedTransactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex items-center justify-between p-4 rounded-lg border bg-card border-border hover:bg-muted/30 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-card border-border hover:bg-muted/30 transition-colors gap-3"
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <p className="font-medium text-foreground truncate">
                     {transaction.description}
                   </p>
@@ -110,7 +110,7 @@ export function UncategorizedTransactions({
                     No Category
                   </Badge>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                   <span>{formatDate(transaction.date)}</span>
                   <span className="font-semibold text-destructive">
                     -{formatCurrency(transaction.amount)}
@@ -118,12 +118,12 @@ export function UncategorizedTransactions({
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 ml-4">
+              <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-4">
                 <Select
                   value={selectedCategories[transaction.id] || ""}
                   onValueChange={(value) => handleCategorySelect(transaction.id, value)}
                 >
-                  <SelectTrigger className="w-40 h-9 bg-background border-border">
+                  <SelectTrigger className="flex-1 sm:w-40 h-9 bg-background border-border">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-lg z-50">
@@ -140,7 +140,7 @@ export function UncategorizedTransactions({
                   variant="outline"
                   onClick={() => handleApplyCategory(transaction.id)}
                   disabled={!selectedCategories[transaction.id]}
-                  className="h-9 px-3"
+                  className="h-9 px-3 flex-shrink-0"
                 >
                   <Check className="h-4 w-4" />
                 </Button>
