@@ -59,6 +59,7 @@ export function UncategorizedTransactions({
   };
 
   const handleCategorySelect = (transactionId: string, category: string) => {
+    console.log('Category selected:', { transactionId, category });
     onUpdateTransactionCategory(transactionId, category);
     setOpenSelects(prev => ({
       ...prev,
@@ -91,13 +92,12 @@ export function UncategorizedTransactions({
                   </p>
                   {openSelects[transaction.id] ? (
                     <Select
-                      open={true}
-                      onOpenChange={(open) => {
-                        if (!open) {
-                          setOpenSelects(prev => ({ ...prev, [transaction.id]: false }));
-                        }
-                      }}
+                      value=""
                       onValueChange={(value) => handleCategorySelect(transaction.id, value)}
+                      open={openSelects[transaction.id]}
+                      onOpenChange={(open) => {
+                        setOpenSelects(prev => ({ ...prev, [transaction.id]: open }));
+                      }}
                     >
                       <SelectTrigger className="w-40 h-8 bg-background border-border">
                         <SelectValue placeholder="Select category" />
