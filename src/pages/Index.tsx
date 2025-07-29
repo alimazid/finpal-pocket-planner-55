@@ -367,6 +367,7 @@ const Index = () => {
     return null; // Will redirect to auth page
   }
 
+  // Calculate totals
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -374,6 +375,16 @@ const Index = () => {
   const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const remainingBudget = totalBudget - totalSpent;
+
+  // Format currency with commas
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -399,18 +410,18 @@ const Index = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatsCard
             title="Total Expenses"
-            value={`$${totalExpenses.toFixed(2)}`}
+            value={formatCurrency(totalExpenses)}
             icon={DollarSign}
             trend={{ value: "12%", isPositive: false }}
           />
           <StatsCard
             title="Monthly Budget"
-            value={`$${totalBudget.toFixed(2)}`}
+            value={formatCurrency(totalBudget)}
             icon={Target}
           />
           <StatsCard
             title="Remaining Budget"
-            value={`$${remainingBudget.toFixed(2)}`}
+            value={formatCurrency(remainingBudget)}
             icon={TrendingUp}
             trend={{ value: remainingBudget >= 0 ? "On track" : "Over budget", isPositive: remainingBudget >= 0 }}
           />
