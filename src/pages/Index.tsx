@@ -101,16 +101,7 @@ const Index = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: async (newTransaction) => {
-      // Update budget spent amount
-      const budget = budgets?.find(b => b.category === newTransaction.category);
-      if (budget) {
-        await supabase
-          .from('budgets')
-          .update({ spent: budget.spent + newTransaction.amount })
-          .eq('id', budget.id);
-      }
-
+    onSuccess: (newTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
@@ -228,18 +219,7 @@ const Index = () => {
       if (error) throw error;
       return transaction;
     },
-    onSuccess: async (transaction) => {
-      if (transaction && transaction.type === 'expense') {
-        // Update budget spent amount
-        const budget = budgets?.find(b => b.category === transaction.category);
-        if (budget) {
-          await supabase
-            .from('budgets')
-            .update({ spent: budget.spent - transaction.amount })
-            .eq('id', budget.id);
-        }
-      }
-
+    onSuccess: (transaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
@@ -263,20 +243,7 @@ const Index = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: async (updatedTransaction) => {
-      const oldTransaction = transactions?.find(t => t.id === updatedTransaction.id);
-      
-      if (oldTransaction && oldTransaction.type === 'expense') {
-        const budget = budgets?.find(b => b.category === oldTransaction.category);
-        if (budget) {
-          const amountDifference = updatedTransaction.amount - oldTransaction.amount;
-          await supabase
-            .from('budgets')
-            .update({ spent: budget.spent + amountDifference })
-            .eq('id', budget.id);
-        }
-      }
-
+    onSuccess: (updatedTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
