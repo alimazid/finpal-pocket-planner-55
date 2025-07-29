@@ -7,6 +7,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
 import { BudgetCard } from "@/components/budget/BudgetCard";
+import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { DollarSign, TrendingUp, Target, CreditCard } from "lucide-react";
@@ -418,6 +419,9 @@ const Index = () => {
             icon={CreditCard}
           />
         </div>
+
+        {/* Budget Summary */}
+        <BudgetSummary budgets={budgets} />
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
