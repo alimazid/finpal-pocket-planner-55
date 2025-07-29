@@ -84,12 +84,12 @@ export function UncategorizedTransactions({
   const hasSelectedCategories = Object.keys(selectedCategories).length > 0;
 
   return (
-    <Card className="bg-gradient-card shadow-soft border-orange-200 dark:border-orange-800">
+    <Card className="bg-gradient-card shadow-soft border-warning/20">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+        <CardTitle className="flex items-center gap-2 text-warning">
           <AlertTriangle className="h-5 w-5" />
           Uncategorized Transactions
-          <Badge variant="secondary" className="ml-auto bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
+          <Badge variant="secondary" className="ml-auto bg-warning/10 text-warning border-warning/20">
             {uncategorizedTransactions.length}
           </Badge>
         </CardTitle>
@@ -102,14 +102,14 @@ export function UncategorizedTransactions({
           {uncategorizedTransactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex items-center justify-between p-3 rounded-lg border bg-orange-50/50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-800/50"
+              className="flex items-center justify-between p-4 rounded-lg border bg-card border-border hover:bg-muted/30 transition-colors"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-medium text-foreground truncate">
                     {transaction.description}
                   </p>
-                  <Badge variant="outline" className="border-orange-300 text-orange-600 bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:bg-orange-950/20 flex-shrink-0">
+                  <Badge variant="outline" className="border-warning/50 text-warning bg-warning/5 flex-shrink-0">
                     No Category
                   </Badge>
                 </div>
@@ -126,7 +126,7 @@ export function UncategorizedTransactions({
                   value={selectedCategories[transaction.id] || ""}
                   onValueChange={(value) => handleCategorySelect(transaction.id, value)}
                 >
-                  <SelectTrigger className="w-40 h-9 bg-background border">
+                  <SelectTrigger className="w-40 h-9 bg-background border-border">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-lg z-50">
@@ -152,10 +152,10 @@ export function UncategorizedTransactions({
           ))}
           
           {hasSelectedCategories && (
-            <div className="pt-3 border-t">
+            <div className="pt-3 border-t border-border">
               <Button
                 onClick={handleCategorizeAll}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                className="w-full bg-warning hover:bg-warning/90 text-warning-foreground"
               >
                 Categorize All Selected ({Object.keys(selectedCategories).length})
               </Button>
