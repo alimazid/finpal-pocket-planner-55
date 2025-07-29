@@ -34,7 +34,9 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
   };
 
   const getProgressColor = (spent: number, amount: number, index: number) => {
-    const percentage = (spent / amount) * 100;
+    const spentNum = Number(spent) || 0;
+    const amountNum = Number(amount) || 1;
+    const percentage = (spentNum / amountNum) * 100;
     if (percentage >= 90) return '#ef4444'; // red for over-budget
     if (percentage >= 75) return '#f97316'; // orange for warning
     return getCategoryColor('', index); // default color
@@ -48,7 +50,9 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
   };
 
   const getSpentPercentage = (spent: number, amount: number) => {
-    return Math.min((spent / amount) * 100, 100);
+    const spentNum = Number(spent) || 0;
+    const amountNum = Number(amount) || 1;
+    return Math.min((spentNum / amountNum) * 100, 100);
   };
 
   if (budgets.length === 0) {
@@ -84,6 +88,8 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
             const percentage = getSpentPercentage(budget.spent, budget.amount);
             const isOverBudget = budget.spent > budget.amount;
             
+            console.log(`Budget ${budget.category}: spent=${budget.spent}, amount=${budget.amount}, percentage=${percentage}`);
+            
             return (
               <div key={budget.id} className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -108,11 +114,11 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                 </div>
                 
                 <div className="relative">
-                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden border">
                     <div 
-                      className="h-full transition-all duration-500 ease-out rounded-full"
+                      className="h-full transition-all duration-500 ease-out"
                       style={{ 
-                        width: `${Math.min(percentage, 100)}%`,
+                        width: `${Math.max(percentage, 2)}%`, // Minimum 2% width for visibility
                         backgroundColor: getProgressColor(budget.spent, budget.amount, index)
                       }}
                     />
