@@ -10,6 +10,7 @@ import { BudgetCard } from "@/components/budget/BudgetCard";
 import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
+import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import { DollarSign, TrendingUp, Target, CreditCard } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +22,7 @@ interface Transaction {
   user_id: string;
   amount: number;
   description: string;
-  category: string;
+  category: string | null;
   date: string;
   type: 'expense' | 'income';
   created_at: string;
@@ -83,7 +84,7 @@ const Index = () => {
     mutationFn: async (expense: {
       amount: number;
       description: string;
-      category: string;
+      category: string | null;
       date: string;
     }) => {
       const { data, error } = await supabase
@@ -257,7 +258,7 @@ const Index = () => {
 
   // Update transaction category mutation
   const updateTransactionCategoryMutation = useMutation({
-    mutationFn: async ({ transactionId, category }: { transactionId: string; category: string }) => {
+    mutationFn: async ({ transactionId, category }: { transactionId: string; category: string | null }) => {
       const { data, error } = await supabase
         .from('transactions')
         .update({ category })
@@ -419,6 +420,13 @@ const Index = () => {
             icon={CreditCard}
           />
         </div>
+
+        {/* Uncategorized Transactions */}
+        <UncategorizedTransactions 
+          transactions={transactions}
+          availableCategories={budgets.map(budget => budget.category)}
+          onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
+        />
 
         {/* Budget Summary */}
         <BudgetSummary budgets={budgets} />
