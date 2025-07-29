@@ -82,25 +82,26 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
           Budget Summary
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
+      <CardContent className="w-full max-w-full">
+        <div className="space-y-6 w-full max-w-full">
           {budgets.map((budget, index) => {
             const percentage = getSpentPercentage(budget.spent, budget.amount);
             const isOverBudget = budget.spent > budget.amount;
             
             console.log(`Budget ${budget.category}: spent=${budget.spent}, amount=${budget.amount}, percentage=${percentage}`);
+            console.log(`Width should be: ${Math.min(Math.max(percentage, 0), 100)}%`);
             
             return (
-              <div key={budget.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+              <div key={budget.id} className="space-y-2 w-full max-w-full">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <div 
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: getCategoryColor(budget.category, index) }}
                     />
                     <span className="font-medium text-foreground">{budget.category}</span>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <div className="text-sm font-medium">
                       <span className={isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-foreground'}>
                         {formatCurrency(budget.spent)}
@@ -113,7 +114,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                   </div>
                 </div>
                 
-                <div className="relative w-full">
+                <div className="w-full max-w-full overflow-hidden">
                   <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full transition-all duration-500 ease-out rounded-full"
@@ -123,12 +124,6 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                       }}
                     />
                   </div>
-                  {isOverBudget && (
-                    <div 
-                      className="absolute top-0 left-0 h-3 bg-red-500/30 rounded-full animate-pulse"
-                      style={{ width: `${Math.min((budget.spent / budget.amount) * 100, 150)}%` }}
-                    />
-                  )}
                 </div>
                 
                 {isOverBudget && (
