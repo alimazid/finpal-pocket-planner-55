@@ -115,7 +115,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {transactions.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground bg-gradient-card rounded-lg">
           <DollarSign className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -126,14 +126,14 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
         transactions.map((transaction) => (
           <div
             key={transaction.id}
-            className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border transition-colors gap-3 ${
+            className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border transition-colors gap-2 ${
               !transaction.category 
                 ? 'bg-red-50 border-red-200 hover:bg-red-100/50 dark:bg-red-950/20 dark:border-red-800/50 dark:hover:bg-red-900/30' 
                 : 'bg-gradient-card hover:bg-muted/30'
             }`}
           >
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <p className="font-medium text-foreground truncate">
                   {transaction.description}
                 </p>
