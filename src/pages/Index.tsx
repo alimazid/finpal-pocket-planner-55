@@ -254,6 +254,30 @@ const Index = () => {
     },
   });
 
+  // Update transaction category mutation
+  const updateTransactionCategoryMutation = useMutation({
+    mutationFn: async ({ transactionId, category }: { transactionId: string; category: string }) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .update({ category })
+        .eq('id', transactionId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (updatedTransaction) => {
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      toast({
+        title: "Category Updated",
+        description: `Category updated to ${updatedTransaction.category}`,
+      });
+    },
+  });
+
   // Update category mutation
   const updateCategoryMutation = useMutation({
     mutationFn: async ({ budgetId, newCategory }: { budgetId: string; newCategory: string }) => {
@@ -422,6 +446,7 @@ const Index = () => {
               transactions={transactions}
               onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
               onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
+              onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
               onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
               availableCategories={budgets.map(budget => budget.category)}
             />

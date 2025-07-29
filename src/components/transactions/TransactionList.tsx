@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar, DollarSign, Trash2, Check, X, Plus } from "lucide-react";
@@ -22,6 +23,7 @@ interface TransactionListProps {
   transactions: Transaction[];
   onDeleteTransaction?: (id: string) => void;
   onUpdateTransaction?: (id: string, newAmount: number) => void;
+  onUpdateTransactionCategory?: (id: string, newCategory: string) => void;
   onAddExpense?: (expense: {
     amount: number;
     description: string;
@@ -31,8 +33,9 @@ interface TransactionListProps {
   availableCategories?: string[];
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onAddExpense, availableCategories }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onAddExpense, availableCategories }: TransactionListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const formatDate = (dateString: string) => {
@@ -84,6 +87,21 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
     setEditAmount("");
   };
 
+  const handleCategoryEdit = (transactionId: string) => {
+    setEditingCategoryId(transactionId);
+  };
+
+  const handleCategoryChange = (transactionId: string, newCategory: string) => {
+    if (onUpdateTransactionCategory) {
+      onUpdateTransactionCategory(transactionId, newCategory);
+    }
+    setEditingCategoryId(null);
+  };
+
+  const handleCategoryCancel = () => {
+    setEditingCategoryId(null);
+  };
+
   const handleAddExpense = (expense: {
     amount: number;
     description: string;
@@ -124,9 +142,42 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                       <p className="font-medium text-foreground">
                         {transaction.description}
                       </p>
-                      <Badge variant="secondary" className={getCategoryColor(transaction.category)}>
-                        {transaction.category}
-                      </Badge>
+                      {editingCategoryId === transaction.id && availableCategories ? (
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={transaction.category}
+                            onValueChange={(value) => handleCategoryChange(transaction.id, value)}
+                            onOpenChange={(open) => {
+                              if (!open) handleCategoryCancel();
+                            }}
+                            defaultOpen={true}
+                          >
+                            <SelectTrigger className="w-32 h-6 text-xs">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableCategories.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button size="sm" variant="ghost" onClick={handleCategoryCancel} className="h-6 w-6 p-0">
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Badge 
+                          variant="secondary" 
+                          className={`${getCategoryColor(transaction.category)} ${
+                            onUpdateTransactionCategory ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+                          }`}
+                          onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
+                        >
+                          {transaction.category}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {formatDate(transaction.date)}
