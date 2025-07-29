@@ -108,13 +108,15 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                 </div>
                 
                 <div className="relative">
-                  <Progress 
-                    value={Math.min(percentage, 100)} 
-                    className="h-3 bg-muted"
-                    style={{
-                      '--progress-background': getProgressColor(budget.spent, budget.amount, index)
-                    } as React.CSSProperties}
-                  />
+                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full transition-all duration-500 ease-out rounded-full"
+                      style={{ 
+                        width: `${Math.min(percentage, 100)}%`,
+                        backgroundColor: getProgressColor(budget.spent, budget.amount, index)
+                      }}
+                    />
+                  </div>
                   {isOverBudget && (
                     <div 
                       className="absolute top-0 left-0 h-3 bg-red-500/30 rounded-full animate-pulse"
