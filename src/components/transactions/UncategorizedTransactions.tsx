@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Check } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 
 interface Transaction {
@@ -25,7 +24,7 @@ export function UncategorizedTransactions({
   availableCategories, 
   onUpdateTransactionCategory 
 }: UncategorizedTransactionsProps) {
-  const [selectedCategories, setSelectedCategories] = useState<Record<string, string>>({});
+  const [openSelects, setOpenSelects] = useState<Record<string, boolean>>({});
 
   // Filter to only show uncategorized transactions
   const uncategorizedTransactions = transactions.filter(t => !t.category);
@@ -52,36 +51,20 @@ export function UncategorizedTransactions({
     }).format(amount);
   };
 
-  const handleCategorySelect = (transactionId: string, category: string) => {
-    setSelectedCategories(prev => ({
+  const handleBadgeClick = (transactionId: string) => {
+    setOpenSelects(prev => ({
       ...prev,
-      [transactionId]: category
+      [transactionId]: !prev[transactionId]
     }));
   };
 
-  const handleApplyCategory = (transactionId: string) => {
-    const category = selectedCategories[transactionId];
-    if (category) {
-      onUpdateTransactionCategory(transactionId, category);
-      // Remove from local state after applying
-      setSelectedCategories(prev => {
-        const updated = { ...prev };
-        delete updated[transactionId];
-        return updated;
-      });
-    }
+  const handleCategorySelect = (transactionId: string, category: string) => {
+    onUpdateTransactionCategory(transactionId, category);
+    setOpenSelects(prev => ({
+      ...prev,
+      [transactionId]: false
+    }));
   };
-
-  const handleCategorizeAll = () => {
-    Object.entries(selectedCategories).forEach(([transactionId, category]) => {
-      if (category) {
-        onUpdateTransactionCategory(transactionId, category);
-      }
-    });
-    setSelectedCategories({});
-  };
-
-  const hasSelectedCategories = Object.keys(selectedCategories).length > 0;
 
   return (
     <Card className="bg-gradient-card shadow-soft border-warning/20">
@@ -106,9 +89,36 @@ export function UncategorizedTransactions({
                   <p className="font-medium text-foreground truncate">
                     {transaction.description}
                   </p>
-                  <Badge variant="outline" className="border-warning/50 text-warning bg-warning/5 flex-shrink-0">
-                    No Category
-                  </Badge>
+                  {openSelects[transaction.id] ? (
+                    <Select
+                      open={true}
+                      onOpenChange={(open) => {
+                        if (!open) {
+                          setOpenSelects(prev => ({ ...prev, [transaction.id]: false }));
+                        }
+                      }}
+                      onValueChange={(value) => handleCategorySelect(transaction.id, value)}
+                    >
+                      <SelectTrigger className="w-40 h-8 bg-background border-border">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-lg z-50">
+                        {availableCategories.map((category) => (
+                          <SelectItem key={category} value={category} className="hover:bg-muted">
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge 
+                      variant="outline" 
+                      className="border-warning/50 text-warning bg-warning/5 flex-shrink-0 cursor-pointer hover:bg-warning/10 transition-colors"
+                      onClick={() => handleBadgeClick(transaction.id)}
+                    >
+                      No Category
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                   <span>{formatDate(transaction.date)}</span>
@@ -117,47 +127,8 @@ export function UncategorizedTransactions({
                   </span>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-4">
-                <Select
-                  value={selectedCategories[transaction.id] || ""}
-                  onValueChange={(value) => handleCategorySelect(transaction.id, value)}
-                >
-                  <SelectTrigger className="flex-1 sm:w-40 h-9 bg-background border-border">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border shadow-lg z-50">
-                    {availableCategories.map((category) => (
-                      <SelectItem key={category} value={category} className="hover:bg-muted">
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleApplyCategory(transaction.id)}
-                  disabled={!selectedCategories[transaction.id]}
-                  className="h-9 px-3 flex-shrink-0"
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
           ))}
-          
-          {hasSelectedCategories && (
-            <div className="pt-3 border-t border-border">
-              <Button
-                onClick={handleCategorizeAll}
-                className="w-full bg-warning hover:bg-warning/90 text-warning-foreground"
-              >
-                Categorize All Selected ({Object.keys(selectedCategories).length})
-              </Button>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
