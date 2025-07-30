@@ -21,12 +21,12 @@ export function StatsCard({ title, value, icon: Icon, trend, className }: StatsC
             <p className="text-xs font-medium text-muted-foreground mb-1">
               {title}
             </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-lg font-bold text-foreground break-all">
+            <div className="space-y-1">
+              <p className="text-lg font-bold text-foreground whitespace-nowrap overflow-hidden text-ellipsis">
                 {value}
               </p>
               {trend && (
-                <span className={`text-xs flex-shrink-0 ${
+                <span className={`text-xs block ${
                   trend.isPositive ? 'text-success' : 'text-destructive'
                 }`}>
                   {trend.value}
