@@ -641,6 +641,7 @@ const Index = () => {
                 category={budget.category}
                 spent={budget.spent}
                 budget={budget.amount}
+                transactions={transactions.filter(t => t.category === budget.category && t.type === 'expense')}
                 onBudgetUpdate={(newBudget) => updateBudgetMutation.mutate({ budgetId: budget.id, amount: newBudget })}
                 onCategoryUpdate={(newCategory) => updateCategoryMutation.mutate({ budgetId: budget.id, newCategory })}
                 onDelete={() => deleteBudgetMutation.mutate(budget.id)}
