@@ -532,7 +532,6 @@ const Index = () => {
             title="Total Expenses"
             value={formatCurrency(totalExpenses)}
             icon={DollarSign}
-            trend={{ value: "12%", isPositive: false }}
           />
           <StatsCard
             title="Monthly Budget"
@@ -543,7 +542,6 @@ const Index = () => {
             title="Remaining Budget"
             value={formatCurrency(remainingBudget)}
             icon={TrendingUp}
-            trend={{ value: remainingBudget >= 0 ? "On track" : "Over budget", isPositive: remainingBudget >= 0 }}
           />
           <StatsCard
             title="Transactions"
