@@ -22,7 +22,7 @@ export function StatsCard({ title, value, icon: Icon, trend, className }: StatsC
               {title}
             </p>
             <div className="space-y-1">
-              <p className="text-lg font-bold text-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+              <p className="text-lg font-bold text-foreground whitespace-nowrap">
                 {value}
               </p>
               {trend && (
