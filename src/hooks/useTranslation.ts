@@ -228,6 +228,32 @@ const translations: Translations = {
   deleteTransactionConfirm: {
     english: 'Are you sure you want to delete this transaction for',
     spanish: '¿Estás seguro de que quieres eliminar esta transacción de'
+  },
+  
+  // Add Budget translations
+  addNewBudget: {
+    english: 'Add New Budget',
+    spanish: 'Agregar Nuevo Presupuesto'
+  },
+  createBudgetCategory: {
+    english: 'Create a new budget category to track your expenses.',
+    spanish: 'Crea una nueva categoría de presupuesto para rastrear tus gastos.'
+  },
+  budgetName: {
+    english: 'Budget Name',
+    spanish: 'Nombre del Presupuesto'
+  },
+  budgetAmount: {
+    english: 'Budget Amount',
+    spanish: 'Cantidad del Presupuesto'
+  },
+  budgetNamePlaceholder: {
+    english: 'e.g., Groceries, Gas, Entertainment',
+    spanish: 'ej., Comestibles, Gasolina, Entretenimiento'
+  },
+  budgetAmountPlaceholder: {
+    english: 'e.g., 500',
+    spanish: 'ej., 500'
   }
 };
 

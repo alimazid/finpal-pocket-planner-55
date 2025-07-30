@@ -607,7 +607,11 @@ const Index = () => {
         )}
 
         {/* Budget Summary */}
-        <BudgetSummary budgets={budgets} language={selectedLanguage as 'english' | 'spanish'} />
+        <BudgetSummary 
+          budgets={budgets} 
+          language={selectedLanguage as 'english' | 'spanish'} 
+          onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })}
+        />
 
         {/* Recent Transactions */}
         <div className="space-y-4">
