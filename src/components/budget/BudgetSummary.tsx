@@ -19,16 +19,16 @@ interface BudgetSummaryProps {
 export function BudgetSummary({ budgets }: BudgetSummaryProps) {
   const getCategoryColor = (category: string, index: number) => {
     const colors = [
-      'hsl(var(--primary))',     // cyan for first
-      'hsl(var(--secondary))',   // secondary for second  
-      'hsl(var(--accent))',      // accent for third
-      'hsl(262 83% 58%)',        // violet for fourth
-      'hsl(348 77% 55%)',        // red for fifth
-      'hsl(24 95% 53%)',         // orange  
-      'hsl(45 93% 47%)',         // yellow
-      'hsl(142 71% 45%)',        // green
-      'hsl(217 91% 60%)',        // blue
-      'hsl(330 81% 60%)',        // pink
+      'hsl(var(--primary))',
+      'hsl(var(--secondary))',
+      'hsl(var(--accent))',
+      '#ef4444', // red
+      '#f97316', // orange
+      '#eab308', // yellow
+      '#22c55e', // green
+      '#3b82f6', // blue
+      '#8b5cf6', // violet
+      '#ec4899', // pink
     ];
     return colors[index % colors.length];
   };
@@ -37,8 +37,8 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
     const spentNum = Number(spent) || 0;
     const amountNum = Number(amount) || 1;
     const percentage = (spentNum / amountNum) * 100;
-    if (percentage >= 90) return 'hsl(348 77% 55%)'; // red for over-budget
-    if (percentage >= 75) return 'hsl(24 95% 53%)'; // orange for warning
+    if (percentage >= 90) return '#ef4444'; // red for over-budget
+    if (percentage >= 75) return '#f97316'; // orange for warning
     return getCategoryColor('', index); // default color
   };
 
@@ -89,9 +89,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
             const isOverBudget = budget.spent > budget.amount;
             
             console.log(`Budget ${budget.category}: spent=${budget.spent}, amount=${budget.amount}, percentage=${percentage}`);
-            console.log(`Index: ${index}, Color: ${getCategoryColor(budget.category, index)}`);
-            console.log(`Progress color: ${getProgressColor(budget.spent, budget.amount, index)}`);
-            console.log(`Width should be: ${percentage}%`);
+            console.log(`Width should be: ${Math.min(Math.max(percentage, 0), 100)}%`);
             
             return (
               <div key={budget.id} className="space-y-2 w-full max-w-full">
@@ -115,14 +113,12 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                 </div>
                 
                 <div className="w-full max-w-full overflow-hidden">
-                  <div className="w-full h-4 bg-muted rounded-full overflow-hidden">
+                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
                     <div 
-                      key={`${budget.id}-${percentage}`}
                       className="h-full transition-all duration-500 ease-out rounded-full"
                       style={{ 
-                        width: `${Math.max(percentage, 0)}%`,
-                        backgroundColor: getProgressColor(budget.spent, budget.amount, index),
-                        minWidth: percentage > 0 && percentage < 2 ? '2%' : '0%'
+                        width: `${Math.min(Math.max(percentage, 0), 100)}%`,
+                        backgroundColor: getProgressColor(budget.spent, budget.amount, index)
                       }}
                     />
                   </div>
