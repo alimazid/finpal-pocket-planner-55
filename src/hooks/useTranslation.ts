@@ -86,8 +86,8 @@ const translations: Translations = {
   
   // Budget section
   budgetSummary: {
-    english: 'Budget Details',
-    spanish: 'Detalles de presupuestos'
+    english: 'Budget Summary',
+    spanish: 'Resumen del Presupuesto'
   },
   addBudget: {
     english: 'Add Budget',
