@@ -19,20 +19,22 @@ export function StatsCard({ title, value, icon: Icon, trend, className }: StatsC
         <div className="absolute top-4 right-4">
           <Icon className="h-5 w-5 text-primary" />
         </div>
-        <div className="pr-8">
-          <p className="text-xs font-medium text-muted-foreground mb-2">
+        <div className="pr-8 h-16 flex flex-col justify-between">
+          <p className="text-xs font-medium text-muted-foreground">
             {title}
           </p>
-          <p className="text-lg font-bold text-foreground whitespace-nowrap mb-1">
+          <p className="text-lg font-bold text-foreground whitespace-nowrap">
             {value}
           </p>
-          {trend && (
-            <span className={`text-xs ${
-              trend.isPositive ? 'text-success' : 'text-destructive'
-            }`}>
-              {trend.value}
-            </span>
-          )}
+          <div className="h-4 flex items-start">
+            {trend && (
+              <span className={`text-xs ${
+                trend.isPositive ? 'text-success' : 'text-destructive'
+              }`}>
+                {trend.value}
+              </span>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
