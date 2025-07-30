@@ -27,13 +27,15 @@ export function StatsCard({ title, value, icon: Icon, trend, className }: StatsC
             <p className="text-lg font-bold text-foreground whitespace-nowrap">
               {value}
             </p>
-            {trend && (
-              <span className={`text-xs block ${
-                trend.isPositive ? 'text-success' : 'text-destructive'
-              }`}>
-                {trend.value}
-              </span>
-            )}
+            <div className="h-4 flex items-center">
+              {trend && (
+                <span className={`text-xs ${
+                  trend.isPositive ? 'text-success' : 'text-destructive'
+                }`}>
+                  {trend.value}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
