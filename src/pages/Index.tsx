@@ -7,7 +7,6 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
 import { BudgetCard } from "@/components/budget/BudgetCard";
-import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
@@ -605,9 +604,6 @@ const Index = () => {
             />
           </div>
         )}
-
-        {/* Budget Summary */}
-        <BudgetSummary budgets={budgets} />
 
         {/* Recent Transactions */}
         <div className="space-y-4">
