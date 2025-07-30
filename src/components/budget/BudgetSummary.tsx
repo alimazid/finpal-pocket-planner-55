@@ -22,13 +22,13 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
       'hsl(var(--primary))',
       'hsl(var(--secondary))',
       'hsl(var(--accent))',
-      '#ef4444', // red
-      '#f97316', // orange
-      '#eab308', // yellow
-      '#22c55e', // green
-      '#3b82f6', // blue
-      '#8b5cf6', // violet
-      '#ec4899', // pink
+      'hsl(0 84% 60%)', // red
+      'hsl(24 95% 53%)', // orange
+      'hsl(45 93% 47%)', // yellow
+      'hsl(142 71% 45%)', // green
+      'hsl(217 91% 60%)', // blue
+      'hsl(262 83% 58%)', // violet
+      'hsl(330 81% 60%)', // pink
     ];
     return colors[index % colors.length];
   };
@@ -37,8 +37,8 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
     const spentNum = Number(spent) || 0;
     const amountNum = Number(amount) || 1;
     const percentage = (spentNum / amountNum) * 100;
-    if (percentage >= 90) return '#ef4444'; // red for over-budget
-    if (percentage >= 75) return '#f97316'; // orange for warning
+    if (percentage >= 90) return 'hsl(0 84% 60%)'; // red for over-budget
+    if (percentage >= 75) return 'hsl(24 95% 53%)'; // orange for warning
     return getCategoryColor('', index); // default color
   };
 
@@ -112,17 +112,13 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                   </div>
                 </div>
                 
-                <div className="w-full max-w-full overflow-hidden">
-                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full transition-all duration-500 ease-out rounded-full"
-                      style={{ 
-                        width: `${Math.min(Math.max(percentage, 0), 100)}%`,
-                        backgroundColor: getProgressColor(budget.spent, budget.amount, index)
-                      }}
-                    />
-                  </div>
-                </div>
+                <Progress 
+                  value={percentage} 
+                  className="h-3"
+                  style={{ 
+                    '--progress-background': getProgressColor(budget.spent, budget.amount, index)
+                  } as React.CSSProperties}
+                />
                 
                 {isOverBudget && (
                   <div className="text-xs text-red-600 dark:text-red-400 font-medium">
