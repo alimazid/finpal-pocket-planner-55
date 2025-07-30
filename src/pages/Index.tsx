@@ -49,7 +49,7 @@ const Index = () => {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("spanish");
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
