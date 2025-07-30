@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Calendar, DollarSign, Trash2, Check, X, Plus } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Transaction {
   id: string;
@@ -31,13 +32,15 @@ interface TransactionListProps {
     date: string;
   }) => void;
   availableCategories?: string[];
+  language: 'english' | 'spanish';
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onAddExpense, availableCategories }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onAddExpense, availableCategories, language }: TransactionListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { t } = useTranslation(language);
   const formatDate = (dateString: string) => {
     // Parse date as local date to avoid timezone issues
     const [year, month, day] = dateString.split('-').map(Number);
@@ -119,8 +122,8 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
       {transactions.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground bg-gradient-card rounded-lg">
           <DollarSign className="h-12 w-12 mx-auto mb-2 opacity-50" />
-          <p>No transactions yet</p>
-          <p className="text-sm">Add your first expense to get started</p>
+          <p>{t('noTransactionsYet')}</p>
+          <p className="text-sm">{t('addFirstExpense')}</p>
         </div>
       ) : (
         transactions.map((transaction) => (
@@ -148,7 +151,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                       defaultOpen={true}
                     >
                       <SelectTrigger className="w-32 h-8 text-xs bg-background border">
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder={t('selectCategory')} />
                       </SelectTrigger>
                       <SelectContent className="bg-background border shadow-lg z-50">
                         {availableCategories.map((category) => (
@@ -178,7 +181,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     className="border-red-300 text-red-600 bg-red-50 cursor-pointer hover:bg-red-100 transition-colors dark:border-red-700 dark:text-red-400 dark:bg-red-950/20 dark:hover:bg-red-900/30 flex-shrink-0"
                     onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
                   >
-                    No Category
+                    {t('noCategory')}
                   </Badge>
                 )}
               </div>
@@ -231,18 +234,18 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                      <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete this transaction for "{transaction.description}" (${transaction.amount.toFixed(2)})? This action cannot be undone.
+                        {t('deleteTransactionConfirm')} "{transaction.description}" (${transaction.amount.toFixed(2)})? {t('actionCannotBeUndoneSimple')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                       <AlertDialogAction 
                         onClick={() => onDeleteTransaction(transaction.id)} 
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Delete
+                        {t('delete')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -262,16 +265,16 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Plus className="h-5 w-5 text-primary" />
                 </div>
-                <span className="text-base font-medium text-muted-foreground">Add Transaction</span>
+                <span className="text-base font-medium text-muted-foreground">{t('addTransaction')}</span>
               </div>
             </div>
           </DialogTrigger>
           
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Add New Expense</DialogTitle>
+              <DialogTitle>{t('addNewExpense')}</DialogTitle>
               <DialogDescription>
-                Track your spending by adding a new expense.
+                {t('trackSpending')}
               </DialogDescription>
             </DialogHeader>
             

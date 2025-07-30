@@ -198,6 +198,36 @@ const translations: Translations = {
   overBudgetBy: {
     english: 'Over budget by',
     spanish: 'Excede el presupuesto en'
+  },
+  
+  // Transaction List translations
+  noTransactionsYet: {
+    english: 'No transactions yet',
+    spanish: 'Aún no hay transacciones'
+  },
+  addFirstExpense: {
+    english: 'Add your first expense to get started',
+    spanish: 'Agrega tu primer gasto para comenzar'
+  },
+  addTransaction: {
+    english: 'Add Transaction',
+    spanish: 'Agregar Transacción'
+  },
+  noCategory: {
+    english: 'No Category',
+    spanish: 'Sin Categoría'
+  },
+  selectCategory: {
+    english: 'Select category',
+    spanish: 'Seleccionar categoría'
+  },
+  deleteTransaction: {
+    english: 'Delete Transaction',
+    spanish: 'Eliminar Transacción'
+  },
+  deleteTransactionConfirm: {
+    english: 'Are you sure you want to delete this transaction for',
+    spanish: '¿Estás seguro de que quieres eliminar esta transacción de'
   }
 };
 
