@@ -189,27 +189,27 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
         <Separator />
 
         {/* Transactions List */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 w-full overflow-hidden">
           <div className="flex items-center gap-2 mb-2">
             <Receipt className="h-4 w-4 text-primary" />
             <h4 className="font-medium text-sm">Transactions ({transactions.length})</h4>
           </div>
-          <ScrollArea className="h-full">
-            <div className="space-y-2">
+          <ScrollArea className="h-full w-full">
+            <div className="space-y-2 pr-2 w-full overflow-hidden">
               {transactions.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   No transactions in this category
                 </p>
               ) : (
                 transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-start justify-between p-2 rounded-md bg-muted/50 text-sm gap-2 w-full">
-                    <div className="flex-1 min-w-0 overflow-hidden max-w-[60%]">
-                      <p className="font-medium truncate text-xs leading-tight break-all">{transaction.description}</p>
+                  <div key={transaction.id} className="flex items-start justify-between p-2 rounded-md bg-muted/50 text-sm gap-2 w-full max-w-full overflow-hidden">
+                    <div className="flex-1 min-w-0 overflow-hidden max-w-[65%]">
+                      <p className="font-medium text-xs leading-tight break-words overflow-hidden text-ellipsis whitespace-nowrap">{transaction.description}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {format(new Date(transaction.date), 'MMM dd, yyyy')}
                       </p>
                     </div>
-                    <div className="text-right flex-shrink-0 max-w-[40%]">
+                    <div className="text-right flex-shrink-0 max-w-[35%] overflow-hidden">
                       <span className={`font-medium text-xs ${transaction.type === 'expense' ? 'text-destructive' : 'text-success'}`}>
                         {transaction.type === 'expense' ? '-' : '+'}${transaction.amount.toFixed(2)}
                       </span>
