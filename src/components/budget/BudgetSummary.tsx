@@ -88,8 +88,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
             const percentage = getSpentPercentage(budget.spent, budget.amount);
             const isOverBudget = budget.spent > budget.amount;
             
-            console.log(`Budget ${budget.category}: spent=${budget.spent}, amount=${budget.amount}, percentage=${percentage}`);
-            console.log(`Width should be: ${Math.min(Math.max(percentage, 0), 100)}%`);
+            console.log(`Budget ${budget.category} (index ${index}): spent=${budget.spent}, amount=${budget.amount}, percentage=${percentage}`);
             
             return (
               <div key={budget.id} className="space-y-2 w-full max-w-full">
