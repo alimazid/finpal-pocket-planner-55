@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LogOut, Trash2, Languages } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Transaction {
   id: string;
@@ -51,6 +52,7 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
 
   // Fetch budgets
   const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
@@ -474,18 +476,18 @@ const Index = () => {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Clear All Transactions</AlertDialogTitle>
+                    <AlertDialogTitle>{t('clearAllTransactions')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete all {transactions.length} transaction{transactions.length === 1 ? '' : 's'}? This action cannot be undone and will reset all budget spending calculations.
+                      {t('areYouSureTransactions')} {transactions.length} {transactions.length === 1 ? t('transaction') : t('transactions')}? {t('actionCannotBeUndone')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => clearAllTransactionsMutation.mutate()}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      Clear All Transactions
+                      {t('clearAllTransactions')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -504,18 +506,18 @@ const Index = () => {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Clear All Budgets</AlertDialogTitle>
+                    <AlertDialogTitle>{t('clearAllBudgets')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete all {budgets.length} budget{budgets.length === 1 ? '' : 's'}? This action cannot be undone.
+                      {t('areYouSureBudgets')} {budgets.length} {budgets.length === 1 ? t('budget') : t('budgets')}? {t('actionCannotBeUndoneSimple')}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => clearAllBudgetsMutation.mutate()}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      Clear All Budgets
+                      {t('clearAllBudgets')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -533,9 +535,9 @@ const Index = () => {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
-                    <DialogTitle>Select Language</DialogTitle>
+                    <DialogTitle>{t('selectLanguage')}</DialogTitle>
                     <DialogDescription>
-                      Choose your preferred language for the application.
+                      {t('chooseLanguage')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -544,23 +546,23 @@ const Index = () => {
                         <SelectValue placeholder="Select a language" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="english">English</SelectItem>
-                        <SelectItem value="spanish">Spanish</SelectItem>
+                        <SelectItem value="english">{t('english')}</SelectItem>
+                        <SelectItem value="spanish">{t('spanish')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setIsTranslationOpen(false)}>
-                      Cancel
+                      {t('cancel')}
                     </Button>
                     <Button onClick={() => {
                       toast({
-                        title: "Language Updated",
-                        description: `Language changed to ${selectedLanguage === 'english' ? 'English' : 'Spanish'}`,
+                        title: t('languageUpdated'),
+                        description: `${t('languageChangedTo')} ${selectedLanguage === 'english' ? t('english') : t('spanish')}`,
                       });
                       setIsTranslationOpen(false);
                     }}>
-                      Apply
+                      {t('apply')}
                     </Button>
                   </div>
                 </DialogContent>
@@ -577,26 +579,13 @@ const Index = () => {
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatsCard
-            title="Total Expenses"
-            value={formatCurrency(totalExpenses)}
-            icon={DollarSign}
-          />
-          <StatsCard
-            title="Monthly Budget"
-            value={formatCurrency(totalBudget)}
-            icon={Target}
-          />
-          <StatsCard
-            title="Remaining Budget"
-            value={formatCurrency(remainingBudget)}
-            icon={TrendingUp}
-          />
-          <StatsCard
-            title="Transactions"
-            value={transactions.length.toString()}
-            icon={CreditCard}
-          />
+          <StatsCard title={t('totalExpenses')} value={formatCurrency(totalExpenses)} icon={DollarSign} />
+          <StatsCard title={t('totalBudget')} value={formatCurrency(totalBudget)} icon={Target} />
+          <StatsCard title={t('remainingBudget')} value={formatCurrency(totalBudget - totalExpenses)} icon={TrendingUp} trend={{
+            value: totalBudget - totalExpenses > 0 ? '+' : '-',
+            isPositive: totalBudget - totalExpenses > 0
+          }} />
+          <StatsCard title={t('transactions')} value={transactions.length.toString()} icon={CreditCard} />
         </div>
 
         {/* Uncategorized Transactions */}
@@ -604,7 +593,7 @@ const Index = () => {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-warning" />
-              Uncategorized Transactions
+              {t('uncategorizedTransactions')}
               <Badge variant="secondary" className="ml-auto bg-warning/10 text-warning border-warning/20">
                 {transactions.filter(t => !t.category).length}
               </Badge>
@@ -624,7 +613,7 @@ const Index = () => {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Recent Transactions
+            {t('recentTransactions')}
           </h2>
           <TransactionList 
             transactions={transactions}
@@ -638,7 +627,7 @@ const Index = () => {
 
         {/* Budget Overview */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-foreground">Budget Overview</h2>
+          <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {budgets.map((budget) => (
               <BudgetCard

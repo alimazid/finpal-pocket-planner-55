@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { DollarSign } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface FloatingExpenseButtonProps {
   onAddExpense: (expense: {
@@ -12,10 +13,12 @@ interface FloatingExpenseButtonProps {
     date: string;
   }) => void;
   availableCategories: string[];
+  language: 'english' | 'spanish';
 }
 
-export function FloatingExpenseButton({ onAddExpense, availableCategories }: FloatingExpenseButtonProps) {
+export function FloatingExpenseButton({ onAddExpense, availableCategories, language }: FloatingExpenseButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation(language);
 
   const handleAddExpense = (expense: {
     amount: number;
@@ -40,9 +43,9 @@ export function FloatingExpenseButton({ onAddExpense, availableCategories }: Flo
       
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add New Expense</DialogTitle>
+          <DialogTitle>{t('addNewExpense')}</DialogTitle>
           <DialogDescription>
-            Track your spending by adding a new expense.
+            {t('trackSpending')}
           </DialogDescription>
         </DialogHeader>
         
