@@ -254,6 +254,22 @@ const translations: Translations = {
   budgetAmountPlaceholder: {
     english: 'e.g., 500',
     spanish: 'ej., 500'
+  },
+  pickADate: {
+    english: 'Pick a date',
+    spanish: 'Seleccionar fecha'
+  },
+  whatDidYouSpendOn: {
+    english: 'What did you spend on?',
+    spanish: '¿En qué gastaste?'
+  },
+  selectCategoryOptional: {
+    english: 'Select a category (optional)',
+    spanish: 'Seleccionar una categoría (opcional)'
+  },
+  noBudgetsAvailable: {
+    english: 'No budgets available - will be uncategorized',
+    spanish: 'No hay presupuestos disponibles - será sin categorizar'
   }
 };
 

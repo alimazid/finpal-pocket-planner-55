@@ -49,7 +49,7 @@ export function FloatingExpenseButton({ onAddExpense, availableCategories, langu
           </DialogDescription>
         </DialogHeader>
         
-        <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} />
+        <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} language={language} />
       </DialogContent>
     </Dialog>
   );

@@ -4,7 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 
 interface ExpenseFormProps {
@@ -16,12 +21,15 @@ interface ExpenseFormProps {
   }) => void;
   availableCategories: string[];
   showCard?: boolean;
+  language: 'english' | 'spanish';
 }
 
-export function ExpenseForm({ onAddExpense, availableCategories, showCard = true }: ExpenseFormProps) {
+export function ExpenseForm({ onAddExpense, availableCategories, showCard = true, language }: ExpenseFormProps) {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [date, setDate] = useState<Date>(new Date());
+  const { t } = useTranslation(language);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +38,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
         amount: parseFloat(amount),
         description,
         category: category || null,
-        date: new Date().toISOString().split('T')[0]
+        date: date.toISOString().split('T')[0]
       });
       setAmount("");
       setDescription("");
@@ -41,7 +49,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="amount">Amount</Label>
+        <Label htmlFor="amount">{t('amount')}</Label>
         <Input
           id="amount"
           type="number"
@@ -54,10 +62,10 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
         />
       </div>
       <div>
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">{t('description')}</Label>
         <Input
           id="description"
-          placeholder="What did you spend on?"
+          placeholder={t('whatDidYouSpendOn')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="mt-1"
@@ -65,10 +73,10 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
         />
       </div>
       <div>
-        <Label htmlFor="category">Category (Optional)</Label>
+        <Label htmlFor="category">{t('category')} (Optional)</Label>
         <Select value={category} onValueChange={setCategory}>
           <SelectTrigger className="mt-1">
-            <SelectValue placeholder={availableCategories.length > 0 ? "Select a category (optional)" : "No budgets available - will be uncategorized"} />
+            <SelectValue placeholder={availableCategories.length > 0 ? t('selectCategoryOptional') : t('noBudgetsAvailable')} />
           </SelectTrigger>
           <SelectContent className="bg-background border shadow-lg z-50">
             {availableCategories.map((cat) => (
@@ -79,8 +87,35 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
           </SelectContent>
         </Select>
       </div>
+      <div>
+        <Label htmlFor="date">{t('date')}</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal mt-1",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date ? format(date, "PPP") : <span>{t('pickADate')}</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={(selectedDate) => selectedDate && setDate(selectedDate)}
+              disabled={(date) => date > new Date()}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
       <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity">
-        Add Expense
+        {t('addExpense')}
       </Button>
     </form>
   );
@@ -94,10 +129,10 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Plus className="h-5 w-5 text-primary" />
-          Add Expense
+          {t('addExpense')}
         </CardTitle>
         <CardDescription>
-          Track your spending by adding new expenses
+          {t('trackSpending')}
         </CardDescription>
       </CardHeader>
       <CardContent>

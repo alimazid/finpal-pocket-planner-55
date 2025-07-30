@@ -278,7 +278,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
               </DialogDescription>
             </DialogHeader>
             
-            <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} />
+            <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} language={language} />
           </DialogContent>
         </Dialog>
       )}
