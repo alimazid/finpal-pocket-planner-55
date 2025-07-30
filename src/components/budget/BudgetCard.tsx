@@ -202,15 +202,15 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                 </p>
               ) : (
                 transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{transaction.description}</p>
-                      <p className="text-xs text-muted-foreground">
+                  <div key={transaction.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm gap-2">
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <p className="font-medium truncate text-xs">{transaction.description}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {format(new Date(transaction.date), 'MMM dd, yyyy')}
                       </p>
                     </div>
-                    <div className="text-right ml-2 flex-shrink-0">
-                      <span className={`font-medium ${transaction.type === 'expense' ? 'text-destructive' : 'text-success'}`}>
+                    <div className="text-right flex-shrink-0 min-w-0">
+                      <span className={`font-medium text-xs ${transaction.type === 'expense' ? 'text-destructive' : 'text-success'}`}>
                         {transaction.type === 'expense' ? '-' : '+'}${transaction.amount.toFixed(2)}
                       </span>
                     </div>
