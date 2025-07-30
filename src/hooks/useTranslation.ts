@@ -172,6 +172,32 @@ const translations: Translations = {
   save: {
     english: 'Save',
     spanish: 'Guardar'
+  },
+  
+  // Budget Summary translations
+  totalBudgetProgress: {
+    english: 'Total Budget Progress',
+    spanish: 'Progreso del Presupuesto Total'
+  },
+  ofTotalBudgetUsed: {
+    english: 'of total budget used',
+    spanish: 'del presupuesto total usado'
+  },
+  noBudgetsCreated: {
+    english: 'No budgets created yet',
+    spanish: 'Aún no se han creado presupuestos'
+  },
+  createFirstBudget: {
+    english: 'Create your first budget to see progress here',
+    spanish: 'Crea tu primer presupuesto para ver el progreso aquí'
+  },
+  used: {
+    english: 'used',
+    spanish: 'usado'
+  },
+  overBudgetBy: {
+    english: 'Over budget by',
+    spanish: 'Excede el presupuesto en'
   }
 };
 

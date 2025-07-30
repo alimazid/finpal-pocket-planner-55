@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BarChart3 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Budget {
   id: string;
@@ -14,9 +15,11 @@ interface Budget {
 
 interface BudgetSummaryProps {
   budgets: Budget[];
+  language: 'english' | 'spanish';
 }
 
-export function BudgetSummary({ budgets }: BudgetSummaryProps) {
+export function BudgetSummary({ budgets, language }: BudgetSummaryProps) {
+  const { t } = useTranslation(language);
   const getProgressColor = (spent: number, amount: number) => {
     const spentNum = Number(spent) || 0;
     const amountNum = Number(amount) || 1;
@@ -48,13 +51,13 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
       <>
         <div className="flex items-center gap-2 mb-6">
           <BarChart3 className="h-6 w-6 text-primary" />
-          <h2 className="text-xl font-semibold text-foreground">Budget Summary</h2>
+          <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
         </div>
         <Card className="bg-gradient-card shadow-soft">
           <CardContent className="p-6">
             <div className="text-center py-6 text-muted-foreground">
-              <p>No budgets created yet</p>
-              <p className="text-sm">Create your first budget to see progress here</p>
+              <p>{t('noBudgetsCreated')}</p>
+              <p className="text-sm">{t('createFirstBudget')}</p>
             </div>
           </CardContent>
         </Card>
@@ -67,7 +70,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
       {/* Independent Title */}
       <div className="flex items-center gap-2 mb-6">
         <BarChart3 className="h-6 w-6 text-primary" />
-        <h2 className="text-xl font-semibold text-foreground">Budget Summary</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
       </div>
 
       {/* Overall Progress Bar */}
@@ -75,7 +78,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
         <CardContent className="p-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Total Budget Progress</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('totalBudgetProgress')}</span>
               <span className="text-sm font-medium text-foreground">
                 {formatCurrency(totalSpent)} / {formatCurrency(totalBudget)}
               </span>
@@ -90,7 +93,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
               } as React.CSSProperties}
             />
             <div className="text-xs text-muted-foreground text-right">
-              {totalPercentage.toFixed(0)}% of total budget used
+              {totalPercentage.toFixed(0)}% {t('ofTotalBudgetUsed')}
             </div>
           </div>
         </CardContent>
@@ -122,7 +125,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                         <span className="text-muted-foreground"> / {formatCurrency(budget.amount)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {percentage.toFixed(0)}% used
+                        {percentage.toFixed(0)}% {t('used')}
                       </div>
                     </div>
                   </div>
@@ -139,7 +142,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                   {/* Over Budget Warning */}
                   {isOverBudget && (
                     <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                      Over budget by {formatCurrency(budget.spent - budget.amount)}
+                      {t('overBudgetBy')} {formatCurrency(budget.spent - budget.amount)}
                     </div>
                   )}
                 </div>

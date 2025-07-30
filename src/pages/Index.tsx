@@ -607,7 +607,7 @@ const Index = () => {
         )}
 
         {/* Budget Summary */}
-        <BudgetSummary budgets={budgets} />
+        <BudgetSummary budgets={budgets} language={selectedLanguage as 'english' | 'spanish'} />
 
         {/* Recent Transactions */}
         <div className="space-y-4">
