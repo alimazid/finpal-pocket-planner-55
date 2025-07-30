@@ -16,7 +16,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { LogOut, Trash2 } from "lucide-react";
+import { LogOut, Trash2, Languages } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Transaction {
   id: string;
@@ -46,6 +48,8 @@ const Index = () => {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("english");
+  const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Fetch budgets
@@ -516,6 +520,51 @@ const Index = () => {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+
+              <Dialog open={isTranslationOpen} onOpenChange={setIsTranslationOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0"
+                  >
+                    <Languages className="w-4 h-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Select Language</DialogTitle>
+                    <DialogDescription>
+                      Choose your preferred language for the application.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="english">English</SelectItem>
+                        <SelectItem value="spanish">Spanish</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsTranslationOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={() => {
+                      toast({
+                        title: "Language Updated",
+                        description: `Language changed to ${selectedLanguage === 'english' ? 'English' : 'Spanish'}`,
+                      });
+                      setIsTranslationOpen(false);
+                    }}>
+                      Apply
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               
               <Button variant="outline" size="sm" onClick={handleSignOut} className="text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0">
                 <LogOut className="w-4 h-4" />
