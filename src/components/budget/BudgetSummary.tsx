@@ -17,29 +17,13 @@ interface BudgetSummaryProps {
 }
 
 export function BudgetSummary({ budgets }: BudgetSummaryProps) {
-  const getCategoryColor = (category: string, index: number) => {
-    const colors = [
-      'hsl(var(--primary))',
-      'hsl(var(--secondary))',
-      'hsl(var(--accent))',
-      'hsl(0 84% 60%)', // red
-      'hsl(24 95% 53%)', // orange
-      'hsl(45 93% 47%)', // yellow
-      'hsl(142 71% 45%)', // green
-      'hsl(217 91% 60%)', // blue
-      'hsl(262 83% 58%)', // violet
-      'hsl(330 81% 60%)', // pink
-    ];
-    return colors[index % colors.length];
-  };
-
-  const getProgressColor = (spent: number, amount: number, index: number) => {
+  const getProgressColor = (spent: number, amount: number) => {
     const spentNum = Number(spent) || 0;
     const amountNum = Number(amount) || 1;
     const percentage = (spentNum / amountNum) * 100;
     if (percentage >= 90) return 'hsl(0 84% 60%)'; // red for over-budget
     if (percentage >= 75) return 'hsl(24 95% 53%)'; // orange for warning
-    return getCategoryColor('', index); // default color
+    return 'hsl(var(--primary))'; // default color
   };
 
   const formatCurrency = (amount: number) => {
@@ -126,8 +110,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: getCategoryColor(budget.category, index) }}
+                        className="w-3 h-3 rounded-full flex-shrink-0 bg-primary"
                       />
                       <span className="font-medium text-foreground">{budget.category}</span>
                     </div>
@@ -149,7 +132,7 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                     value={percentage} 
                     className="h-3"
                     style={{ 
-                      '--progress-background': getProgressColor(budget.spent, budget.amount, index)
+                      '--progress-background': getProgressColor(budget.spent, budget.amount)
                     } as React.CSSProperties}
                   />
                   
