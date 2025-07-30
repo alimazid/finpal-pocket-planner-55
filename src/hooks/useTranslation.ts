@@ -177,7 +177,7 @@ const translations: Translations = {
   // Budget Summary translations
   totalBudgetProgress: {
     english: 'Total Budget Progress',
-    spanish: 'Progreso del Presupuesto Total'
+    spanish: 'Presupuesto total'
   },
   ofTotalBudgetUsed: {
     english: 'of total budget used',
