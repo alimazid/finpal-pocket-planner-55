@@ -340,6 +340,35 @@ const Index = () => {
     },
   });
 
+  // Clear all budgets mutation
+  const clearAllBudgetsMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('user_id', user!.id);
+      
+      if (error) throw error;
+      return budgets.length;
+    },
+    onSuccess: (budgetCount) => {
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+
+      toast({
+        title: "All Budgets Cleared",
+        description: `${budgetCount} budget${budgetCount === 1 ? '' : 's'} have been removed`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to clear budgets",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -453,6 +482,36 @@ const Index = () => {
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                       Clear All Transactions
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0"
+                    disabled={budgets.length === 0}
+                  >
+                    <Target className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear All Budgets</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete all {budgets.length} budget{budgets.length === 1 ? '' : 's'}? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => clearAllBudgetsMutation.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Clear All Budgets
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
