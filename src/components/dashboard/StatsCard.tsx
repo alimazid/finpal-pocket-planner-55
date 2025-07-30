@@ -23,7 +23,7 @@ export function StatsCard({ title, value, icon: Icon, trend, className }: StatsC
           <p className="text-xs font-medium text-muted-foreground">
             {title}
           </p>
-          <p className="text-lg font-bold text-foreground whitespace-nowrap absolute top-6">
+          <p className="text-lg font-bold text-foreground whitespace-nowrap absolute top-7">
             {value}
           </p>
           {trend && (
