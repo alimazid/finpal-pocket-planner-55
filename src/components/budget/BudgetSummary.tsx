@@ -113,11 +113,11 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                 </div>
                 
                 <div className="w-full max-w-full overflow-hidden">
-                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                  <div className="w-full h-4 bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full transition-all duration-500 ease-out rounded-full"
                       style={{ 
-                        width: `${Math.min(Math.max(percentage, 0), 100)}%`,
+                        width: `${Math.min(Math.max(percentage > 0 ? Math.max(percentage, 2) : 0, 0), 100)}%`,
                         backgroundColor: getProgressColor(budget.spent, budget.amount, index)
                       }}
                     />
