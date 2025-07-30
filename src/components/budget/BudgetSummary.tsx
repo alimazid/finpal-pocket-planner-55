@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BarChart3 } from "lucide-react";
 
@@ -55,96 +55,116 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
     return Math.min((spentNum / amountNum) * 100, 100);
   };
 
+  const totalSpent = budgets.reduce((sum, budget) => sum + budget.spent, 0);
+  const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
+  const totalPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+
   if (budgets.length === 0) {
     return (
-      <Card className="bg-gradient-card shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Budget Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 text-muted-foreground">
-            <p>No budgets created yet</p>
-            <p className="text-sm">Create your first budget to see progress here</p>
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <div className="flex items-center gap-2 mb-6">
+          <BarChart3 className="h-6 w-6 text-primary" />
+          <h2 className="text-xl font-semibold text-foreground">Budget Summary</h2>
+        </div>
+        <Card className="bg-gradient-card shadow-soft">
+          <CardContent className="p-6">
+            <div className="text-center py-6 text-muted-foreground">
+              <p>No budgets created yet</p>
+              <p className="text-sm">Create your first budget to see progress here</p>
+            </div>
+          </CardContent>
+        </Card>
+      </>
     );
   }
 
   return (
-    <Card className="bg-gradient-card shadow-soft">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          Budget Summary
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="w-full max-w-full">
-        <div className="space-y-6 w-full max-w-full">
-          {budgets.map((budget, index) => {
-            const percentage = getSpentPercentage(budget.spent, budget.amount);
-            const isOverBudget = budget.spent > budget.amount;
-            
-            console.log(`Budget ${budget.category} (index ${index}): spent=${budget.spent}, amount=${budget.amount}, percentage=${percentage}`);
-            
-            return (
-              <div key={budget.id} className="space-y-2 w-full max-w-full">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: getCategoryColor(budget.category, index) }}
-                  />
-                  <span className="font-medium text-foreground">{budget.category}</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium">
-                    <span className={isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-foreground'}>
-                      {formatCurrency(budget.spent)}
-                    </span>
-                    <span className="text-muted-foreground"> / {formatCurrency(budget.amount)}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {percentage.toFixed(0)}% used
-                  </div>
-                </div>
-                
-                <Progress 
-                  value={percentage} 
-                  className="h-3"
-                  style={{ 
-                    '--progress-background': getProgressColor(budget.spent, budget.amount, index)
-                  } as React.CSSProperties}
-                />
-                
-                {isOverBudget && (
-                  <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                    Over budget by {formatCurrency(budget.spent - budget.amount)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          
-          {/* Total Summary */}
-          <div className="border-t pt-4 mt-6">
+    <>
+      {/* Independent Title */}
+      <div className="flex items-center gap-2 mb-6">
+        <BarChart3 className="h-6 w-6 text-primary" />
+        <h2 className="text-xl font-semibold text-foreground">Budget Summary</h2>
+      </div>
+
+      {/* Overall Progress Bar */}
+      <Card className="bg-gradient-card shadow-soft mb-6">
+        <CardContent className="p-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-foreground">Total</span>
-              <div className="text-right">
-                <div className="font-semibold">
-                  {formatCurrency(budgets.reduce((sum, budget) => sum + budget.spent, 0))}
-                  <span className="text-muted-foreground font-normal"> / {formatCurrency(budgets.reduce((sum, budget) => sum + budget.amount, 0))}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {((budgets.reduce((sum, budget) => sum + budget.spent, 0) / budgets.reduce((sum, budget) => sum + budget.amount, 0)) * 100).toFixed(0)}% of total budget
-                </div>
-              </div>
+              <span className="text-sm font-medium text-muted-foreground">Total Budget Progress</span>
+              <span className="text-sm font-medium text-foreground">
+                {formatCurrency(totalSpent)} / {formatCurrency(totalBudget)}
+              </span>
+            </div>
+            <Progress 
+              value={totalPercentage} 
+              className="h-3"
+              style={{ 
+                '--progress-background': totalPercentage >= 90 ? 'hsl(0 84% 60%)' : 
+                                        totalPercentage >= 75 ? 'hsl(24 95% 53%)' : 
+                                        'hsl(var(--primary))'
+              } as React.CSSProperties}
+            />
+            <div className="text-xs text-muted-foreground text-right">
+              {totalPercentage.toFixed(0)}% of total budget used
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Individual Budget Cards */}
+      <div className="space-y-4">
+        {budgets.map((budget, index) => {
+          const percentage = getSpentPercentage(budget.spent, budget.amount);
+          const isOverBudget = budget.spent > budget.amount;
+          
+          return (
+            <Card key={budget.id} className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200">
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: getCategoryColor(budget.category, index) }}
+                      />
+                      <span className="font-medium text-foreground">{budget.category}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium">
+                        <span className={isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-foreground'}>
+                          {formatCurrency(budget.spent)}
+                        </span>
+                        <span className="text-muted-foreground"> / {formatCurrency(budget.amount)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {percentage.toFixed(0)}% used
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <Progress 
+                    value={percentage} 
+                    className="h-3"
+                    style={{ 
+                      '--progress-background': getProgressColor(budget.spent, budget.amount, index)
+                    } as React.CSSProperties}
+                  />
+                  
+                  {/* Over Budget Warning */}
+                  {isOverBudget && (
+                    <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+                      Over budget by {formatCurrency(budget.spent - budget.amount)}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </>
   );
 }
