@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Transaction {
   id: string;
@@ -16,14 +17,17 @@ interface UncategorizedTransactionsProps {
   transactions: Transaction[];
   availableCategories: string[];
   onUpdateTransactionCategory: (id: string, category: string) => void;
+  language: 'english' | 'spanish';
 }
 
 export function UncategorizedTransactions({ 
   transactions, 
   availableCategories, 
-  onUpdateTransactionCategory 
+  onUpdateTransactionCategory,
+  language 
 }: UncategorizedTransactionsProps) {
   const [openSelects, setOpenSelects] = useState<Record<string, boolean>>({});
+  const { t } = useTranslation(language);
 
   // Filter to only show uncategorized transactions
   const uncategorizedTransactions = transactions.filter(t => !t.category);
@@ -88,7 +92,7 @@ export function UncategorizedTransactions({
                   }}
                 >
                   <SelectTrigger className="w-40 h-8 bg-background border-border">
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={t('selectCategory')} />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-lg z-50">
                     {availableCategories.map((category) => (
@@ -104,7 +108,7 @@ export function UncategorizedTransactions({
                   className="border-red-300 text-red-600 bg-red-50 cursor-pointer hover:bg-red-100 transition-colors dark:border-red-700 dark:text-red-400 dark:bg-red-950/20 dark:hover:bg-red-900/30 flex-shrink-0"
                   onClick={() => handleBadgeClick(transaction.id)}
                 >
-                  No Category
+                  {t('noCategory')}
                 </Badge>
               )}
             </div>

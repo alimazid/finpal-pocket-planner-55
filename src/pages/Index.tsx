@@ -602,6 +602,7 @@ const Index = () => {
               transactions={transactions}
               availableCategories={budgets.map(budget => budget.category)}
               onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
+              language={selectedLanguage as 'english' | 'spanish'}
             />
           </div>
         )}
