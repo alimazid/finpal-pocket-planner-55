@@ -29,6 +29,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [date, setDate] = useState<Date>(new Date());
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const { t } = useTranslation(language);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,7 +90,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
       </div>
       <div>
         <Label htmlFor="date">{t('date')}</Label>
-        <Popover>
+        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -106,7 +107,12 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
             <Calendar
               mode="single"
               selected={date}
-              onSelect={(selectedDate) => selectedDate && setDate(selectedDate)}
+              onSelect={(selectedDate) => {
+                if (selectedDate) {
+                  setDate(selectedDate);
+                  setIsDatePickerOpen(false);
+                }
+              }}
               disabled={(date) => date > new Date()}
               initialFocus
               className={cn("p-3 pointer-events-auto")}
