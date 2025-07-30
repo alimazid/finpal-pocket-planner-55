@@ -89,7 +89,9 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
             const isOverBudget = budget.spent > budget.amount;
             
             console.log(`Budget ${budget.category}: spent=${budget.spent}, amount=${budget.amount}, percentage=${percentage}`);
-            console.log(`Width should be: ${Math.min(Math.max(percentage, 0), 100)}%`);
+            console.log(`Index: ${index}, Color: ${getCategoryColor(budget.category, index)}`);
+            console.log(`Progress color: ${getProgressColor(budget.spent, budget.amount, index)}`);
+            console.log(`Width should be: ${percentage}%`);
             
             return (
               <div key={budget.id} className="space-y-2 w-full max-w-full">
