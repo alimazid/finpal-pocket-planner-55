@@ -19,16 +19,16 @@ interface BudgetSummaryProps {
 export function BudgetSummary({ budgets }: BudgetSummaryProps) {
   const getCategoryColor = (category: string, index: number) => {
     const colors = [
-      'hsl(var(--primary))',
-      'hsl(var(--secondary))',
-      'hsl(var(--accent))',
-      'hsl(348 77% 55%)', // red
-      'hsl(24 95% 53%)', // orange  
-      'hsl(45 93% 47%)', // yellow
-      'hsl(142 71% 45%)', // green
-      'hsl(217 91% 60%)', // blue
-      'hsl(262 83% 58%)', // violet
-      'hsl(330 81% 60%)', // pink
+      'hsl(var(--primary))',     // cyan for first
+      'hsl(var(--secondary))',   // secondary for second  
+      'hsl(var(--accent))',      // accent for third
+      'hsl(262 83% 58%)',        // violet for fourth
+      'hsl(348 77% 55%)',        // red for fifth
+      'hsl(24 95% 53%)',         // orange  
+      'hsl(45 93% 47%)',         // yellow
+      'hsl(142 71% 45%)',        // green
+      'hsl(217 91% 60%)',        // blue
+      'hsl(330 81% 60%)',        // pink
     ];
     return colors[index % colors.length];
   };
@@ -117,10 +117,12 @@ export function BudgetSummary({ budgets }: BudgetSummaryProps) {
                 <div className="w-full max-w-full overflow-hidden">
                   <div className="w-full h-4 bg-muted rounded-full overflow-hidden">
                     <div 
+                      key={`${budget.id}-${percentage}`}
                       className="h-full transition-all duration-500 ease-out rounded-full"
                       style={{ 
-                        width: `${percentage}%`,
-                        backgroundColor: getProgressColor(budget.spent, budget.amount, index)
+                        width: `${Math.max(percentage, 0)}%`,
+                        backgroundColor: getProgressColor(budget.spent, budget.amount, index),
+                        minWidth: percentage > 0 && percentage < 2 ? '2%' : '0%'
                       }}
                     />
                   </div>
