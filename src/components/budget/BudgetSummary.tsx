@@ -14,7 +14,6 @@ interface Budget {
   category: string;
   amount: number;
   spent: number;
-  currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -39,32 +38,11 @@ export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryP
     return 'hsl(var(--primary))'; // default color
   };
 
-  const getCurrencyCode = (currency: string) => {
-    // Map custom currency codes to valid ISO 4217 codes
-    const currencyMap: { [key: string]: string } = {
-      'RD': 'DOP', // Dominican Peso
-      'RD$': 'DOP',
-      '$': 'USD',
-    };
-    
-    return currencyMap[currency] || currency;
-  };
-
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    const validCurrency = getCurrencyCode(currency);
-    
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: validCurrency,
-      }).format(amount);
-    } catch (error) {
-      // Fallback to USD if currency is still invalid
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(amount);
-    }
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   };
 
   const getSpentPercentage = (spent: number, amount: number) => {
@@ -188,7 +166,7 @@ export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryP
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">{t('totalBudgetProgress')}</span>
               <span className="text-sm font-medium text-foreground">
-                {formatCurrency(totalSpent, budgets[0]?.currency)} / {formatCurrency(totalBudget, budgets[0]?.currency)}
+                {formatCurrency(totalSpent)} / {formatCurrency(totalBudget)}
               </span>
             </div>
             <Progress 
@@ -228,9 +206,9 @@ export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryP
                     <div className="text-right">
                       <div className="text-sm font-medium">
                         <span className={isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-foreground'}>
-                          {formatCurrency(budget.spent, budget.currency)}
+                          {formatCurrency(budget.spent)}
                         </span>
-                        <span className="text-muted-foreground"> / {formatCurrency(budget.amount, budget.currency)}</span>
+                        <span className="text-muted-foreground"> / {formatCurrency(budget.amount)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {percentage.toFixed(0)}% {t('used')}
@@ -250,7 +228,7 @@ export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryP
                   {/* Over Budget Warning */}
                   {isOverBudget && (
                     <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                      {t('overBudgetBy')} {formatCurrency(budget.spent - budget.amount, budget.currency)}
+                      {t('overBudgetBy')} {formatCurrency(budget.spent - budget.amount)}
                     </div>
                   )}
                 </div>
