@@ -26,13 +26,6 @@ export function StatsCard({ title, value, icon: Icon, trend, className }: StatsC
           <p className="text-lg font-bold text-foreground whitespace-nowrap absolute top-9">
             {value}
           </p>
-          {trend && (
-            <span className={`text-xs absolute bottom-0 ${
-              trend.isPositive ? 'text-success' : 'text-destructive'
-            }`}>
-              {trend.value}
-            </span>
-          )}
         </div>
       </CardContent>
     </Card>
