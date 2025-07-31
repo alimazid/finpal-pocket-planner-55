@@ -39,11 +39,32 @@ export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryP
     return 'hsl(var(--primary))'; // default color
   };
 
+  const getCurrencyCode = (currency: string) => {
+    // Map custom currency codes to valid ISO 4217 codes
+    const currencyMap: { [key: string]: string } = {
+      'RD': 'DOP', // Dominican Peso
+      'RD$': 'DOP',
+      '$': 'USD',
+    };
+    
+    return currencyMap[currency] || currency;
+  };
+
   const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(amount);
+    const validCurrency = getCurrencyCode(currency);
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: validCurrency,
+      }).format(amount);
+    } catch (error) {
+      // Fallback to USD if currency is still invalid
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }).format(amount);
+    }
   };
 
   const getSpentPercentage = (spent: number, amount: number) => {
