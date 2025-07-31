@@ -39,6 +39,10 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
   const isOverBudget = spent > budget;
   const remaining = budget - spent;
 
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   const handleBudgetSave = () => {
     const newBudget = parseFloat(editBudget);
     if (!isNaN(newBudget) && newBudget > 0 && onBudgetUpdate) {
@@ -144,7 +148,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
             <div className="flex justify-between text-sm w-full">
               <span className="text-muted-foreground">Spent:</span>
               <span className={`font-semibold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                RD${spent.toFixed(2)}
+                RD${formatAmount(spent)}
               </span>
             </div>
             <div className="flex justify-between text-sm w-full items-center">
@@ -171,7 +175,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                   className="font-semibold cursor-pointer hover:text-primary transition-colors"
                   onClick={() => setIsEditingBudget(true)}
                 >
-                  RD${budget.toFixed(2)}
+                  RD${formatAmount(budget)}
                 </span>
               )}
             </div>
@@ -180,7 +184,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                 {remaining >= 0 ? 'Remaining:' : 'Over:'}
               </span>
               <span className={`font-semibold ${remaining >= 0 ? 'text-success' : 'text-destructive'}`}>
-                RD${Math.abs(remaining).toFixed(2)}
+                RD${formatAmount(Math.abs(remaining))}
               </span>
             </div>
           </div>
@@ -211,7 +215,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                     </div>
                     <div className="text-right flex-shrink-0 max-w-[35%] overflow-hidden">
                       <span className={`font-medium text-xs ${transaction.type === 'expense' ? 'text-destructive' : 'text-success'}`}>
-                        {transaction.type === 'expense' ? '-' : '+'}RD${transaction.amount.toFixed(2)}
+                        {transaction.type === 'expense' ? '-' : '+'}RD${formatAmount(transaction.amount)}
                       </span>
                     </div>
                   </div>
