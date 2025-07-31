@@ -16,12 +16,14 @@ interface Transaction {
   category: string | null;
   date: string;
   type: 'expense' | 'income';
+  currency: string;
 }
 
 interface BudgetCardProps {
   category: string;
   spent: number;
   budget: number;
+  currency: string;
   transactions: Transaction[];
   onEdit?: () => void;
   onBudgetUpdate?: (newBudget: number) => void;
@@ -29,7 +31,7 @@ interface BudgetCardProps {
   onDelete?: () => void;
 }
 
-export function BudgetCard({ category, spent, budget, transactions, onEdit, onBudgetUpdate, onCategoryUpdate, onDelete }: BudgetCardProps) {
+export function BudgetCard({ category, spent, budget, currency, transactions, onEdit, onBudgetUpdate, onCategoryUpdate, onDelete }: BudgetCardProps) {
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [editBudget, setEditBudget] = useState(budget.toString());
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -148,7 +150,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
             <div className="flex justify-between text-sm w-full">
               <span className="text-muted-foreground">Spent:</span>
               <span className={`font-semibold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                RD${formatAmount(spent)}
+                {currency}${formatAmount(spent)}
               </span>
             </div>
             <div className="flex justify-between text-sm w-full items-center">
@@ -175,7 +177,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                   className="font-semibold cursor-pointer hover:text-primary transition-colors"
                   onClick={() => setIsEditingBudget(true)}
                 >
-                  RD${formatAmount(budget)}
+                  {currency}${formatAmount(budget)}
                 </span>
               )}
             </div>
@@ -184,7 +186,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                 {remaining >= 0 ? 'Remaining:' : 'Over:'}
               </span>
               <span className={`font-semibold ${remaining >= 0 ? 'text-success' : 'text-destructive'}`}>
-                RD${formatAmount(Math.abs(remaining))}
+                {currency}${formatAmount(Math.abs(remaining))}
               </span>
             </div>
           </div>
@@ -215,7 +217,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                     </div>
                     <div className="text-right flex-shrink-0 max-w-[35%] overflow-hidden">
                       <span className={`font-medium text-xs ${transaction.type === 'expense' ? 'text-destructive' : 'text-success'}`}>
-                        {transaction.type === 'expense' ? '-' : '+'}RD${formatAmount(transaction.amount)}
+                        {transaction.type === 'expense' ? '-' : '+'}{transaction.currency}${formatAmount(transaction.amount)}
                       </span>
                     </div>
                   </div>

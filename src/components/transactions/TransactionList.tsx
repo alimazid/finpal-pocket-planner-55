@@ -18,6 +18,7 @@ interface Transaction {
   category: string | null;
   date: string;
   type: 'expense' | 'income';
+  currency: string;
 }
 
 interface TransactionListProps {
@@ -225,7 +226,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     onClick={() => onUpdateTransaction && handleAmountEdit(transaction)}
                   >
                     {transaction.type === 'expense' ? '-' : '+'}
-                    RD${formatAmount(transaction.amount)}
+                    {transaction.currency}${formatAmount(transaction.amount)}
                   </p>
                 )}
               </div>
@@ -240,7 +241,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     <AlertDialogHeader>
                       <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t('deleteTransactionConfirm')} "{transaction.description}" (RD${formatAmount(transaction.amount)})? {t('actionCannotBeUndoneSimple')}
+                        {t('deleteTransactionConfirm')} "{transaction.description}" ({transaction.currency}${formatAmount(transaction.amount)})? {t('actionCannotBeUndoneSimple')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

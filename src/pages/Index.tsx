@@ -29,6 +29,7 @@ interface Transaction {
   category: string | null;
   date: string;
   type: 'expense' | 'income';
+  currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +40,7 @@ interface Budget {
   category: string;
   amount: number;
   spent: number;
+  currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -641,6 +643,7 @@ const Index = () => {
                 category={budget.category}
                 spent={budget.spent}
                 budget={budget.amount}
+                currency={budget.currency}
                 transactions={transactions.filter(t => t.category === budget.category && t.type === 'expense')}
                 onBudgetUpdate={(newBudget) => updateBudgetMutation.mutate({ budgetId: budget.id, amount: newBudget })}
                 onCategoryUpdate={(newCategory) => updateCategoryMutation.mutate({ budgetId: budget.id, newCategory })}
