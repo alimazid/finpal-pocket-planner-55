@@ -144,7 +144,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
             <div className="flex justify-between text-sm w-full">
               <span className="text-muted-foreground">Spent:</span>
               <span className={`font-semibold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                ${spent.toFixed(2)}
+                RD${spent.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between text-sm w-full items-center">
@@ -171,7 +171,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                   className="font-semibold cursor-pointer hover:text-primary transition-colors"
                   onClick={() => setIsEditingBudget(true)}
                 >
-                  ${budget.toFixed(2)}
+                  RD${budget.toFixed(2)}
                 </span>
               )}
             </div>
@@ -180,7 +180,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                 {remaining >= 0 ? 'Remaining:' : 'Over:'}
               </span>
               <span className={`font-semibold ${remaining >= 0 ? 'text-success' : 'text-destructive'}`}>
-                ${Math.abs(remaining).toFixed(2)}
+                RD${Math.abs(remaining).toFixed(2)}
               </span>
             </div>
           </div>
@@ -211,7 +211,7 @@ export function BudgetCard({ category, spent, budget, transactions, onEdit, onBu
                     </div>
                     <div className="text-right flex-shrink-0 max-w-[35%] overflow-hidden">
                       <span className={`font-medium text-xs ${transaction.type === 'expense' ? 'text-destructive' : 'text-success'}`}>
-                        {transaction.type === 'expense' ? '-' : '+'}${transaction.amount.toFixed(2)}
+                        {transaction.type === 'expense' ? '-' : '+'}RD${transaction.amount.toFixed(2)}
                       </span>
                     </div>
                   </div>

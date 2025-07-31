@@ -19,6 +19,7 @@ export type Database = {
           amount: number
           category: string
           created_at: string
+          currency: string
           id: string
           spent: number
           updated_at: string
@@ -28,6 +29,7 @@ export type Database = {
           amount?: number
           category: string
           created_at?: string
+          currency?: string
           id?: string
           spent?: number
           updated_at?: string
@@ -37,6 +39,7 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string
+          currency?: string
           id?: string
           spent?: number
           updated_at?: string
@@ -49,6 +52,7 @@ export type Database = {
           amount: number
           category: string | null
           created_at: string
+          currency: string
           date: string
           description: string
           id: string
@@ -60,6 +64,7 @@ export type Database = {
           amount: number
           category?: string | null
           created_at?: string
+          currency?: string
           date: string
           description: string
           id?: string
@@ -71,6 +76,7 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          currency?: string
           date?: string
           description?: string
           id?: string
