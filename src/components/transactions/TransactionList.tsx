@@ -41,6 +41,10 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
   const [editAmount, setEditAmount] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { t } = useTranslation(language);
+  
+  const formatAmount = (amount: number) => {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
   const formatDate = (dateString: string) => {
     // Parse date as local date to avoid timezone issues
     const [year, month, day] = dateString.split('-').map(Number);
@@ -221,7 +225,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     onClick={() => onUpdateTransaction && handleAmountEdit(transaction)}
                   >
                     {transaction.type === 'expense' ? '-' : '+'}
-                    ${transaction.amount.toFixed(2)}
+                    RD${formatAmount(transaction.amount)}
                   </p>
                 )}
               </div>
@@ -236,7 +240,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     <AlertDialogHeader>
                       <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t('deleteTransactionConfirm')} "{transaction.description}" (${transaction.amount.toFixed(2)})? {t('actionCannotBeUndoneSimple')}
+                        {t('deleteTransactionConfirm')} "{transaction.description}" (RD${formatAmount(transaction.amount)})? {t('actionCannotBeUndoneSimple')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
