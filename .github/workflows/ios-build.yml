@@ -1,0 +1,146 @@
+name: iOS Build and Deploy
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build React app
+      run: npm run build
+      
+    - name: Setup Capacitor
+      run: |
+        npx cap add ios
+        npx cap sync ios
+        
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Setup Fastlane
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+        bundler-cache: true
+        working-directory: ios/App
+        
+    - name: Create Fastlane files
+      run: |
+        mkdir -p ios/App/fastlane
+        cat > ios/App/fastlane/Fastfile << 'EOF'
+        default_platform(:ios)
+        
+        platform :ios do
+          desc "Build and upload to TestFlight"
+          lane :beta do
+            setup_ci if ENV['CI']
+            
+            match(
+              type: "appstore",
+              readonly: true,
+              app_identifier: "app.lovable.951e3171ca15422eaa52a6d4774e9ee7"
+            )
+            
+            build_app(
+              workspace: "App.xcworkspace",
+              scheme: "App",
+              export_method: "app-store"
+            )
+            
+            upload_to_testflight(
+              skip_waiting_for_build_processing: true
+            )
+          end
+          
+          desc "Build for development"
+          lane :build do
+            setup_ci if ENV['CI']
+            
+            build_app(
+              workspace: "App.xcworkspace",
+              scheme: "App",
+              export_method: "development",
+              skip_codesigning: true
+            )
+          end
+        end
+        EOF
+        
+        cat > ios/App/fastlane/Appfile << 'EOF'
+        app_identifier("app.lovable.951e3171ca15422eaa52a6d4774e9ee7")
+        apple_id("${{ secrets.APPLE_ID }}")
+        itc_team_id("${{ secrets.APP_STORE_CONNECT_TEAM_ID }}")
+        team_id("${{ secrets.APPLE_TEAM_ID }}")
+        EOF
+        
+    - name: Install Fastlane dependencies
+      run: |
+        cd ios/App
+        bundle install
+        
+    - name: Build iOS app (Development)
+      if: github.event_name == 'pull_request'
+      run: |
+        cd ios/App
+        bundle exec fastlane build
+        
+    - name: Deploy to TestFlight
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        FASTLANE_USER: ${{ secrets.APPLE_ID }}
+        FASTLANE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+      run: |
+        cd ios/App
+        bundle exec fastlane beta
+        
+    - name: Upload build artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build-${{ github.run_number }}
+        path: |
+          ios/App/*.ipa
+          ios/App/build/
+        retention-days: 30
+        
+  notify:
+    needs: build-ios
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notify build status
+      uses: 8398a7/action-slack@v3
+      if: env.SLACK_WEBHOOK_URL != ''
+      with:
+        status: ${{ job.status }}
+        text: |
+          iOS Build ${{ job.status }}!
+          Branch: ${{ github.ref }}
+          Commit: ${{ github.sha }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
