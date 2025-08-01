@@ -57,7 +57,8 @@ jobs:
             match(
               type: "appstore",
               readonly: true,
-              app_identifier: "com.lovable.finpalapp"
+              app_identifier: "com.lovable.finpalapp",
+              git_url: "${{ secrets.MATCH_GIT_URL }}"
             )
             
             build_app(
