@@ -92,6 +92,13 @@ jobs:
         team_id("${{ secrets.APPLE_TEAM_ID }}")
         EOF
         
+        cat > ios/App/Gemfile << 'EOF'
+        source "https://rubygems.org"
+        
+        gem "fastlane"
+        gem "cocoapods"
+        EOF
+        
     - name: Install Fastlane dependencies
       run: |
         cd ios/App
