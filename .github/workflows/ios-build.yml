@@ -57,7 +57,7 @@ jobs:
             match(
               type: "appstore",
               readonly: true,
-              app_identifier: "app.lovable.951e3171ca15422eaa52a6d4774e9ee7"
+              app_identifier: "com.lovable.finpalapp"
             )
             
             build_app(
@@ -86,7 +86,7 @@ jobs:
         EOF
         
         cat > ios/App/fastlane/Appfile << 'EOF'
-        app_identifier("app.lovable.951e3171ca15422eaa52a6d4774e9ee7")
+        app_identifier("com.lovable.finpalapp")
         apple_id("${{ secrets.APPLE_ID }}")
         itc_team_id("${{ secrets.APP_STORE_CONNECT_TEAM_ID }}")
         team_id("${{ secrets.APPLE_TEAM_ID }}")

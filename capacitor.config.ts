@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.951e3171ca15422eaa52a6d4774e9ee7',
+  appId: 'com.lovable.finpalapp',
   appName: 'finpal-pocket-planner-55',
   webDir: 'dist',
   server: {
