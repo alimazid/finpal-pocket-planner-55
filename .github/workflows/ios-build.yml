@@ -58,7 +58,8 @@ jobs:
               type: "appstore",
               readonly: true,
               app_identifier: "com.lovable.finpalapp",
-              git_url: "${{ secrets.MATCH_GIT_URL }}"
+              git_url: "${{ secrets.MATCH_GIT_URL }}",
+              clone_branch_directly: true
             )
             
             build_app(
