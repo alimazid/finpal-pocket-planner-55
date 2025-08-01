@@ -17,7 +17,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '18'
         cache: 'npm'
         
     - name: Install dependencies
@@ -57,9 +57,7 @@ jobs:
             match(
               type: "appstore",
               readonly: true,
-              app_identifier: "com.lovable.finpalapp",
-              git_url: "${{ secrets.MATCH_GIT_URL }}",
-              clone_branch_directly: true
+              app_identifier: "app.lovable.951e3171ca15422eaa52a6d4774e9ee7"
             )
             
             build_app(
@@ -88,17 +86,10 @@ jobs:
         EOF
         
         cat > ios/App/fastlane/Appfile << 'EOF'
-        app_identifier("com.lovable.finpalapp")
+        app_identifier("app.lovable.951e3171ca15422eaa52a6d4774e9ee7")
         apple_id("${{ secrets.APPLE_ID }}")
         itc_team_id("${{ secrets.APP_STORE_CONNECT_TEAM_ID }}")
         team_id("${{ secrets.APPLE_TEAM_ID }}")
-        EOF
-        
-        cat > ios/App/Gemfile << 'EOF'
-        source "https://rubygems.org"
-        
-        gem "fastlane"
-        gem "cocoapods"
         EOF
         
     - name: Install Fastlane dependencies
