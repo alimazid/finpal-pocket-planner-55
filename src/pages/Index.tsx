@@ -11,6 +11,7 @@ import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
+import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
 import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -455,8 +456,11 @@ const Index = () => {
       <div className="bg-gradient-primary border-b border-primary/20">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-              <DollarSign className="h-5 w-5 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-white" />
+              </div>
+              <ExchangeRateWidget />
             </div>
             <div className="flex items-center gap-2">
               <AlertDialog>
