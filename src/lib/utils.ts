@@ -7,11 +7,21 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Formats a number as currency using the appropriate currency code
- * Maps RD to DOP (Dominican Peso) for proper formatting
+ * Maps common invalid currency codes to valid ISO codes
  */
 export function formatCurrency(amount: number, currency: string = 'USD'): string {
-  // Map RD to DOP for proper currency formatting
-  const currencyCode = currency === 'RD' ? 'DOP' : currency;
+  // Map invalid/shorthand currency codes to valid ISO codes
+  const currencyMap: Record<string, string> = {
+    'RD': 'DOP',    // Dominican Peso
+    'US': 'USD',    // US Dollar
+    'EU': 'EUR',    // Euro
+    'UK': 'GBP',    // British Pound
+    'CA': 'CAD',    // Canadian Dollar
+    'AU': 'AUD',    // Australian Dollar
+    'JP': 'JPY',    // Japanese Yen
+  };
+  
+  const currencyCode = currencyMap[currency] || currency;
   
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
