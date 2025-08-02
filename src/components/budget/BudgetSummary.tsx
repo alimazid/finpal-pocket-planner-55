@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 
 interface Budget {
@@ -39,12 +40,6 @@ export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryP
     return 'hsl(var(--primary))'; // default color
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency === 'RD' ? 'DOP' : currency,
-    }).format(amount);
-  };
 
   const getSpentPercentage = (spent: number, amount: number) => {
     const spentNum = Number(spent) || 0;

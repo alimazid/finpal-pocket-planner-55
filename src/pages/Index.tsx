@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { LogOut, Trash2, Languages } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatCurrency } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface Transaction {
@@ -445,15 +446,8 @@ const Index = () => {
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const remainingBudget = totalBudget - totalSpent;
 
-  // Format currency with commas
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  // Get primary currency from first budget or default to USD
+  const primaryCurrency = budgets.length > 0 ? budgets[0].currency : 'USD';
 
   return (
     <div className="min-h-screen bg-background">
@@ -581,9 +575,9 @@ const Index = () => {
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatsCard title={t('totalExpenses')} value={formatCurrency(totalExpenses)} icon={DollarSign} />
-          <StatsCard title={t('totalBudget')} value={formatCurrency(totalBudget)} icon={Target} />
-          <StatsCard title={t('remainingBudget')} value={formatCurrency(totalBudget - totalExpenses)} icon={TrendingUp} trend={{
+          <StatsCard title={t('totalExpenses')} value={formatCurrency(totalExpenses, primaryCurrency)} icon={DollarSign} />
+          <StatsCard title={t('totalBudget')} value={formatCurrency(totalBudget, primaryCurrency)} icon={Target} />
+          <StatsCard title={t('remainingBudget')} value={formatCurrency(totalBudget - totalExpenses, primaryCurrency)} icon={TrendingUp} trend={{
             value: totalBudget - totalExpenses > 0 ? '+' : '-',
             isPositive: totalBudget - totalExpenses > 0
           }} />

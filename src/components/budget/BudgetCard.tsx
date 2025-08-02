@@ -6,6 +6,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Edit, Target, Check, X, Trash2, Receipt } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { format } from "date-fns";
 
@@ -41,9 +42,6 @@ export function BudgetCard({ category, spent, budget, currency, transactions, on
   const isOverBudget = spent > budget;
   const remaining = budget - spent;
 
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
 
   const handleBudgetSave = () => {
     const newBudget = parseFloat(editBudget);
@@ -150,7 +148,7 @@ export function BudgetCard({ category, spent, budget, currency, transactions, on
             <div className="flex justify-between text-sm w-full">
               <span className="text-muted-foreground">Spent:</span>
               <span className={`font-semibold ${isOverBudget ? 'text-destructive' : 'text-foreground'}`}>
-                {currency}${formatAmount(spent)}
+                {formatCurrency(spent, currency)}
               </span>
             </div>
             <div className="flex justify-between text-sm w-full items-center">
@@ -177,7 +175,7 @@ export function BudgetCard({ category, spent, budget, currency, transactions, on
                   className="font-semibold cursor-pointer hover:text-primary transition-colors"
                   onClick={() => setIsEditingBudget(true)}
                 >
-                  {currency}${formatAmount(budget)}
+                  {formatCurrency(budget, currency)}
                 </span>
               )}
             </div>
@@ -186,7 +184,7 @@ export function BudgetCard({ category, spent, budget, currency, transactions, on
                 {remaining >= 0 ? 'Remaining:' : 'Over:'}
               </span>
               <span className={`font-semibold ${remaining >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {currency}${formatAmount(Math.abs(remaining))}
+                {formatCurrency(Math.abs(remaining), currency)}
               </span>
             </div>
           </div>
@@ -217,7 +215,7 @@ export function BudgetCard({ category, spent, budget, currency, transactions, on
                     </div>
                     <div className="text-right flex-shrink-0 max-w-[35%] overflow-hidden">
                       <span className={`font-medium text-xs ${transaction.type === 'expense' ? 'text-destructive' : 'text-success'}`}>
-                        {transaction.type === 'expense' ? '-' : '+'}{transaction.currency}${formatAmount(transaction.amount)}
+                        {transaction.type === 'expense' ? '-' : '+'}{formatCurrency(transaction.amount, transaction.currency)}
                       </span>
                     </div>
                   </div>

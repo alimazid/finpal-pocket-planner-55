@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -11,6 +12,7 @@ interface Transaction {
   category: string | null;
   date: string;
   type: 'expense' | 'income';
+  currency: string;
 }
 
 interface UncategorizedTransactionsProps {
@@ -47,12 +49,6 @@ export function UncategorizedTransactions({
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   const handleBadgeClick = (transactionId: string) => {
     setOpenSelects(prev => ({
@@ -115,7 +111,7 @@ export function UncategorizedTransactions({
             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
               <span>{formatDate(transaction.date)}</span>
               <span className="font-semibold text-destructive">
-                -{formatCurrency(transaction.amount)}
+                -{formatCurrency(transaction.amount, transaction.currency)}
               </span>
             </div>
           </div>

@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar, DollarSign, Trash2, Check, X, Plus } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -43,9 +44,6 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { t } = useTranslation(language);
   
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
   const formatDate = (dateString: string) => {
     // Parse date as local date to avoid timezone issues
     const [year, month, day] = dateString.split('-').map(Number);
@@ -226,7 +224,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     onClick={() => onUpdateTransaction && handleAmountEdit(transaction)}
                   >
                     {transaction.type === 'expense' ? '-' : '+'}
-                    {transaction.currency}${formatAmount(transaction.amount)}
+                    {formatCurrency(transaction.amount, transaction.currency)}
                   </p>
                 )}
               </div>
@@ -241,7 +239,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     <AlertDialogHeader>
                       <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t('deleteTransactionConfirm')} "{transaction.description}" ({transaction.currency}${formatAmount(transaction.amount)})? {t('actionCannotBeUndoneSimple')}
+                        {t('deleteTransactionConfirm')} "{transaction.description}" ({formatCurrency(transaction.amount, transaction.currency)})? {t('actionCannotBeUndoneSimple')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
