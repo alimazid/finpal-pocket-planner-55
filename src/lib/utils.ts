@@ -38,8 +38,8 @@ export function formatCurrency(amount: number, currency: string = 'USD'): string
   }
   
   if (currency === 'DOP' || currency === 'RD') {
-    // Replace 'DOP ' with 'RD$'
-    return standardFormat.replace('DOP ', 'RD$');
+    // Replace any DOP format with 'RD$' - handle both 'DOP ' and 'DOP'
+    return standardFormat.replace(/DOP\s?/, 'RD$');
   }
   
   return standardFormat;
