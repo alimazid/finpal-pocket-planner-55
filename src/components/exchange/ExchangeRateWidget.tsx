@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { exchangeRateService } from '@/lib/exchangeRateService';
 
 interface ExchangeRateData {
   rate: number;
@@ -19,26 +20,50 @@ const ExchangeRateWidget = () => {
   const fetchExchangeRate = async () => {
     setIsLoading(true);
     try {
-      // Using exchangerate-api.com (free tier allows 1500 requests/month)
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      // Use shared exchange rate service to ensure consistency
+      const dopRate = await exchangeRateService.getExchangeRate('USD', 'DOP');
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch exchange rate');
-      }
-      
-      const data = await response.json();
-      const dopRate = data.rates.DOP;
-      
-      if (dopRate) {
-        const currentTime = new Date();
-        setExchangeData({
-          rate: dopRate,
-          lastUpdated: currentTime.toISOString(),
+      // Store this rate in the database so budget calculations can use the exact same rate
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        console.log('Storing exchange rate in database:', dopRate);
+        
+        const { error: dopError } = await supabase.rpc('upsert_exchange_rate', {
+          p_from_currency: 'USD',
+          p_to_currency: 'DOP',
+          p_rate: dopRate
         });
-        setLastFetchTime(currentTime);
-      } else {
-        throw new Error('DOP rate not found');
+        
+        if (dopError) {
+          console.error('Failed to store DOP rate:', dopError);
+        }
+        
+        // Also store RD rate (Dominican Peso alternative code)
+        const { error: rdError } = await supabase.rpc('upsert_exchange_rate', {
+          p_from_currency: 'USD',
+          p_to_currency: 'RD',
+          p_rate: dopRate
+        });
+        
+        if (rdError) {
+          console.error('Failed to store RD rate:', rdError);
+        }
+        
+        if (!dopError && !rdError) {
+          console.log('Exchange rates stored successfully');
+        }
+      } catch (dbError) {
+        console.error('Failed to store exchange rate in database:', dbError);
+        // Don't fail the UI update if database storage fails
       }
+      
+      const currentTime = new Date();
+      setExchangeData({
+        rate: dopRate,
+        lastUpdated: currentTime.toISOString(),
+      });
+      setLastFetchTime(currentTime);
     } catch (error) {
       toast({
         title: "Error",
