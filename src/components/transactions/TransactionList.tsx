@@ -32,6 +32,7 @@ interface TransactionListProps {
     description: string;
     category: string | null;
     date: string;
+    currency: string;
   }) => void;
   availableCategories?: string[];
   language: 'english' | 'spanish';
@@ -113,6 +114,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
     description: string;
     category: string | null;
     date: string;
+    currency: string;
   }) => {
     if (onAddExpense) {
       onAddExpense(expense);

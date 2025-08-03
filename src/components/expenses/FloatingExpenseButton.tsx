@@ -11,6 +11,7 @@ interface FloatingExpenseButtonProps {
     description: string;
     category: string;
     date: string;
+    currency: string;
   }) => void;
   availableCategories: string[];
   language: 'english' | 'spanish';
@@ -25,6 +26,7 @@ export function FloatingExpenseButton({ onAddExpense, availableCategories, langu
     description: string;
     category: string;
     date: string;
+    currency: string;
   }) => {
     onAddExpense(expense);
     setIsOpen(false);

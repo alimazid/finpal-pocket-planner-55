@@ -97,6 +97,7 @@ const Index = () => {
       description: string;
       category: string | null;
       date: string;
+      currency: string;
     }) => {
       const { data, error } = await supabase
         .from('transactions')
@@ -107,6 +108,7 @@ const Index = () => {
           category: expense.category,
           date: expense.date,
           type: 'expense',
+          currency: expense.currency,
         }])
         .select()
         .single();

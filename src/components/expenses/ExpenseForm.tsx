@@ -18,6 +18,7 @@ interface ExpenseFormProps {
     description: string;
     category: string | null;
     date: string;
+    currency: string;
   }) => void;
   availableCategories: string[];
   showCard?: boolean;
@@ -28,9 +29,16 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [currency, setCurrency] = useState("USD");
   const [date, setDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const { t } = useTranslation(language);
+
+  const currencies = [
+    { value: "USD", label: "USD - US Dollar" },
+    { value: "DOP", label: "DOP - Dominican Peso" },
+    { value: "RD", label: "RD - Peso Dominicano" },
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,11 +47,13 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
         amount: parseFloat(amount),
         description,
         category: category || null,
-        date: date.toISOString().split('T')[0]
+        date: date.toISOString().split('T')[0],
+        currency
       });
       setAmount("");
       setDescription("");
       setCategory("");
+      setCurrency("USD");
     }
   };
 
@@ -83,6 +93,21 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
             {availableCategories.map((cat) => (
               <SelectItem key={cat} value={cat} className="hover:bg-muted">
                 {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor="currency">{t('currency')}</Label>
+        <Select value={currency} onValueChange={setCurrency}>
+          <SelectTrigger className="mt-1">
+            <SelectValue placeholder="Select currency" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border shadow-lg z-50">
+            {currencies.map((curr) => (
+              <SelectItem key={curr.value} value={curr.value} className="hover:bg-muted">
+                {curr.label}
               </SelectItem>
             ))}
           </SelectContent>

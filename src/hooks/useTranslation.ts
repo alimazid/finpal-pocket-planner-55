@@ -157,6 +157,10 @@ const translations: Translations = {
     english: 'Date',
     spanish: 'Fecha'
   },
+  currency: {
+    english: 'Currency',
+    spanish: 'Moneda'
+  },
   addExpense: {
     english: 'Add Expense',
     spanish: 'Agregar Gasto'
