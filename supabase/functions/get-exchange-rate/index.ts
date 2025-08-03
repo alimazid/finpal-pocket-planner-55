@@ -43,21 +43,44 @@ serve(async (req) => {
       );
     }
 
-    // Fetch exchange rate from external API
-    const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${fromCurrency}`);
+    // Fetch exchange rate from external API - use same endpoint as frontend toolbar
+    // Always fetch from USD base to ensure consistency with toolbar
+    const baseResponse = await fetch(`https://api.exchangerate-api.com/v4/latest/USD`);
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch exchange rate: ${response.statusText}`);
+    if (!baseResponse.ok) {
+      throw new Error(`Failed to fetch exchange rate: ${baseResponse.statusText}`);
     }
     
-    const data = await response.json();
-    const rate = data.rates[toCurrency];
+    const baseData = await baseResponse.json();
+    let rate: number;
     
-    if (!rate) {
-      throw new Error(`Exchange rate not found for ${fromCurrency} to ${toCurrency}`);
+    if (fromCurrency === 'USD') {
+      // Direct conversion from USD
+      rate = baseData.rates[toCurrency];
+      if (!rate) {
+        throw new Error(`Exchange rate not found for ${fromCurrency} to ${toCurrency}`);
+      }
+    } else if (toCurrency === 'USD') {
+      // Convert to USD (inverse of USD to fromCurrency)
+      const usdToFromRate = baseData.rates[fromCurrency];
+      if (!usdToFromRate) {
+        throw new Error(`Exchange rate not found for USD to ${fromCurrency}`);
+      }
+      rate = 1 / usdToFromRate;
+    } else {
+      // Cross-currency conversion via USD
+      const usdToFromRate = baseData.rates[fromCurrency];
+      const usdToToRate = baseData.rates[toCurrency];
+      
+      if (!usdToFromRate || !usdToToRate) {
+        throw new Error(`Exchange rate not found for ${fromCurrency} to ${toCurrency}`);
+      }
+      
+      // Convert from -> USD -> to
+      rate = usdToToRate / usdToFromRate;
     }
 
-    console.log(`Exchange rate fetched: 1 ${fromCurrency} = ${rate} ${toCurrency}`);
+    console.log(`Exchange rate fetched: 1 ${fromCurrency} = ${rate} ${toCurrency} (via USD base)`);
 
     return new Response(
       JSON.stringify({ success: true, rate }),

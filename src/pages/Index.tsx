@@ -12,6 +12,8 @@ import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
+import { ExchangeRateSync } from "@/components/exchange/ExchangeRateSync";
+import BitcoinPriceWidget from "@/components/crypto/BitcoinPriceWidget";
 import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -463,6 +465,8 @@ const Index = () => {
                 <DollarSign className="h-5 w-5 text-white" />
               </div>
               <ExchangeRateWidget />
+              <ExchangeRateSync />
+              <BitcoinPriceWidget />
             </div>
             <div className="flex items-center gap-2">
               <AlertDialog>
