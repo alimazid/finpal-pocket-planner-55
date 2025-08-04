@@ -28,6 +28,7 @@ jobs:
       
     - name: Setup Capacitor
       run: |
+        rm -rf ios
         npx cap add ios
         npx cap sync ios
         
