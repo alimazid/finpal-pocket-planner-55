@@ -2,7 +2,7 @@ name: iOS Build and Deploy
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, test-ios-build ]
   pull_request:
     branches: [ main ]
 
