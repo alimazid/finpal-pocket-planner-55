@@ -2,7 +2,7 @@ name: iOS Build and Deploy
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, test-ios-build ]
   pull_request:
     branches: [ main ]
 
@@ -17,7 +17,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
         
     - name: Install dependencies
@@ -28,7 +28,12 @@ jobs:
       
     - name: Setup Capacitor
       run: |
+        rm -rf ios
+        # Temporarily change App ID to valid format for platform creation
+        sed -i.bak 's/app\.lovable\.951e3171ca15422eaa52a6d4774e9ee7/app.lovable.finpal/g' capacitor.config.ts
         npx cap add ios
+        # Restore original App ID
+        mv capacitor.config.ts.bak capacitor.config.ts
         npx cap sync ios
         
     - name: Setup Xcode
@@ -92,6 +97,12 @@ jobs:
         apple_id("${{ secrets.APPLE_ID }}")
         itc_team_id("${{ secrets.APP_STORE_CONNECT_TEAM_ID }}")
         team_id("${{ secrets.APPLE_TEAM_ID }}")
+        EOF
+        
+        cat > ios/App/Gemfile << 'EOF'
+        source "https://rubygems.org"
+        
+        gem "fastlane"
         EOF
         
     - name: Install Fastlane dependencies
