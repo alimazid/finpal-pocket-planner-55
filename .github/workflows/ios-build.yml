@@ -76,7 +76,7 @@ jobs:
               workspace: "App.xcworkspace",
               scheme: "App",
               export_method: "app-store",
-              xcargs: "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']}"
+              xcargs: "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']} CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER='match AppStore app.lovable.951e3171ca15422eaa52a6d4774e9ee7'"
             )
             
             upload_to_testflight(
