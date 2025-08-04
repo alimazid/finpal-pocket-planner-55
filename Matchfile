@@ -1,0 +1,15 @@
+git_url("https://github.com/alimazid/certificates")
+
+storage_mode("git")
+
+type("development") # The default type, can be: appstore, adhoc, enterprise or development
+
+app_identifier(["app.lovable.951e3171ca15422eaa52a6d4774e9ee7"])
+username("alimazid@protonmail.com") # Your Apple Developer Portal username
+
+# clone_branch_directly(true) # Disabled for first run to create branch
+
+# For all available options run `fastlane match --help`
+# Remove the # in the beginning of the line to enable the other options
+
+# The docs are available on https://docs.fastlane.tools/actions/match

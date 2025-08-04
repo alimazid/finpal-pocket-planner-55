@@ -57,7 +57,9 @@ jobs:
             match(
               type: "appstore",
               readonly: true,
-              app_identifier: "app.lovable.951e3171ca15422eaa52a6d4774e9ee7"
+              app_identifier: "app.lovable.951e3171ca15422eaa52a6d4774e9ee7",
+              git_url: ENV["MATCH_GIT_URL"],
+              git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTHORIZATION"]
             )
             
             build_app(
@@ -110,6 +112,8 @@ jobs:
         FASTLANE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+        MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
         APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
         APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
         APP_STORE_CONNECT_API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
