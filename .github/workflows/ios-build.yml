@@ -29,7 +29,11 @@ jobs:
     - name: Setup Capacitor
       run: |
         rm -rf ios
+        # Temporarily change App ID to valid format for platform creation
+        sed -i.bak 's/app\.lovable\.951e3171ca15422eaa52a6d4774e9ee7/app.lovable.finpal/g' capacitor.config.ts
         npx cap add ios
+        # Restore original App ID
+        mv capacitor.config.ts.bak capacitor.config.ts
         npx cap sync ios
         
     - name: Setup Xcode
