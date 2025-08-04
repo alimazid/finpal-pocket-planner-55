@@ -36,6 +36,10 @@ jobs:
         mv capacitor.config.ts.bak capacitor.config.ts
         npx cap sync ios
         
+        # Fix bundle identifier in iOS project to match certificates
+        sed -i '' 's/app\.lovable\.finpal/app.lovable.951e3171ca15422eaa52a6d4774e9ee7/g' ios/App/App/Info.plist
+        plutil -replace CFBundleIdentifier -string "app.lovable.951e3171ca15422eaa52a6d4774e9ee7" ios/App/App/Info.plist
+        
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
