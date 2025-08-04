@@ -38,6 +38,7 @@ jobs:
         
         # Fix bundle identifier in iOS project to match certificates
         sed -i '' 's/app\.lovable\.finpal/app.lovable.951e3171ca15422eaa52a6d4774e9ee7/g' ios/App/App/Info.plist
+        sed -i '' 's/app\.lovable\.finpal/app.lovable.951e3171ca15422eaa52a6d4774e9ee7/g' ios/App/App.xcodeproj/project.pbxproj
         plutil -replace CFBundleIdentifier -string "app.lovable.951e3171ca15422eaa52a6d4774e9ee7" ios/App/App/Info.plist
         
     - name: Setup Xcode
