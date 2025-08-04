@@ -82,15 +82,8 @@ jobs:
           lane :build do
             setup_ci if ENV['CI']
             
-            build_app(
-              workspace: "App.xcworkspace",
-              scheme: "App",
-              archive_path: "./build/App.xcarchive",
-              skip_package_ipa: true,
-              skip_archive: false,
-              build_path: "./build",
-              output_directory: "./build"
-            )
+            # Just build without archiving to avoid code signing issues
+            sh("xcodebuild -workspace App.xcworkspace -scheme App -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO")
           end
         end
         EOF
