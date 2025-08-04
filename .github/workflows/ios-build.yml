@@ -76,6 +76,7 @@ jobs:
               workspace: "App.xcworkspace",
               scheme: "App",
               export_method: "app-store",
+              xcargs: "DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']}",
               export_options: {
                 method: "app-store",
                 provisioningProfiles: {
