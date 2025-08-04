@@ -85,8 +85,11 @@ jobs:
             build_app(
               workspace: "App.xcworkspace",
               scheme: "App",
-              export_method: "development",
-              skip_codesigning: true
+              archive_path: "./build/App.xcarchive",
+              skip_package_ipa: true,
+              skip_archive: false,
+              build_path: "./build",
+              output_directory: "./build"
             )
           end
         end
