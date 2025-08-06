@@ -29,14 +29,10 @@ const ExchangeRateWidget = () => {
         
         console.log('Storing exchange rate in database:', dopRate);
         
-        // Use edge function to store rates consistently with budget calculations
-        const { data: dopResult, error: dopError } = await supabase.functions.invoke('get-exchange-rate', {
-          body: { 
-            from: 'USD', 
-            to: 'DOP',
-            store_rate: true,
-            rate: dopRate 
-          }
+        const { error: dopError } = await supabase.rpc('upsert_exchange_rate', {
+          p_from_currency: 'USD',
+          p_to_currency: 'DOP',
+          p_rate: dopRate
         });
         
         if (dopError) {
@@ -44,13 +40,10 @@ const ExchangeRateWidget = () => {
         }
         
         // Also store RD rate (Dominican Peso alternative code)
-        const { data: rdResult, error: rdError } = await supabase.functions.invoke('get-exchange-rate', {
-          body: { 
-            from: 'USD', 
-            to: 'RD',
-            store_rate: true,
-            rate: dopRate 
-          }
+        const { error: rdError } = await supabase.rpc('upsert_exchange_rate', {
+          p_from_currency: 'USD',
+          p_to_currency: 'RD',
+          p_rate: dopRate
         });
         
         if (rdError) {

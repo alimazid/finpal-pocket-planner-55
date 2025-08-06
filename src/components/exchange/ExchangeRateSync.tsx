@@ -19,23 +19,17 @@ export function ExchangeRateSync() {
       
       console.log('🔄 Force syncing exchange rate:', dopRate);
       
-      // Store both DOP and RD rates using edge function
-      const { data: dopResult, error: dopError } = await supabase.functions.invoke('get-exchange-rate', {
-        body: { 
-          from: 'USD', 
-          to: 'DOP',
-          store_rate: true,
-          rate: dopRate 
-        }
+      // Store both DOP and RD rates
+      const { error: dopError } = await supabase.rpc('upsert_exchange_rate', {
+        p_from_currency: 'USD',
+        p_to_currency: 'DOP',
+        p_rate: dopRate
       });
       
-      const { data: rdResult, error: rdError } = await supabase.functions.invoke('get-exchange-rate', {
-        body: { 
-          from: 'USD', 
-          to: 'RD',
-          store_rate: true,
-          rate: dopRate 
-        }
+      const { error: rdError } = await supabase.rpc('upsert_exchange_rate', {
+        p_from_currency: 'USD',
+        p_to_currency: 'RD',
+        p_rate: dopRate
       });
       
       if (dopError || rdError) {
