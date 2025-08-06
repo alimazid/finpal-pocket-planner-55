@@ -460,15 +460,21 @@ const Index = () => {
       <div className="bg-gradient-primary border-b border-primary/20">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            {/* Fixed logo section */}
+            <div className="flex items-center gap-4 flex-shrink-0">
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-white" />
               </div>
+            </div>
+            
+            {/* Scrollable content section on mobile */}
+            <div className="flex items-center gap-4 overflow-x-auto scrollbar-hide flex-1 mx-4">
               <ExchangeRateWidget />
               <ExchangeRateSync />
               <BitcoinPriceWidget />
             </div>
-            <div className="flex items-center gap-2">
+            
+            <div className="flex items-center gap-2 flex-shrink-0">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button 
