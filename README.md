@@ -72,8 +72,3 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
-## iOS Build Status
-
-✅ iOS build pipeline configured and working
-- Development builds: Fast compilation check without code signing
-- Production builds: Full TestFlight deployment with proper certificates
