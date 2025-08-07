@@ -20,13 +20,13 @@ export function ExchangeRateSync() {
       console.log('🔄 Force syncing exchange rate:', dopRate);
       
       // Store both DOP and RD rates
-      const { error: dopError } = await supabase.rpc('upsert_exchange_rate', {
+      const { error: dopError } = await (supabase.rpc as any)('upsert_exchange_rate', {
         p_from_currency: 'USD',
         p_to_currency: 'DOP',
         p_rate: dopRate
       });
       
-      const { error: rdError } = await supabase.rpc('upsert_exchange_rate', {
+      const { error: rdError } = await (supabase.rpc as any)('upsert_exchange_rate', {
         p_from_currency: 'USD',
         p_to_currency: 'RD',
         p_rate: dopRate

@@ -29,7 +29,7 @@ const ExchangeRateWidget = () => {
         
         console.log('Storing exchange rate in database:', dopRate);
         
-        const { error: dopError } = await supabase.rpc('upsert_exchange_rate', {
+        const { error: dopError } = await (supabase.rpc as any)('upsert_exchange_rate', {
           p_from_currency: 'USD',
           p_to_currency: 'DOP',
           p_rate: dopRate
@@ -40,7 +40,7 @@ const ExchangeRateWidget = () => {
         }
         
         // Also store RD rate (Dominican Peso alternative code)
-        const { error: rdError } = await supabase.rpc('upsert_exchange_rate', {
+        const { error: rdError } = await (supabase.rpc as any)('upsert_exchange_rate', {
           p_from_currency: 'USD',
           p_to_currency: 'RD',
           p_rate: dopRate

@@ -105,7 +105,7 @@ class ExchangeRateService {
       // Dynamic import to avoid circular dependencies
       const { supabase } = await import('@/integrations/supabase/client');
       
-      const { error } = await supabase.rpc('upsert_exchange_rate', {
+      const { error } = await (supabase.rpc as any)('upsert_exchange_rate', {
         p_from_currency: fromCurrency,
         p_to_currency: toCurrency,
         p_rate: rate
