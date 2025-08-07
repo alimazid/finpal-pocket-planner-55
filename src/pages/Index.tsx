@@ -13,7 +13,7 @@ import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
 import { ExchangeRateSync } from "@/components/exchange/ExchangeRateSync";
-import BitcoinPriceWidget from "@/components/crypto/BitcoinPriceWidget";
+
 import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -467,7 +467,7 @@ const Index = () => {
               </div>
               <ExchangeRateWidget />
               <ExchangeRateSync />
-              <BitcoinPriceWidget />
+              
             </div>
             <div className="flex items-center gap-2">
               <DropdownMenu>
