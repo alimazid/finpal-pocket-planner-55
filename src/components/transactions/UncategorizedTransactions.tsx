@@ -1,6 +1,8 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -19,6 +21,7 @@ interface UncategorizedTransactionsProps {
   transactions: Transaction[];
   availableCategories: string[];
   onUpdateTransactionCategory: (id: string, category: string) => void;
+  onDeleteTransaction?: (id: string) => void;
   language: 'english' | 'spanish';
 }
 
@@ -26,6 +29,7 @@ export function UncategorizedTransactions({
   transactions, 
   availableCategories, 
   onUpdateTransactionCategory,
+  onDeleteTransaction,
   language 
 }: UncategorizedTransactionsProps) {
   const [openSelects, setOpenSelects] = useState<Record<string, boolean>>({});
@@ -108,12 +112,42 @@ export function UncategorizedTransactions({
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-              <span>{formatDate(transaction.date)}</span>
-              <span className="font-semibold text-destructive">
+            <p className="text-sm text-muted-foreground">
+              {formatDate(transaction.date)}
+            </p>
+          </div>
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+            <div className="text-left sm:text-right">
+              <p className="font-semibold text-destructive">
                 -{formatCurrency(transaction.amount, transaction.currency)}
-              </span>
+              </p>
             </div>
+            {onDeleteTransaction && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive flex-shrink-0">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('deleteTransactionConfirm')} "{transaction.description}" ({formatCurrency(transaction.amount, transaction.currency)})? {t('actionCannotBeUndoneSimple')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => onDeleteTransaction(transaction.id)} 
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {t('delete')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
       ))}
