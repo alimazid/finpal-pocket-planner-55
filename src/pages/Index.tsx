@@ -601,14 +601,13 @@ const Index = () => {
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           <StatsCard title={t('totalExpenses')} value={formatCurrency(totalExpenses, primaryCurrency)} icon={DollarSign} />
           <StatsCard title={t('totalBudget')} value={formatCurrency(totalBudget, primaryCurrency)} icon={Target} />
           <StatsCard title={t('remainingBudget')} value={formatCurrency(totalBudget - totalExpenses, primaryCurrency)} icon={TrendingUp} trend={{
             value: totalBudget - totalExpenses > 0 ? '+' : '-',
             isPositive: totalBudget - totalExpenses > 0
           }} />
-          <StatsCard title={t('transactions')} value={transactions.length.toString()} icon={CreditCard} />
         </div>
 
         {/* Uncategorized Transactions */}
