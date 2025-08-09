@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { ExpensesGraph } from "@/components/dashboard/ExpensesGraph";
 
 import { BudgetCard } from "@/components/budget/BudgetCard";
 import { BudgetSummary } from "@/components/budget/BudgetSummary";
@@ -673,6 +674,12 @@ const Index = () => {
           onPeriodChange={setCurrentBudgetPeriod}
           language={selectedLanguage as 'english' | 'spanish'}
           cutoffDay={1}
+        />
+
+        {/* Expenses Graph */}
+        <ExpensesGraph 
+          transactions={transactions}
+          currentPeriod={currentBudgetPeriod}
         />
 
         {/* Budget Summary */}
