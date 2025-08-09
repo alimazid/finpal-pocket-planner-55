@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
-import { BudgetPeriodNavigator } from "./BudgetPeriodNavigator";
 
 interface Budget {
   id: string;
@@ -118,15 +117,6 @@ export function BudgetSummary({
           <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
         </div>
 
-        {/* Budget Period Navigator */}
-        {onPeriodChange && (
-          <BudgetPeriodNavigator
-            currentPeriod={activePeriod}
-            onPeriodChange={onPeriodChange}
-            language={language}
-            cutoffDay={cutoffDay}
-          />
-        )}
         
         <Card className="bg-gradient-card shadow-soft mb-4">
           <CardContent className="p-6">
@@ -207,15 +197,6 @@ export function BudgetSummary({
         <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
       </div>
 
-      {/* Budget Period Navigator */}
-      {onPeriodChange && (
-        <BudgetPeriodNavigator
-          currentPeriod={activePeriod}
-          onPeriodChange={onPeriodChange}
-          language={language}
-          cutoffDay={cutoffDay}
-        />
-      )}
 
       {/* Overall Progress Bar */}
       <Card className="bg-gradient-card shadow-soft mb-6">

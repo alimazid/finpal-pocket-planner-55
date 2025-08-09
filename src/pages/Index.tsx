@@ -8,6 +8,7 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
 import { BudgetCard } from "@/components/budget/BudgetCard";
 import { BudgetSummary } from "@/components/budget/BudgetSummary";
+import { BudgetPeriodNavigator } from "@/components/budget/BudgetPeriodNavigator";
 import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
@@ -630,35 +631,13 @@ const Index = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          <StatsCard title={t('totalExpenses')} value={formatCurrency(totalExpenses, primaryCurrency)} icon={DollarSign} />
-          <StatsCard title={t('totalBudget')} value={formatCurrency(totalBudget, primaryCurrency)} icon={Target} />
-          <StatsCard title={t('remainingBudget')} value={formatCurrency(totalBudget - totalExpenses, primaryCurrency)} icon={TrendingUp} trend={{
-            value: totalBudget - totalExpenses > 0 ? '+' : '-',
-            isPositive: totalBudget - totalExpenses > 0
-          }} />
-        </div>
-
-        {/* Uncategorized Transactions */}
-        {transactions.filter(t => !t.category).length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              {t('uncategorizedTransactions')}
-              <Badge variant="secondary" className="ml-auto bg-warning/10 text-warning border-warning/20">
-                {transactions.filter(t => !t.category).length}
-              </Badge>
-            </h2>
-            <UncategorizedTransactions 
-              transactions={transactions}
-              availableCategories={budgets.map(budget => budget.category)}
-              onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
-              onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
-              language={selectedLanguage as 'english' | 'spanish'}
-            />
-          </div>
-        )}
+        {/* Budget Period Navigator */}
+        <BudgetPeriodNavigator
+          currentPeriod={currentBudgetPeriod}
+          onPeriodChange={setCurrentBudgetPeriod}
+          language={selectedLanguage as 'english' | 'spanish'}
+          cutoffDay={1}
+        />
 
         {/* Budget Summary */}
         <BudgetSummary 
