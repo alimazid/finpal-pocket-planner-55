@@ -1,18 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, Plus, Check, X, Trash2, GripVertical } from "lucide-react";
+import { BarChart3, Plus, Check, X, Trash2 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   DndContext,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -106,9 +107,19 @@ export function BudgetSummary({
     }
   }, [budgets]);
 
-  // Drag and drop sensors
+  // Drag and drop sensors with mobile support
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 3,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 0, // Remove delay for instant response on mobile
+        tolerance: 3, // Reduce tolerance for more precise touch
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -128,19 +139,24 @@ export function BudgetSummary({
       const oldIndex = sortedBaseBudgets.findIndex((budget) => budget.id === active.id);
       const newIndex = sortedBaseBudgets.findIndex((budget) => budget.id === over?.id);
       
-      const reorderedBudgets = arrayMove(sortedBaseBudgets, oldIndex, newIndex);
-      
-      // Update sort_order for all budgets
-      const budgetsWithNewOrder = reorderedBudgets.map((budget, index) => ({
-        ...budget,
-        sort_order: index + 1
-      }));
-      
-      // Immediately update optimistic state for smooth UI
-      setOptimisticBudgets(budgetsWithNewOrder);
-      
-      if (onUpdateBudgetOrder) {
-        onUpdateBudgetOrder(budgetsWithNewOrder);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reorderedBudgets = arrayMove(sortedBaseBudgets, oldIndex, newIndex);
+        
+        // Update sort_order for all budgets
+        const budgetsWithNewOrder = reorderedBudgets.map((budget, index) => ({
+          ...budget,
+          sort_order: index + 1
+        }));
+        
+        // Immediately update optimistic state for smooth UI
+        setOptimisticBudgets(budgetsWithNewOrder);
+        
+        // Use requestAnimationFrame to defer database update and prevent blocking
+        requestAnimationFrame(() => {
+          if (onUpdateBudgetOrder) {
+            onUpdateBudgetOrder(budgetsWithNewOrder);
+          }
+        });
       }
     }
   };
@@ -368,6 +384,9 @@ export function BudgetSummary({
       transform: CSS.Transform.toString(transform),
       transition,
       opacity: isDragging ? 0.5 : 1,
+      userSelect: 'none' as const,
+      WebkitUserSelect: 'none' as const,
+      touchAction: isDragging ? 'none' : 'auto',
     };
 
     const categoryTransactions = transactions.filter(
@@ -375,17 +394,22 @@ export function BudgetSummary({
     );
 
     return (
-      <div ref={setNodeRef} style={style} {...attributes}>
+      <div 
+        ref={setNodeRef} 
+        style={style} 
+        {...attributes}
+        className="select-none touch-manipulation"
+      >
         <BudgetDisplayCard
           title={budget.category}
           spent={budget.spent}
           amount={budget.amount}
           currency={budget.currency}
-          showIcon={true}
+          showIcon={false}
           budgetId={budget.id}
           isClickable={true}
           categoryTransactions={categoryTransactions}
-          dragHandleProps={listeners}
+          dragListeners={listeners}
         />
       </div>
     );
@@ -402,7 +426,7 @@ export function BudgetSummary({
     budgetId,
     isClickable = false,
     categoryTransactions = [],
-    dragHandleProps
+    dragListeners
   }: {
     title: string;
     spent: number;
@@ -413,12 +437,30 @@ export function BudgetSummary({
     budgetId?: string;
     isClickable?: boolean;
     categoryTransactions?: Transaction[];
-    dragHandleProps?: any;
+    dragListeners?: any;
   }) => {
     const percentage = getSpentPercentage(spent, amount);
     const budgetStatus = getBudgetStatus(spent, amount);
     const isOverBudget = spent > amount;
     const isExpanded = budgetId && expandedBudgetId === budgetId;
+    const editContainerRef = useRef<HTMLDivElement>(null);
+
+    // Handle click outside to discard edit changes
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (editingBudgetId === budgetId && 
+            editContainerRef.current && 
+            !editContainerRef.current.contains(event.target as Node)) {
+          setEditingBudgetId(null);
+          setEditBudgetCategory("");
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, [editingBudgetId, budgetId]);
 
     const handleCardClick = () => {
       if (!isClickable || !budgetId) return;
@@ -446,21 +488,17 @@ export function BudgetSummary({
                   {showIcon && (
                     <div className="w-3 h-3 rounded-full flex-shrink-0 bg-primary" />
                   )}
-                  {dragHandleProps && (
-                    <button
-                      {...dragHandleProps}
-                      className="cursor-grab hover:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
-                      title="Drag to reorder"
-                    >
-                      <GripVertical className="h-4 w-4" />
-                    </button>
-                  )}
                   {editingBudgetId === budgetId && budgetId ? (
-                    <div className="flex items-center gap-2">
+                    <div 
+                      ref={editContainerRef}
+                      className="flex items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Input
                         value={editBudgetCategory}
                         onChange={(e) => setEditBudgetCategory(e.target.value)}
                         className="h-6 text-sm font-medium"
+                        onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             if (editBudgetCategory.trim() && onUpdateBudgetCategory) {
@@ -477,7 +515,8 @@ export function BudgetSummary({
                       <Button 
                         size="sm" 
                         variant="ghost" 
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (editBudgetCategory.trim() && onUpdateBudgetCategory) {
                             onUpdateBudgetCategory(budgetId, editBudgetCategory.trim());
                           }
@@ -490,7 +529,10 @@ export function BudgetSummary({
                       <Button 
                         size="sm" 
                         variant="ghost" 
-                        onClick={() => setEditingBudgetId(null)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingBudgetId(null);
+                        }}
                         className="h-6 w-6 p-0"
                       >
                         <X className="h-3 w-3" />
@@ -501,8 +543,9 @@ export function BudgetSummary({
                       className={`font-medium text-foreground ${
                         budgetId && onUpdateBudgetCategory ? 'cursor-pointer hover:text-primary transition-colors' : ''
                       }`}
-                      onClick={() => {
+                      onClick={(e) => {
                         if (budgetId && onUpdateBudgetCategory) {
+                          e.stopPropagation();
                           setEditingBudgetId(budgetId);
                           setEditBudgetCategory(title);
                         }
@@ -517,22 +560,41 @@ export function BudgetSummary({
                     </span>
                   )}
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium">
-                    <span className={budgetStatus.textClasses}>
-                      {formatCurrency(spent, currency)}
-                    </span>
-                    <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-sm font-medium">
+                      <span className={budgetStatus.textClasses}>
+                        {formatCurrency(spent, currency)}
+                      </span>
+                      <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {percentage.toFixed(0)}% {t('used')}
+                    </div>
+                    <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
+                      {isOverBudget ? 
+                        `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
+                        `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
+                      }
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {percentage.toFixed(0)}% {t('used')}
-                  </div>
-                  <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
-                    {isOverBudget ? 
-                      `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
-                      `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
-                    }
-                  </div>
+                  {dragListeners && (
+                    <div
+                      {...dragListeners}
+                      className="flex items-center justify-center w-8 h-full cursor-grab hover:cursor-grabbing active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors hover:bg-muted/20 rounded px-1 select-none touch-manipulation"
+                      title="Drag to reorder"
+                      style={{ touchAction: 'none' }}
+                    >
+                      <div className="flex flex-col gap-1">
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
