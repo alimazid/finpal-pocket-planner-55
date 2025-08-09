@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, Plus } from "lucide-react";
+import { BarChart3, Plus, Check, X, Trash2 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -26,10 +26,29 @@ interface BudgetPeriod {
   isCurrentPeriod: boolean;
 }
 
+interface Transaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  description: string;
+  category: string | null;
+  date: string;
+  type: 'expense' | 'income';
+  currency: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface BudgetSummaryProps {
   budgets: Budget[];
+  transactions?: Transaction[];
   language: 'english' | 'spanish';
   onAddBudget?: (category: string, amount: number) => void;
+  onDeleteTransaction?: (id: string) => void;
+  onUpdateTransaction?: (id: string, amount: number) => void;
+  onUpdateTransactionCategory?: (id: string, category: string | null) => void;
+  onUpdateBudgetCategory?: (id: string, category: string) => void;
+  availableCategories?: string[];
   currentPeriod?: BudgetPeriod;
   onPeriodChange?: (period: BudgetPeriod) => void;
   cutoffDay?: number;
@@ -37,8 +56,14 @@ interface BudgetSummaryProps {
 
 export function BudgetSummary({ 
   budgets, 
+  transactions = [],
   language, 
   onAddBudget, 
+  onDeleteTransaction,
+  onUpdateTransaction,
+  onUpdateTransactionCategory,
+  onUpdateBudgetCategory,
+  availableCategories = [],
   currentPeriod,
   onPeriodChange,
   cutoffDay = 1 
@@ -47,6 +72,9 @@ export function BudgetSummary({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
+  const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
+  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
+  const [editBudgetCategory, setEditBudgetCategory] = useState("");
 
   // Create default current period if not provided
   const getCurrentPeriod = (): BudgetPeriod => {
@@ -71,13 +99,37 @@ export function BudgetSummary({
   };
 
   const activePeriod = currentPeriod || getCurrentPeriod();
-  const getProgressColor = (spent: number, amount: number) => {
+  // Unified color logic for consistent theming across progress bar, spent amount, and remaining amount
+  const getBudgetStatus = (spent: number, amount: number) => {
     const spentNum = Number(spent) || 0;
     const amountNum = Number(amount) || 1;
     const percentage = (spentNum / amountNum) * 100;
-    if (percentage >= 90) return 'hsl(0 84% 60%)'; // red for over-budget
-    if (percentage >= 75) return 'hsl(24 95% 53%)'; // orange for warning
-    return 'hsl(var(--primary))'; // default color
+    
+    if (percentage >= 100) {
+      return {
+        type: 'over-budget' as const,
+        hslColor: 'hsl(0 84% 60%)', // red for over-budget
+        textClasses: 'text-red-600 dark:text-red-400'
+      };
+    } else if (percentage >= 90) {
+      return {
+        type: 'critical' as const,
+        hslColor: 'hsl(0 84% 60%)', // red for critical
+        textClasses: 'text-red-600 dark:text-red-400'
+      };
+    } else if (percentage >= 75) {
+      return {
+        type: 'warning' as const,
+        hslColor: 'hsl(24 95% 53%)', // orange for warning
+        textClasses: 'text-orange-600 dark:text-orange-400'
+      };
+    } else {
+      return {
+        type: 'healthy' as const,
+        hslColor: 'hsl(142 76% 36%)', // green color matching the text for healthy budgets
+        textClasses: 'text-green-600 dark:text-green-400'
+      };
+    }
   };
 
 
@@ -108,6 +160,304 @@ export function BudgetSummary({
   const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
   const totalPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
   const primaryCurrency = budgets.length > 0 ? budgets[0].currency : 'USD';
+  const totalBudgetStatus = getBudgetStatus(totalSpent, totalBudget);
+
+  // Transaction Accordion Component
+  const TransactionAccordion = ({ 
+    transactions, 
+    category, 
+    language, 
+    onDeleteTransaction, 
+    onUpdateTransaction, 
+    onUpdateTransactionCategory, 
+    availableCategories 
+  }: {
+    transactions: Transaction[];
+    category: string;
+    language: 'english' | 'spanish';
+    onDeleteTransaction?: (id: string) => void;
+    onUpdateTransaction?: (id: string, amount: number) => void;
+    onUpdateTransactionCategory?: (id: string, category: string | null) => void;
+    availableCategories: string[];
+  }) => {
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editAmount, setEditAmount] = useState("");
+    
+    const formatDate = (dateString: string) => {
+      const [year, month, day] = dateString.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+      });
+    };
+
+    const handleEdit = (transaction: Transaction) => {
+      setEditingId(transaction.id);
+      setEditAmount(transaction.amount.toString());
+    };
+
+    const handleSave = () => {
+      if (editingId && onUpdateTransaction) {
+        const newAmount = parseFloat(editAmount);
+        if (newAmount > 0) {
+          onUpdateTransaction(editingId, newAmount);
+        }
+      }
+      setEditingId(null);
+    };
+
+    if (transactions.length === 0) {
+      return (
+        <Card className="bg-muted/30">
+          <CardContent className="p-4 text-center text-muted-foreground">
+            <p className="text-sm">{t('noTransactions')}</p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card className="bg-muted/30">
+        <CardContent className="p-4">
+          <div className="space-y-3">
+            {transactions.slice(0, 10).map((transaction) => (
+              <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-b-0">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-foreground truncate">{transaction.description}</p>
+                    <div className="flex items-center gap-2 ml-4">
+                      {editingId === transaction.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            className="w-20 h-6 text-xs"
+                            step="0.01"
+                            min="0"
+                          />
+                          <Button size="sm" variant="outline" onClick={handleSave} className="h-6 w-6 p-0">
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingId(null)} className="h-6 w-6 p-0">
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <span 
+                            className="text-sm font-medium cursor-pointer hover:text-primary"
+                            onClick={() => handleEdit(transaction)}
+                          >
+                            {formatCurrency(transaction.amount, transaction.currency)}
+                          </span>
+                          {onDeleteTransaction && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onDeleteTransaction(transaction.id)}
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatDate(transaction.date)}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {transactions.length > 10 && (
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                {t('showing')} 10 {t('of')} {transactions.length} {t('transactions')}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Reusable Budget Card Component
+  const BudgetDisplayCard = ({ 
+    title, 
+    spent, 
+    amount, 
+    currency, 
+    showIcon = true, 
+    className = "",
+    budgetId,
+    isClickable = false,
+    categoryTransactions = []
+  }: {
+    title: string;
+    spent: number;
+    amount: number;
+    currency: string;
+    showIcon?: boolean;
+    className?: string;
+    budgetId?: string;
+    isClickable?: boolean;
+    categoryTransactions?: Transaction[];
+  }) => {
+    const percentage = getSpentPercentage(spent, amount);
+    const budgetStatus = getBudgetStatus(spent, amount);
+    const isOverBudget = spent > amount;
+    const isExpanded = budgetId && expandedBudgetId === budgetId;
+
+    const handleCardClick = () => {
+      if (!isClickable || !budgetId) return;
+      
+      if (expandedBudgetId === budgetId) {
+        setExpandedBudgetId(null); // Collapse if already expanded
+      } else {
+        setExpandedBudgetId(budgetId); // Expand this one (closes others)
+      }
+    };
+
+    return (
+      <div>
+        <Card 
+          className={`bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200 ${
+            isClickable ? 'cursor-pointer hover:bg-gradient-card/80' : ''
+          } ${isExpanded ? 'ring-2 ring-primary/20 shadow-lg' : ''} ${className}`}
+          onClick={handleCardClick}
+        >
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              {/* Category Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {showIcon && (
+                    <div className="w-3 h-3 rounded-full flex-shrink-0 bg-primary" />
+                  )}
+                  {editingBudgetId === budgetId && budgetId ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editBudgetCategory}
+                        onChange={(e) => setEditBudgetCategory(e.target.value)}
+                        className="h-6 text-sm font-medium"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (editBudgetCategory.trim() && onUpdateBudgetCategory) {
+                              onUpdateBudgetCategory(budgetId, editBudgetCategory.trim());
+                            }
+                            setEditingBudgetId(null);
+                          }
+                          if (e.key === 'Escape') {
+                            setEditingBudgetId(null);
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => {
+                          if (editBudgetCategory.trim() && onUpdateBudgetCategory) {
+                            onUpdateBudgetCategory(budgetId, editBudgetCategory.trim());
+                          }
+                          setEditingBudgetId(null);
+                        }}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Check className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => setEditingBudgetId(null)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <span 
+                      className={`font-medium text-foreground ${
+                        budgetId && onUpdateBudgetCategory ? 'cursor-pointer hover:text-primary transition-colors' : ''
+                      }`}
+                      onClick={() => {
+                        if (budgetId && onUpdateBudgetCategory) {
+                          setEditingBudgetId(budgetId);
+                          setEditBudgetCategory(title);
+                        }
+                      }}
+                    >
+                      {title}
+                    </span>
+                  )}
+                  {isClickable && (
+                    <span className="text-xs text-muted-foreground">
+                      ({categoryTransactions.length})
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium">
+                    <span className={budgetStatus.textClasses}>
+                      {formatCurrency(spent, currency)}
+                    </span>
+                    <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {percentage.toFixed(0)}% {t('used')}
+                  </div>
+                  <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
+                    {isOverBudget ? 
+                      `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
+                      `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
+                    }
+                  </div>
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <Progress 
+                value={percentage} 
+                className="h-3"
+                style={{ 
+                  '--progress-background': budgetStatus.hslColor
+                } as React.CSSProperties}
+              />
+              
+              {/* Over Budget Warning */}
+              {isOverBudget && (
+                <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
+                  {t('overBudgetBy')} {formatCurrency(spent - amount, currency)}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Animated Accordion Container */}
+        <div className={`grid transition-all duration-300 ease-in-out ${
+          isExpanded && isClickable ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}>
+          <div className="overflow-hidden">
+            <div className="mt-2 pl-4">
+              <TransactionAccordion 
+                transactions={categoryTransactions}
+                category={title}
+                language={language}
+                onDeleteTransaction={onDeleteTransaction}
+                onUpdateTransaction={onUpdateTransaction}
+                onUpdateTransactionCategory={onUpdateTransactionCategory}
+                availableCategories={availableCategories}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   if (budgets.length === 0) {
     return (
@@ -198,81 +548,35 @@ export function BudgetSummary({
       </div>
 
 
-      {/* Overall Progress Bar */}
-      <Card className="bg-gradient-card shadow-soft mb-6">
-        <CardContent className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">{t('totalBudgetProgress')}</span>
-              <span className="text-sm font-medium text-foreground">
-                {formatCurrency(totalSpent, primaryCurrency)} / {formatCurrency(totalBudget, primaryCurrency)}
-              </span>
-            </div>
-            <Progress 
-              value={totalPercentage} 
-              className="h-3"
-              style={{ 
-                '--progress-background': totalPercentage >= 90 ? 'hsl(0 84% 60%)' : 
-                                        totalPercentage >= 75 ? 'hsl(24 95% 53%)' : 
-                                        'hsl(var(--primary))'
-              } as React.CSSProperties}
-            />
-            <div className="text-xs text-muted-foreground text-right">
-              {totalPercentage.toFixed(0)}% {t('ofTotalBudgetUsed')}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Individual Budget Cards */}
+      {/* All Budget Cards */}
       <div className="space-y-4">
-        {budgets.map((budget, index) => {
-          const percentage = getSpentPercentage(budget.spent, budget.amount);
-          const isOverBudget = budget.spent > budget.amount;
+        {/* Total Budget */}
+        <BudgetDisplayCard
+          title={t('totalBudgetProgress')}
+          spent={totalSpent}
+          amount={totalBudget}
+          currency={primaryCurrency}
+          showIcon={false}
+        />
+
+        {/* Individual Budget Cards */}
+        {budgets.map((budget) => {
+          const categoryTransactions = transactions.filter(
+            t => t.category === budget.category && t.type === 'expense'
+          );
           
           return (
-            <Card key={budget.id} className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200">
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  {/* Category Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0 bg-primary"
-                      />
-                      <span className="font-medium text-foreground">{budget.category}</span>
-                    </div>
-                    <div className="text-right">
-                       <div className="text-sm font-medium">
-                         <span className={isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-foreground'}>
-                           {formatCurrency(budget.spent, budget.currency)}
-                         </span>
-                         <span className="text-muted-foreground"> / {formatCurrency(budget.amount, budget.currency)}</span>
-                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {percentage.toFixed(0)}% {t('used')}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Progress Bar */}
-                  <Progress 
-                    value={percentage} 
-                    className="h-3"
-                    style={{ 
-                      '--progress-background': getProgressColor(budget.spent, budget.amount)
-                    } as React.CSSProperties}
-                  />
-                  
-                   {/* Over Budget Warning */}
-                   {isOverBudget && (
-                     <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                       {t('overBudgetBy')} {formatCurrency(budget.spent - budget.amount, budget.currency)}
-                     </div>
-                   )}
-                </div>
-              </CardContent>
-            </Card>
+            <BudgetDisplayCard
+              key={budget.id}
+              title={budget.category}
+              spent={budget.spent}
+              amount={budget.amount}
+              currency={budget.currency}
+              showIcon={true}
+              budgetId={budget.id}
+              isClickable={true}
+              categoryTransactions={categoryTransactions}
+            />
           );
         })}
       </div>

@@ -207,6 +207,14 @@ const translations: Translations = {
     english: 'Over budget by',
     spanish: 'Excede el presupuesto en'
   },
+  remaining: {
+    english: 'remaining',
+    spanish: 'restante'
+  },
+  overBudget: {
+    english: 'over budget',
+    spanish: 'sobre presupuesto'
+  },
   
   // Transaction List translations
   noTransactionsYet: {
@@ -304,6 +312,16 @@ const translations: Translations = {
   periodEndsToday: {
     english: 'Period ends today',
     spanish: 'El período termina hoy'
+  },
+  
+  // Accordion transactions
+  showing: {
+    english: 'Showing',
+    spanish: 'Mostrando'
+  },
+  of: {
+    english: 'of',
+    spanish: 'de'
   }
 };
 

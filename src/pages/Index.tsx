@@ -642,8 +642,14 @@ const Index = () => {
         {/* Budget Summary */}
         <BudgetSummary 
           budgets={budgets} 
+          transactions={transactions}
           language={selectedLanguage as 'english' | 'spanish'} 
           onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })}
+          onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
+          onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
+          onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
+          onUpdateBudgetCategory={(id, category) => updateCategoryMutation.mutate({ budgetId: id, newCategory: category })}
+          availableCategories={budgets.map(budget => budget.category)}
           currentPeriod={currentBudgetPeriod}
           onPeriodChange={setCurrentBudgetPeriod}
           cutoffDay={1}
