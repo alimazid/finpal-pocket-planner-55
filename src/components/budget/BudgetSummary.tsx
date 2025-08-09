@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, Plus, Check, X, Trash2 } from "lucide-react";
+import { BarChart3, Plus, Check, X, Trash2, GripVertical } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Budget {
   id: string;
@@ -16,6 +35,7 @@ interface Budget {
   amount: number;
   spent: number;
   currency: string;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +68,7 @@ interface BudgetSummaryProps {
   onUpdateTransaction?: (id: string, amount: number) => void;
   onUpdateTransactionCategory?: (id: string, category: string | null) => void;
   onUpdateBudgetCategory?: (id: string, category: string) => void;
+  onUpdateBudgetOrder?: (budgets: Budget[]) => void;
   availableCategories?: string[];
   currentPeriod?: BudgetPeriod;
   onPeriodChange?: (period: BudgetPeriod) => void;
@@ -63,6 +84,7 @@ export function BudgetSummary({
   onUpdateTransaction,
   onUpdateTransactionCategory,
   onUpdateBudgetCategory,
+  onUpdateBudgetOrder,
   availableCategories = [],
   currentPeriod,
   onPeriodChange,
@@ -75,6 +97,39 @@ export function BudgetSummary({
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const [editBudgetCategory, setEditBudgetCategory] = useState("");
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Sort budgets by sort_order
+  const sortedBudgets = [...budgets].sort((a, b) => a.sort_order - b.sort_order);
+
+  // Handle drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const oldIndex = sortedBudgets.findIndex((budget) => budget.id === active.id);
+      const newIndex = sortedBudgets.findIndex((budget) => budget.id === over?.id);
+      
+      const reorderedBudgets = arrayMove(sortedBudgets, oldIndex, newIndex);
+      
+      // Update sort_order for all budgets
+      const budgetsWithNewOrder = reorderedBudgets.map((budget, index) => ({
+        ...budget,
+        sort_order: index + 1
+      }));
+      
+      if (onUpdateBudgetOrder) {
+        onUpdateBudgetOrder(budgetsWithNewOrder);
+      }
+    }
+  };
 
   // Create default current period if not provided
   const getCurrentPeriod = (): BudgetPeriod => {
@@ -284,6 +339,44 @@ export function BudgetSummary({
     );
   };
 
+  // Sortable Budget Card Component
+  const SortableBudgetCard = ({ budget }: { budget: Budget }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: budget.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    const categoryTransactions = transactions.filter(
+      t => t.category === budget.category && t.type === 'expense'
+    );
+
+    return (
+      <div ref={setNodeRef} style={style} {...attributes}>
+        <BudgetDisplayCard
+          title={budget.category}
+          spent={budget.spent}
+          amount={budget.amount}
+          currency={budget.currency}
+          showIcon={true}
+          budgetId={budget.id}
+          isClickable={true}
+          categoryTransactions={categoryTransactions}
+          dragHandleProps={listeners}
+        />
+      </div>
+    );
+  };
+
   // Reusable Budget Card Component
   const BudgetDisplayCard = ({ 
     title, 
@@ -294,7 +387,8 @@ export function BudgetSummary({
     className = "",
     budgetId,
     isClickable = false,
-    categoryTransactions = []
+    categoryTransactions = [],
+    dragHandleProps
   }: {
     title: string;
     spent: number;
@@ -305,6 +399,7 @@ export function BudgetSummary({
     budgetId?: string;
     isClickable?: boolean;
     categoryTransactions?: Transaction[];
+    dragHandleProps?: any;
   }) => {
     const percentage = getSpentPercentage(spent, amount);
     const budgetStatus = getBudgetStatus(spent, amount);
@@ -336,6 +431,15 @@ export function BudgetSummary({
                 <div className="flex items-center gap-2">
                   {showIcon && (
                     <div className="w-3 h-3 rounded-full flex-shrink-0 bg-primary" />
+                  )}
+                  {dragHandleProps && (
+                    <button
+                      {...dragHandleProps}
+                      className="cursor-grab hover:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </button>
                   )}
                   {editingBudgetId === budgetId && budgetId ? (
                     <div className="flex items-center gap-2">
@@ -560,25 +664,20 @@ export function BudgetSummary({
         />
 
         {/* Individual Budget Cards */}
-        {budgets.map((budget) => {
-          const categoryTransactions = transactions.filter(
-            t => t.category === budget.category && t.type === 'expense'
-          );
-          
-          return (
-            <BudgetDisplayCard
-              key={budget.id}
-              title={budget.category}
-              spent={budget.spent}
-              amount={budget.amount}
-              currency={budget.currency}
-              showIcon={true}
-              budgetId={budget.id}
-              isClickable={true}
-              categoryTransactions={categoryTransactions}
-            />
-          );
-        })}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={sortedBudgets.map(budget => budget.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {sortedBudgets.map((budget) => (
+              <SortableBudgetCard key={budget.id} budget={budget} />
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
       
       {/* Add Budget Card - always available when there are budgets */}

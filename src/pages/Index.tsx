@@ -47,6 +47,7 @@ interface Budget {
   amount: number;
   spent: number;
   currency: string;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -100,7 +101,7 @@ const Index = () => {
         .from('budgets')
         .select('*')
         .eq('user_id', user!.id)
-        .order('created_at', { ascending: false });
+        .order('sort_order', { ascending: true });
       
       if (error) throw error;
       return data as Budget[];
@@ -171,6 +172,17 @@ const Index = () => {
   // Add budget mutation
   const addBudgetMutation = useMutation({
     mutationFn: async ({ category, amount }: { category: string; amount: number }) => {
+      // Get the highest sort_order for this user to append new budget at the end
+      const { data: maxSortOrder } = await supabase
+        .from('budgets')
+        .select('sort_order')
+        .eq('user_id', user!.id)
+        .order('sort_order', { ascending: false })
+        .limit(1)
+        .single();
+      
+      const nextSortOrder = (maxSortOrder?.sort_order || 0) + 1;
+      
       const { data, error } = await supabase
         .from('budgets')
         .insert([{
@@ -178,6 +190,7 @@ const Index = () => {
           category,
           amount,
           spent: 0,
+          sort_order: nextSortOrder,
         }])
         .select()
         .single();
@@ -354,6 +367,29 @@ const Index = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+    },
+  });
+
+  // Update budget order mutation
+  const updateBudgetOrderMutation = useMutation({
+    mutationFn: async (budgets: Budget[]) => {
+      const updates = budgets.map(budget => ({
+        id: budget.id,
+        sort_order: budget.sort_order
+      }));
+
+      // Update all budgets with new sort order
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('budgets')
+          .update({ sort_order: update.sort_order })
+          .eq('id', update.id);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
     },
   });
 
@@ -649,7 +685,8 @@ const Index = () => {
           onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
           onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
           onUpdateBudgetCategory={(id, category) => updateCategoryMutation.mutate({ budgetId: id, newCategory: category })}
-          availableCategories={budgets.map(budget => budget.category)}
+          onUpdateBudgetOrder={(budgets) => updateBudgetOrderMutation.mutate(budgets)}
+          availableCategories={budgets.sort((a, b) => a.sort_order - b.sort_order).map(budget => budget.category)}
           currentPeriod={currentBudgetPeriod}
           onPeriodChange={setCurrentBudgetPeriod}
           cutoffDay={1}
@@ -667,7 +704,7 @@ const Index = () => {
             onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
             onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
             onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
-            availableCategories={budgets.map(budget => budget.category)}
+            availableCategories={budgets.sort((a, b) => a.sort_order - b.sort_order).map(budget => budget.category)}
             language={selectedLanguage as 'english' | 'spanish'}
           />
         </div>
