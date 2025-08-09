@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
-import { BudgetPeriodNavigation } from "./BudgetPeriodNavigation";
 
 interface Budget {
   id: string;
@@ -25,19 +24,9 @@ interface BudgetSummaryProps {
   budgets: Budget[];
   language: 'english' | 'spanish';
   onAddBudget?: (category: string, amount: number) => void;
-  currentPeriod?: Date;
-  onPeriodChange?: (newPeriod: Date) => void;
-  cutoffDay?: number;
 }
 
-export function BudgetSummary({ 
-  budgets, 
-  language, 
-  onAddBudget, 
-  currentPeriod = new Date(),
-  onPeriodChange,
-  cutoffDay = 1 
-}: BudgetSummaryProps) {
+export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryProps) {
   const { t } = useTranslation(language);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [category, setCategory] = useState("");
@@ -166,16 +155,6 @@ export function BudgetSummary({
         <BarChart3 className="h-6 w-6 text-primary" />
         <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
       </div>
-
-      {/* Period Navigation */}
-      {onPeriodChange && (
-        <BudgetPeriodNavigation
-          currentPeriod={currentPeriod}
-          onPeriodChange={onPeriodChange}
-          language={language}
-          cutoffDay={cutoffDay}
-        />
-      )}
 
       {/* Overall Progress Bar */}
       <Card className="bg-gradient-card shadow-soft mb-6">

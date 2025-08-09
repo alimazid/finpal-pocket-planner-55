@@ -59,7 +59,6 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>("spanish");
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentPeriod, setCurrentPeriod] = useState<Date>(new Date());
   const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
 
   // Fetch budgets
@@ -636,9 +635,6 @@ const Index = () => {
           budgets={budgets} 
           language={selectedLanguage as 'english' | 'spanish'} 
           onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })}
-          currentPeriod={currentPeriod}
-          onPeriodChange={setCurrentPeriod}
-          cutoffDay={1}
         />
 
         {/* Recent Transactions */}
