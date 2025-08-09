@@ -2,7 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { format, addMonths, subMonths, isSameMonth } from "date-fns";
-import { es, enUS } from "date-fns/locale";
+import { es } from "date-fns/locale/es";
+import { enUS } from "date-fns/locale/en-US";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface BudgetPeriodNavigationProps {
