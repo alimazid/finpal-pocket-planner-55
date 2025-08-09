@@ -59,6 +59,36 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>("spanish");
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // Budget period state
+  interface BudgetPeriod {
+    startDate: Date;
+    endDate: Date;
+    isCurrentPeriod: boolean;
+  }
+  
+  const getCurrentPeriod = (cutoffDay: number = 1): BudgetPeriod => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    let startDate = new Date(year, month, cutoffDay);
+    if (now.getDate() < cutoffDay) {
+      startDate = new Date(year, month - 1, cutoffDay);
+    }
+    
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 1);
+    endDate.setDate(endDate.getDate() - 1);
+    
+    return {
+      startDate,
+      endDate,
+      isCurrentPeriod: true
+    };
+  };
+  
+  const [currentBudgetPeriod, setCurrentBudgetPeriod] = useState<BudgetPeriod>(getCurrentPeriod());
   const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
 
   // Fetch budgets
@@ -635,6 +665,9 @@ const Index = () => {
           budgets={budgets} 
           language={selectedLanguage as 'english' | 'spanish'} 
           onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })}
+          currentPeriod={currentBudgetPeriod}
+          onPeriodChange={setCurrentBudgetPeriod}
+          cutoffDay={1}
         />
 
         {/* Recent Transactions */}

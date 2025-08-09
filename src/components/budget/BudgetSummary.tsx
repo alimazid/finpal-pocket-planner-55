@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
+import { BudgetPeriodNavigator } from "./BudgetPeriodNavigator";
 
 interface Budget {
   id: string;
@@ -20,17 +21,57 @@ interface Budget {
   updated_at: string;
 }
 
+interface BudgetPeriod {
+  startDate: Date;
+  endDate: Date;
+  isCurrentPeriod: boolean;
+}
+
 interface BudgetSummaryProps {
   budgets: Budget[];
   language: 'english' | 'spanish';
   onAddBudget?: (category: string, amount: number) => void;
+  currentPeriod?: BudgetPeriod;
+  onPeriodChange?: (period: BudgetPeriod) => void;
+  cutoffDay?: number;
 }
 
-export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryProps) {
+export function BudgetSummary({ 
+  budgets, 
+  language, 
+  onAddBudget, 
+  currentPeriod,
+  onPeriodChange,
+  cutoffDay = 1 
+}: BudgetSummaryProps) {
   const { t } = useTranslation(language);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
+
+  // Create default current period if not provided
+  const getCurrentPeriod = (): BudgetPeriod => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    let startDate = new Date(year, month, cutoffDay);
+    if (now.getDate() < cutoffDay) {
+      startDate = new Date(year, month - 1, cutoffDay);
+    }
+    
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 1);
+    endDate.setDate(endDate.getDate() - 1);
+    
+    return {
+      startDate,
+      endDate,
+      isCurrentPeriod: true
+    };
+  };
+
+  const activePeriod = currentPeriod || getCurrentPeriod();
   const getProgressColor = (spent: number, amount: number) => {
     const spentNum = Number(spent) || 0;
     const amountNum = Number(amount) || 1;
@@ -76,6 +117,16 @@ export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryP
           <BarChart3 className="h-6 w-6 text-primary" />
           <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
         </div>
+
+        {/* Budget Period Navigator */}
+        {onPeriodChange && (
+          <BudgetPeriodNavigator
+            currentPeriod={activePeriod}
+            onPeriodChange={onPeriodChange}
+            language={language}
+            cutoffDay={cutoffDay}
+          />
+        )}
         
         <Card className="bg-gradient-card shadow-soft mb-4">
           <CardContent className="p-6">
@@ -155,6 +206,16 @@ export function BudgetSummary({ budgets, language, onAddBudget }: BudgetSummaryP
         <BarChart3 className="h-6 w-6 text-primary" />
         <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
       </div>
+
+      {/* Budget Period Navigator */}
+      {onPeriodChange && (
+        <BudgetPeriodNavigator
+          currentPeriod={activePeriod}
+          onPeriodChange={onPeriodChange}
+          language={language}
+          cutoffDay={cutoffDay}
+        />
+      )}
 
       {/* Overall Progress Bar */}
       <Card className="bg-gradient-card shadow-soft mb-6">

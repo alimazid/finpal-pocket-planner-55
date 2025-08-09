@@ -278,6 +278,32 @@ const translations: Translations = {
   noBudgetsAvailable: {
     english: 'No budgets available - will be uncategorized',
     spanish: 'No hay presupuestos disponibles - será sin categorizar'
+  },
+  
+  // Budget Period Navigation
+  previous: {
+    english: 'Previous',
+    spanish: 'Anterior'
+  },
+  next: {
+    english: 'Next',
+    spanish: 'Siguiente'
+  },
+  current: {
+    english: 'Current',
+    spanish: 'Actual'
+  },
+  dayRemaining: {
+    english: 'day remaining',
+    spanish: 'día restante'
+  },
+  daysRemaining: {
+    english: 'days remaining',
+    spanish: 'días restantes'
+  },
+  periodEndsToday: {
+    english: 'Period ends today',
+    spanish: 'El período termina hoy'
   }
 };
 
