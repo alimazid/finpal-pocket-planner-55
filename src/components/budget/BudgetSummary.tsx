@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -97,6 +97,14 @@ export function BudgetSummary({
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const [editBudgetCategory, setEditBudgetCategory] = useState("");
+  const [optimisticBudgets, setOptimisticBudgets] = useState<Budget[] | null>(null);
+
+  // Clear optimistic state when budgets prop updates (after database sync)
+  useEffect(() => {
+    if (optimisticBudgets && budgets.length > 0) {
+      setOptimisticBudgets(null);
+    }
+  }, [budgets]);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -106,24 +114,30 @@ export function BudgetSummary({
     })
   );
 
-  // Sort budgets by sort_order
-  const sortedBudgets = [...budgets].sort((a, b) => a.sort_order - b.sort_order);
+  // Sort budgets by sort_order (use optimistic state during drag operations)
+  const sortedBudgets = (optimisticBudgets || [...budgets]).sort((a, b) => a.sort_order - b.sort_order);
 
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
-      const oldIndex = sortedBudgets.findIndex((budget) => budget.id === active.id);
-      const newIndex = sortedBudgets.findIndex((budget) => budget.id === over?.id);
+      const baseBudgets = optimisticBudgets || [...budgets];
+      const sortedBaseBudgets = baseBudgets.sort((a, b) => a.sort_order - b.sort_order);
       
-      const reorderedBudgets = arrayMove(sortedBudgets, oldIndex, newIndex);
+      const oldIndex = sortedBaseBudgets.findIndex((budget) => budget.id === active.id);
+      const newIndex = sortedBaseBudgets.findIndex((budget) => budget.id === over?.id);
+      
+      const reorderedBudgets = arrayMove(sortedBaseBudgets, oldIndex, newIndex);
       
       // Update sort_order for all budgets
       const budgetsWithNewOrder = reorderedBudgets.map((budget, index) => ({
         ...budget,
         sort_order: index + 1
       }));
+      
+      // Immediately update optimistic state for smooth UI
+      setOptimisticBudgets(budgetsWithNewOrder);
       
       if (onUpdateBudgetOrder) {
         onUpdateBudgetOrder(budgetsWithNewOrder);
