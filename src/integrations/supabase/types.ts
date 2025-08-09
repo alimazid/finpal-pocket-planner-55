@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          sort_order: number
           spent: number
           updated_at: string
           user_id: string
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          sort_order?: number
           spent?: number
           updated_at?: string
           user_id: string
@@ -41,9 +43,37 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          sort_order?: number
           spent?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      exchange_rates: {
+        Row: {
+          created_at: string | null
+          from_currency: string
+          id: string
+          rate: number
+          to_currency: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          from_currency: string
+          id?: string
+          rate: number
+          to_currency: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          from_currency?: string
+          id?: string
+          rate?: number
+          to_currency?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -94,6 +124,10 @@ export type Database = {
       bytea_to_text: {
         Args: { data: string }
         Returns: string
+      }
+      get_exchange_rate: {
+        Args: { p_from_currency: string; p_to_currency: string }
+        Returns: number
       }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
@@ -149,6 +183,10 @@ export type Database = {
       text_to_bytea: {
         Args: { data: string }
         Returns: string
+      }
+      upsert_exchange_rate: {
+        Args: { p_from_currency: string; p_to_currency: string; p_rate: number }
+        Returns: undefined
       }
       urlencode: {
         Args: { data: Json } | { string: string } | { string: string }

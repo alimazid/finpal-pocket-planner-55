@@ -181,7 +181,7 @@ const Index = () => {
         .limit(1)
         .single();
       
-      const nextSortOrder = (maxSortOrder?.sort_order || 0) + 1;
+      const nextSortOrder = ((maxSortOrder as any)?.sort_order || 0) + 1;
       
       const { data, error } = await supabase
         .from('budgets')
@@ -382,7 +382,7 @@ const Index = () => {
       for (const update of updates) {
         const { error } = await supabase
           .from('budgets')
-          .update({ sort_order: update.sort_order })
+          .update({ sort_order: update.sort_order } as any)
           .eq('id', update.id);
         
         if (error) throw error;
