@@ -506,6 +506,23 @@ export function BudgetSummary({
               {/* Category Header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
+                  {dragListeners && (
+                    <div
+                      {...dragListeners}
+                      className="flex items-center justify-center w-8 h-full cursor-grab hover:cursor-grabbing active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors hover:bg-muted/20 rounded px-1 select-none touch-manipulation"
+                      title="Drag to reorder"
+                      style={{ touchAction: 'none' }}
+                    >
+                      <div className="flex flex-col gap-1">
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                      </div>
+                    </div>
+                  )}
                   {showIcon && (
                     <div className="w-3 h-3 rounded-full flex-shrink-0 bg-primary" />
                   )}
@@ -581,41 +598,22 @@ export function BudgetSummary({
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-sm font-medium">
-                      <span className={budgetStatus.textClasses}>
-                        {formatCurrency(spent, currency)}
-                      </span>
-                      <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {percentage.toFixed(0)}% {t('used')}
-                    </div>
-                    <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
-                      {isOverBudget ? 
-                        `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
-                        `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
-                      }
-                    </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium">
+                    <span className={budgetStatus.textClasses}>
+                      {formatCurrency(spent, currency)}
+                    </span>
+                    <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
                   </div>
-                  {dragListeners && (
-                    <div
-                      {...dragListeners}
-                      className="flex items-center justify-center w-8 h-full cursor-grab hover:cursor-grabbing active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors hover:bg-muted/20 rounded px-1 select-none touch-manipulation"
-                      title="Drag to reorder"
-                      style={{ touchAction: 'none' }}
-                    >
-                      <div className="flex flex-col gap-1">
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="text-xs text-muted-foreground">
+                    {percentage.toFixed(0)}% {t('used')}
+                  </div>
+                  <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
+                    {isOverBudget ? 
+                      `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
+                      `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
+                    }
+                  </div>
                 </div>
               </div>
               
