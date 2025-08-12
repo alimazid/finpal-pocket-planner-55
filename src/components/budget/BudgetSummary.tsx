@@ -66,6 +66,7 @@ interface BudgetSummaryProps {
   transactions?: Transaction[];
   language: 'english' | 'spanish';
   onAddBudget?: (category: string, amount: number) => void;
+  onDeleteBudget?: (id: string) => void;
   onDeleteTransaction?: (id: string) => void;
   onUpdateTransaction?: (id: string, amount: number) => void;
   onUpdateTransactionCategory?: (id: string, category: string | null) => void;
@@ -82,6 +83,7 @@ export function BudgetSummary({
   transactions = [],
   language, 
   onAddBudget, 
+  onDeleteBudget,
   onDeleteTransaction,
   onUpdateTransaction,
   onUpdateTransactionCategory,
@@ -615,6 +617,34 @@ export function BudgetSummary({
                     }
                   </div>
                 </div>
+                {budgetId && onDeleteBudget && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive hover:text-destructive ml-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Budget</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete the budget for "{title}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDeleteBudget(budgetId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
               
               {/* Progress Bar */}

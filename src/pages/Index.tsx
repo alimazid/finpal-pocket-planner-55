@@ -689,6 +689,7 @@ const Index = () => {
           transactions={transactions}
           language={selectedLanguage as 'english' | 'spanish'} 
           onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })}
+          onDeleteBudget={(id) => deleteBudgetMutation.mutate(id)}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
           onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
           onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
