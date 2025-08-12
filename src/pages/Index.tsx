@@ -15,12 +15,11 @@ import { UncategorizedTransactions } from "@/components/transactions/Uncategoriz
 import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
 import { ExchangeRateSync } from "@/components/exchange/ExchangeRateSync";
 
-import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu } from "lucide-react";
+import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { LogOut, Trash2, Languages } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -667,6 +666,15 @@ const Index = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Uncategorized Transactions */}
+        <UncategorizedTransactions
+          transactions={transactions}
+          availableCategories={budgets.sort((a, b) => a.sort_order - b.sort_order).map(budget => budget.category)}
+          onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
+          onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
+          language={selectedLanguage as 'english' | 'spanish'}
+        />
+
         {/* Budget Period Navigator */}
         <BudgetPeriodNavigator
           currentPeriod={currentBudgetPeriod}
