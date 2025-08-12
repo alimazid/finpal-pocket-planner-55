@@ -607,12 +607,6 @@ export function BudgetSummary({
                 } as React.CSSProperties}
               />
               
-              {/* Over Budget Warning */}
-              {isOverBudget && (
-                <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
-                  {t('overBudgetBy')} {formatCurrency(spent - amount, currency)}
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
