@@ -572,12 +572,13 @@ export function BudgetSummary({
 
                 {/* Amount and progress info row */}
                 <div className="space-y-2">
+                  {/* Remaining/Over budget info - now on top and larger */}
                   <div className="flex items-center justify-between">
-                    <div className="text-lg font-semibold">
-                      <span className={budgetStatus.textClasses}>
-                        {formatCurrency(spent, currency)}
-                      </span>
-                      <span className="text-muted-foreground text-sm"> / {formatCurrency(amount, currency)}</span>
+                    <div className={`text-lg font-semibold ${budgetStatus.textClasses}`}>
+                      {isOverBudget ? 
+                        `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
+                        `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
+                      }
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-muted-foreground">
@@ -586,12 +587,12 @@ export function BudgetSummary({
                     </div>
                   </div>
                   
-                  {/* Remaining/Over budget info */}
-                  <div className={`text-sm font-medium ${budgetStatus.textClasses}`}>
-                    {isOverBudget ? 
-                      `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
-                      `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
-                    }
+                  {/* Spent/Total amounts - now on bottom and smaller */}
+                  <div className="text-sm">
+                    <span className={budgetStatus.textClasses}>
+                      {formatCurrency(spent, currency)}
+                    </span>
+                    <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
                   </div>
                 </div>
               </div>
