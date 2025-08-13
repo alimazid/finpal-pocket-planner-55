@@ -428,7 +428,6 @@ export function BudgetSummary({
           spent={budget.spent}
           amount={budget.amount}
           currency={budget.currency}
-          showIcon={false}
           budgetId={budget.id}
           isClickable={true}
           categoryTransactions={categoryTransactions}
@@ -444,7 +443,6 @@ export function BudgetSummary({
     spent, 
     amount, 
     currency, 
-    showIcon = true, 
     className = "",
     budgetId,
     isClickable = false,
@@ -455,7 +453,6 @@ export function BudgetSummary({
     spent: number;
     amount: number;
     currency: string;
-    showIcon?: boolean;
     className?: string;
     budgetId?: string;
     isClickable?: boolean;
@@ -524,9 +521,6 @@ export function BudgetSummary({
                         <div className="w-1 h-1 bg-current rounded-full"></div>
                       </div>
                     </div>
-                  )}
-                  {showIcon && (
-                    <div className="w-3 h-3 rounded-full flex-shrink-0 bg-primary" />
                   )}
                   {editingBudgetId === budgetId && budgetId ? (
                     <div 
@@ -600,51 +594,53 @@ export function BudgetSummary({
                     </span>
                   )}
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium">
-                    <span className={budgetStatus.textClasses}>
-                      {formatCurrency(spent, currency)}
-                    </span>
-                    <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-sm font-medium">
+                      <span className={budgetStatus.textClasses}>
+                        {formatCurrency(spent, currency)}
+                      </span>
+                      <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {percentage.toFixed(0)}% {t('used')}
+                    </div>
+                    <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
+                      {isOverBudget ? 
+                        `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
+                        `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
+                      }
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {percentage.toFixed(0)}% {t('used')}
-                  </div>
-                  <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
-                    {isOverBudget ? 
-                      `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
-                      `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
-                    }
-                  </div>
+                  {budgetId && onDeleteBudget && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-destructive hover:text-destructive flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Budget</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete the budget for "{title}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDeleteBudget(budgetId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
-                {budgetId && onDeleteBudget && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-destructive hover:text-destructive ml-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Budget</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete the budget for "{title}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDeleteBudget(budgetId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
               </div>
               
               {/* Progress Bar */}
@@ -779,7 +775,6 @@ export function BudgetSummary({
           spent={totalSpent}
           amount={totalBudget}
           currency={primaryCurrency}
-          showIcon={false}
         />
 
         {/* Individual Budget Cards */}
