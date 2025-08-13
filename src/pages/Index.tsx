@@ -6,10 +6,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
-import { BudgetCard } from "@/components/budget/BudgetCard";
 import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { BudgetPeriodNavigator } from "@/components/budget/BudgetPeriodNavigator";
-import { AddBudgetCard } from "@/components/budget/AddBudgetCard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
@@ -719,26 +717,6 @@ const Index = () => {
           />
         </div>
 
-        {/* Budget Overview */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-foreground">{t('budgetDetails')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {budgets.map((budget) => (
-              <BudgetCard
-                key={budget.id}
-                category={budget.category}
-                spent={budget.spent}
-                budget={budget.amount}
-                currency={budget.currency}
-                transactions={transactions.filter(t => t.category === budget.category && t.type === 'expense')}
-                onBudgetUpdate={(newBudget) => updateBudgetMutation.mutate({ budgetId: budget.id, amount: newBudget })}
-                onCategoryUpdate={(newCategory) => updateCategoryMutation.mutate({ budgetId: budget.id, newCategory })}
-                onDelete={() => deleteBudgetMutation.mutate(budget.id)}
-              />
-            ))}
-            <AddBudgetCard onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })} />
-          </div>
-        </div>
 
       </div>
     </div>
