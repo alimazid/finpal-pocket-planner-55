@@ -584,34 +584,6 @@ export function BudgetSummary({
                       <Edit className="h-4 w-4" />
                     </Button>
                   )}
-                  {budgetId && onDeleteBudget && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-destructive hover:text-destructive flex-shrink-0"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Budget</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete the budget for "{title}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => onDeleteBudget(budgetId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
                 </div>
               </div>
               
@@ -861,11 +833,43 @@ export function BudgetSummary({
               />
             </div>
             
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleEditCancel}>
-                {t('cancel')}
-              </Button>
-              <Button type="submit">{t('updateBudget')}</Button>
+            <DialogFooter className="flex justify-between">
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handleEditCancel}>
+                  {t('cancel')}
+                </Button>
+                <Button type="submit">{t('updateBudget')}</Button>
+              </div>
+              {editingBudget && onDeleteBudget && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" type="button">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {t('deleteBudget')}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t('deleteBudget')}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('deleteBudgetConfirm')} "{editingBudget.category}"? {t('actionCannotBeUndoneSimple')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => {
+                          onDeleteBudget(editingBudget.id);
+                          handleEditCancel();
+                        }} 
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {t('delete')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>
