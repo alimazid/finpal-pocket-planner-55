@@ -525,57 +525,41 @@ export function BudgetSummary({
           <CardContent className="p-4">
             <div className="space-y-3">
               {/* Category Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {dragListeners && (
-                    <div
-                      {...dragListeners}
-                      className="flex items-center justify-center w-8 h-full cursor-grab hover:cursor-grabbing active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors hover:bg-muted/20 rounded px-1 select-none touch-manipulation"
-                      title="Drag to reorder"
-                      style={{ touchAction: 'none' }}
-                    >
-                      <div className="flex flex-col gap-1">
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
-                        <div className="w-1 h-1 bg-current rounded-full"></div>
+              <div className="space-y-3">
+                {/* Top row: Category name and edit button */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {dragListeners && (
+                      <div
+                        {...dragListeners}
+                        className="flex items-center justify-center w-8 h-full cursor-grab hover:cursor-grabbing active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors hover:bg-muted/20 rounded px-1 select-none touch-manipulation flex-shrink-0"
+                        title="Drag to reorder"
+                        style={{ touchAction: 'none' }}
+                      >
+                        <div className="flex flex-col gap-1">
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                          <div className="w-1 h-1 bg-current rounded-full"></div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <span className="font-medium text-foreground">
-                    {title}
-                  </span>
-                  {isClickable && (
-                    <span className="text-xs text-muted-foreground">
-                      ({categoryTransactions.length})
+                    )}
+                    <span className="font-medium text-foreground truncate">
+                      {title}
                     </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="text-sm font-medium">
-                      <span className={budgetStatus.textClasses}>
-                        {formatCurrency(spent, currency)}
+                    {isClickable && (
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        ({categoryTransactions.length})
                       </span>
-                      <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {percentage.toFixed(0)}% {t('used')}
-                    </div>
-                    <div className={`text-xs font-medium ${budgetStatus.textClasses}`}>
-                      {isOverBudget ? 
-                        `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
-                        `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
-                      }
-                    </div>
+                    )}
                   </div>
                   {budget && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                      className="text-muted-foreground hover:text-foreground flex-shrink-0 ml-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditBudget(budget);
@@ -584,6 +568,31 @@ export function BudgetSummary({
                       <Edit className="h-4 w-4" />
                     </Button>
                   )}
+                </div>
+
+                {/* Amount and progress info row */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-lg font-semibold">
+                      <span className={budgetStatus.textClasses}>
+                        {formatCurrency(spent, currency)}
+                      </span>
+                      <span className="text-muted-foreground text-sm"> / {formatCurrency(amount, currency)}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">
+                        {percentage.toFixed(0)}% {t('used')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Remaining/Over budget info */}
+                  <div className={`text-sm font-medium ${budgetStatus.textClasses}`}>
+                    {isOverBudget ? 
+                      `${formatCurrency(spent - amount, currency)} ${t('overBudget')}` :
+                      `${formatCurrency(amount - spent, currency)} ${t('remaining')}`
+                    }
+                  </div>
                 </div>
               </div>
               
