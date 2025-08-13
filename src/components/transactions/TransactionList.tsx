@@ -124,6 +124,33 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
 
   return (
     <div className="space-y-2">
+      {/* Add Transaction Card - Moved to top */}
+      {onAddExpense && availableCategories && (
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <div className="flex items-center justify-center p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30 min-h-[80px]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Plus className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-base font-medium text-muted-foreground">{t('addTransaction')}</span>
+              </div>
+            </div>
+          </DialogTrigger>
+          
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>{t('addNewExpense')}</DialogTitle>
+              <DialogDescription>
+                {t('trackSpending')}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} language={language} />
+          </DialogContent>
+        </Dialog>
+      )}
+
       {transactions.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground bg-gradient-card rounded-lg">
           <DollarSign className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -259,33 +286,6 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
             </div>
           </div>
         ))
-      )}
-      
-      {/* Add Transaction Card */}
-      {onAddExpense && availableCategories && (
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <div className="flex items-center justify-center p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30 min-h-[80px]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Plus className="h-5 w-5 text-primary" />
-                </div>
-                <span className="text-base font-medium text-muted-foreground">{t('addTransaction')}</span>
-              </div>
-            </div>
-          </DialogTrigger>
-          
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>{t('addNewExpense')}</DialogTitle>
-              <DialogDescription>
-                {t('trackSpending')}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} language={language} />
-          </DialogContent>
-        </Dialog>
       )}
     </div>
   );
