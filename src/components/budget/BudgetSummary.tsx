@@ -29,6 +29,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { AddBudgetCard } from './AddBudgetCard';
 
 interface Budget {
   id: string;
@@ -40,6 +41,8 @@ interface Budget {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  period_start: string;
+  period_end: string;
 }
 
 interface BudgetPeriod {
@@ -65,7 +68,7 @@ interface BudgetSummaryProps {
   budgets: Budget[];
   transactions?: Transaction[];
   language: 'english' | 'spanish';
-  onAddBudget?: (category: string, amount: number) => void;
+  onAddBudget?: (category: string, amount: number, periodStart?: string, periodEnd?: string) => void;
   onDeleteBudget?: (id: string) => void;
   onDeleteTransaction?: (id: string) => void;
   onUpdateTransaction?: (id: string, amount: number) => void;
@@ -97,9 +100,6 @@ export function BudgetSummary({
   cutoffDay = 1 
 }: BudgetSummaryProps) {
   const { t } = useTranslation(language);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [category, setCategory] = useState("");
-  const [amount, setAmount] = useState("");
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
@@ -231,22 +231,6 @@ export function BudgetSummary({
     return Math.min((spentNum / amountNum) * 100, 100);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (category.trim() && amount && parseFloat(amount) > 0 && onAddBudget) {
-      onAddBudget(category.trim(), parseFloat(amount));
-      setCategory("");
-      setAmount("");
-      setIsAddDialogOpen(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setCategory("");
-    setAmount("");
-    setIsAddDialogOpen(false);
-  };
 
   const handleEditBudget = (budget: Budget) => {
     setEditingBudget(budget);
@@ -650,63 +634,12 @@ export function BudgetSummary({
           </CardContent>
         </Card>
         
-        {/* Add Budget Card - matches Add Transaction style */}
+        {/* Add Budget Card */}
         {onAddBudget && (
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <div className="flex items-center justify-center p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30 min-h-[80px]">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Plus className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-base font-medium text-muted-foreground">{t('addBudget')}</span>
-                </div>
-              </div>
-            </DialogTrigger>
-            
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{t('addNewBudget')}</DialogTitle>
-                <DialogDescription>
-                  {t('createBudgetCategory')}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category">{t('budgetName')}</Label>
-                  <Input
-                    id="category"
-                    placeholder={t('budgetNamePlaceholder')}
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="amount">{t('budgetAmount')} ($)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder={t('budgetAmountPlaceholder')}
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-                </div>
-                
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={handleCancel}>
-                    {t('cancel')}
-                  </Button>
-                  <Button type="submit">{t('addBudget')}</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <AddBudgetCard 
+            onAddBudget={onAddBudget}
+            currentPeriod={currentPeriod}
+          />
         )}
       </>
     );
@@ -750,61 +683,12 @@ export function BudgetSummary({
       
       {/* Add Budget Card - always available when there are budgets */}
       {onAddBudget && (
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <div className="flex items-center justify-center p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 cursor-pointer transition-all duration-200 bg-gradient-card hover:bg-muted/30 min-h-[80px] mt-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Plus className="h-5 w-5 text-primary" />
-                </div>
-                <span className="text-base font-medium text-muted-foreground">{t('addBudget')}</span>
-              </div>
-            </div>
-          </DialogTrigger>
-          
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{t('addNewBudget')}</DialogTitle>
-              <DialogDescription>
-                {t('createBudgetCategory')}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="category-existing">{t('budgetName')}</Label>
-                <Input
-                  id="category-existing"
-                  placeholder={t('budgetNamePlaceholder')}
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="amount-existing">{t('budgetAmount')} ($)</Label>
-                <Input
-                  id="amount-existing"
-                  type="number"
-                  placeholder={t('budgetAmountPlaceholder')}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  step="0.01"
-                  min="0"
-                  required
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                  {t('cancel')}
-                </Button>
-                <Button type="submit">{t('addBudget')}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="mt-4">
+          <AddBudgetCard 
+            onAddBudget={onAddBudget}
+            currentPeriod={currentPeriod}
+          />
+        </div>
       )}
 
       {/* Edit Budget Dialog */}

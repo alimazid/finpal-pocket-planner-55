@@ -47,6 +47,8 @@ interface Budget {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  period_start: string;
+  period_end: string;
 }
 
 const Index = () => {
@@ -90,14 +92,19 @@ const Index = () => {
   const [currentBudgetPeriod, setCurrentBudgetPeriod] = useState<BudgetPeriod>(getCurrentPeriod());
   const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
 
-  // Fetch budgets
+  // Fetch budgets filtered by current period
   const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
-    queryKey: ['budgets', user?.id],
+    queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()],
     queryFn: async () => {
+      const startDateStr = currentBudgetPeriod.startDate.toISOString().split('T')[0];
+      const endDateStr = currentBudgetPeriod.endDate.toISOString().split('T')[0];
+      
       const { data, error } = await supabase
         .from('budgets')
         .select('*')
         .eq('user_id', user!.id)
+        .eq('period_start', startDateStr)
+        .eq('period_end', endDateStr)
         .order('sort_order', { ascending: true });
       
       if (error) throw error;
@@ -150,7 +157,7 @@ const Index = () => {
     },
     onSuccess: (newTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
 
       toast({
         title: "Expense Added",
@@ -168,12 +175,22 @@ const Index = () => {
 
   // Add budget mutation
   const addBudgetMutation = useMutation({
-    mutationFn: async ({ category, amount }: { category: string; amount: number }) => {
-      // Get the highest sort_order for this user to append new budget at the end
+    mutationFn: async ({ category, amount, periodStart, periodEnd }: { 
+      category: string; 
+      amount: number; 
+      periodStart?: string;
+      periodEnd?: string;
+    }) => {
+      const startDate = periodStart || currentBudgetPeriod.startDate.toISOString().split('T')[0];
+      const endDate = periodEnd || currentBudgetPeriod.endDate.toISOString().split('T')[0];
+      
+      // Get the highest sort_order for this user and period to append new budget at the end
       const { data: maxSortOrder } = await supabase
         .from('budgets')
         .select('sort_order')
         .eq('user_id', user!.id)
+        .eq('period_start', startDate)
+        .eq('period_end', endDate)
         .order('sort_order', { ascending: false })
         .limit(1)
         .single();
@@ -188,6 +205,8 @@ const Index = () => {
           amount,
           spent: 0,
           sort_order: nextSortOrder,
+          period_start: startDate,
+          period_end: endDate,
         }])
         .select()
         .single();
@@ -196,7 +215,7 @@ const Index = () => {
       return data;
     },
     onSuccess: (newBudget) => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
       toast({
         title: "Budget Created",
         description: `Budget for ${newBudget.category} ($${newBudget.amount.toFixed(2)}) has been added`,
@@ -227,7 +246,7 @@ const Index = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
     },
   });
 
@@ -255,7 +274,7 @@ const Index = () => {
     onSuccess: ({ budget }) => {
       const relatedTransactions = transactions?.filter(t => t.category === budget.category) || [];
       
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
 
       toast({
@@ -280,7 +299,7 @@ const Index = () => {
     },
     onSuccess: (transaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
 
       toast({
         title: "Transaction Deleted",
@@ -304,7 +323,7 @@ const Index = () => {
     },
     onSuccess: (updatedTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
 
       toast({
         title: "Transaction Updated",
@@ -328,7 +347,7 @@ const Index = () => {
     },
     onSuccess: (updatedTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
 
       toast({
         title: "Category Updated",
@@ -362,7 +381,7 @@ const Index = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
     },
   });
@@ -386,7 +405,7 @@ const Index = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
     },
   });
 
@@ -403,7 +422,7 @@ const Index = () => {
     },
     onSuccess: (transactionCount) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
 
       toast({
         title: "All Transactions Cleared",
@@ -431,7 +450,7 @@ const Index = () => {
       return budgets.length;
     },
     onSuccess: (budgetCount) => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
 
       toast({
@@ -686,7 +705,7 @@ const Index = () => {
           budgets={budgets} 
           transactions={transactions}
           language={selectedLanguage as 'english' | 'spanish'} 
-          onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })}
+          onAddBudget={(category, amount, periodStart, periodEnd) => addBudgetMutation.mutate({ category, amount, periodStart, periodEnd })}
           onDeleteBudget={(id) => deleteBudgetMutation.mutate(id)}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
           onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}

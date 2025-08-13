@@ -21,6 +21,8 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          period_end: string
+          period_start: string
           sort_order: number
           spent: number
           updated_at: string
@@ -32,6 +34,8 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          period_end?: string
+          period_start?: string
           sort_order?: number
           spent?: number
           updated_at?: string
@@ -43,6 +47,8 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          period_end?: string
+          period_start?: string
           sort_order?: number
           spent?: number
           updated_at?: string
