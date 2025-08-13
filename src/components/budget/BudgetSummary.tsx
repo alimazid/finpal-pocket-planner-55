@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BarChart3, Plus, Check, X, Trash2 } from "lucide-react";
+import { BarChart3, Plus, Check, X, Trash2, Edit } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -71,6 +71,7 @@ interface BudgetSummaryProps {
   onUpdateTransaction?: (id: string, amount: number) => void;
   onUpdateTransactionCategory?: (id: string, category: string | null) => void;
   onUpdateBudgetCategory?: (id: string, category: string) => void;
+  onUpdateBudgetAmount?: (id: string, amount: number) => void;
   onUpdateBudgetOrder?: (budgets: Budget[]) => void;
   availableCategories?: string[];
   currentPeriod?: BudgetPeriod;
@@ -88,6 +89,7 @@ export function BudgetSummary({
   onUpdateTransaction,
   onUpdateTransactionCategory,
   onUpdateBudgetCategory,
+  onUpdateBudgetAmount,
   onUpdateBudgetOrder,
   availableCategories = [],
   currentPeriod,
@@ -99,8 +101,10 @@ export function BudgetSummary({
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
-  const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
-  const [editBudgetCategory, setEditBudgetCategory] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [editCategory, setEditCategory] = useState("");
+  const [editAmount, setEditAmount] = useState("");
   const [optimisticBudgets, setOptimisticBudgets] = useState<Budget[] | null>(null);
 
   // Clear optimistic state when budgets prop updates (after database sync)
@@ -242,6 +246,39 @@ export function BudgetSummary({
     setCategory("");
     setAmount("");
     setIsAddDialogOpen(false);
+  };
+
+  const handleEditBudget = (budget: Budget) => {
+    setEditingBudget(budget);
+    setEditCategory(budget.category);
+    setEditAmount(budget.amount.toString());
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editingBudget && editCategory.trim() && editAmount && parseFloat(editAmount) > 0) {
+      // Update category if changed
+      if (editCategory.trim() !== editingBudget.category && onUpdateBudgetCategory) {
+        onUpdateBudgetCategory(editingBudget.id, editCategory.trim());
+      }
+      
+      // Update amount if changed
+      const newAmount = parseFloat(editAmount);
+      if (newAmount !== editingBudget.amount && onUpdateBudgetAmount) {
+        onUpdateBudgetAmount(editingBudget.id, newAmount);
+      }
+      
+      handleEditCancel();
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingBudget(null);
+    setEditCategory("");
+    setEditAmount("");
+    setEditDialogOpen(false);
   };
 
   const totalSpent = budgets.reduce((sum, budget) => sum + budget.spent, 0);
@@ -429,6 +466,7 @@ export function BudgetSummary({
           amount={budget.amount}
           currency={budget.currency}
           budgetId={budget.id}
+          budget={budget}
           isClickable={true}
           categoryTransactions={categoryTransactions}
           dragListeners={listeners}
@@ -445,6 +483,7 @@ export function BudgetSummary({
     currency, 
     className = "",
     budgetId,
+    budget,
     isClickable = false,
     categoryTransactions = [],
     dragListeners
@@ -455,6 +494,7 @@ export function BudgetSummary({
     currency: string;
     className?: string;
     budgetId?: string;
+    budget?: Budget;
     isClickable?: boolean;
     categoryTransactions?: Transaction[];
     dragListeners?: any;
@@ -463,24 +503,6 @@ export function BudgetSummary({
     const budgetStatus = getBudgetStatus(spent, amount);
     const isOverBudget = spent > amount;
     const isExpanded = budgetId && expandedBudgetId === budgetId;
-    const editContainerRef = useRef<HTMLDivElement>(null);
-
-    // Handle click outside to discard edit changes
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (editingBudgetId === budgetId && 
-            editContainerRef.current && 
-            !editContainerRef.current.contains(event.target as Node)) {
-          setEditingBudgetId(null);
-          setEditBudgetCategory("");
-        }
-      };
-
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [editingBudgetId, budgetId]);
 
     const handleCardClick = () => {
       if (!isClickable || !budgetId) return;
@@ -522,72 +544,9 @@ export function BudgetSummary({
                       </div>
                     </div>
                   )}
-                  {editingBudgetId === budgetId && budgetId ? (
-                    <div 
-                      ref={editContainerRef}
-                      className="flex items-center gap-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Input
-                        value={editBudgetCategory}
-                        onChange={(e) => setEditBudgetCategory(e.target.value)}
-                        className="h-6 text-sm font-medium"
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            if (editBudgetCategory.trim() && onUpdateBudgetCategory) {
-                              onUpdateBudgetCategory(budgetId, editBudgetCategory.trim());
-                            }
-                            setEditingBudgetId(null);
-                          }
-                          if (e.key === 'Escape') {
-                            setEditingBudgetId(null);
-                          }
-                        }}
-                        autoFocus
-                      />
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (editBudgetCategory.trim() && onUpdateBudgetCategory) {
-                            onUpdateBudgetCategory(budgetId, editBudgetCategory.trim());
-                          }
-                          setEditingBudgetId(null);
-                        }}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Check className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingBudgetId(null);
-                        }}
-                        className="h-6 w-6 p-0"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <span 
-                      className={`font-medium text-foreground ${
-                        budgetId && onUpdateBudgetCategory ? 'cursor-pointer hover:text-primary transition-colors' : ''
-                      }`}
-                      onClick={(e) => {
-                        if (budgetId && onUpdateBudgetCategory) {
-                          e.stopPropagation();
-                          setEditingBudgetId(budgetId);
-                          setEditBudgetCategory(title);
-                        }
-                      }}
-                    >
-                      {title}
-                    </span>
-                  )}
+                  <span className="font-medium text-foreground">
+                    {title}
+                  </span>
                   {isClickable && (
                     <span className="text-xs text-muted-foreground">
                       ({categoryTransactions.length})
@@ -612,6 +571,19 @@ export function BudgetSummary({
                       }
                     </div>
                   </div>
+                  {budget && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditBudget(budget);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
                   {budgetId && onDeleteBudget && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -852,6 +824,52 @@ export function BudgetSummary({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Edit Budget Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t('editBudget')}</DialogTitle>
+            <DialogDescription>
+              {t('updateBudgetDetails')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-category">{t('budgetName')}</Label>
+              <Input
+                id="edit-category"
+                placeholder={t('budgetNamePlaceholder')}
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-amount">{t('budgetAmount')} ($)</Label>
+              <Input
+                id="edit-amount"
+                type="number"
+                placeholder={t('budgetAmountPlaceholder')}
+                value={editAmount}
+                onChange={(e) => setEditAmount(e.target.value)}
+                step="0.01"
+                min="0"
+                required
+              />
+            </div>
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleEditCancel}>
+                {t('cancel')}
+              </Button>
+              <Button type="submit">{t('updateBudget')}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
