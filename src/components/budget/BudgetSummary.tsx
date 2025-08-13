@@ -71,6 +71,7 @@ interface BudgetSummaryProps {
   onUpdateTransaction?: (id: string, amount: number) => void;
   onUpdateTransactionCategory?: (id: string, category: string | null) => void;
   onUpdateBudgetCategory?: (id: string, category: string) => void;
+  onUpdateBudgetAmount?: (id: string, amount: number) => void;
   onUpdateBudgetOrder?: (budgets: Budget[]) => void;
   availableCategories?: string[];
   currentPeriod?: BudgetPeriod;
@@ -88,6 +89,7 @@ export function BudgetSummary({
   onUpdateTransaction,
   onUpdateTransactionCategory,
   onUpdateBudgetCategory,
+  onUpdateBudgetAmount,
   onUpdateBudgetOrder,
   availableCategories = [],
   currentPeriod,
@@ -101,6 +103,8 @@ export function BudgetSummary({
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const [editBudgetCategory, setEditBudgetCategory] = useState("");
+  const [editingAmountBudgetId, setEditingAmountBudgetId] = useState<string | null>(null);
+  const [editBudgetAmount, setEditBudgetAmount] = useState("");
   const [optimisticBudgets, setOptimisticBudgets] = useState<Budget[] | null>(null);
 
   // Clear optimistic state when budgets prop updates (after database sync)
@@ -464,6 +468,7 @@ export function BudgetSummary({
     const isOverBudget = spent > amount;
     const isExpanded = budgetId && expandedBudgetId === budgetId;
     const editContainerRef = useRef<HTMLDivElement>(null);
+    const editAmountContainerRef = useRef<HTMLDivElement>(null);
 
     // Handle click outside to discard edit changes
     useEffect(() => {
@@ -474,13 +479,19 @@ export function BudgetSummary({
           setEditingBudgetId(null);
           setEditBudgetCategory("");
         }
+        if (editingAmountBudgetId === budgetId && 
+            editAmountContainerRef.current && 
+            !editAmountContainerRef.current.contains(event.target as Node)) {
+          setEditingAmountBudgetId(null);
+          setEditBudgetAmount("");
+        }
       };
 
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
-    }, [editingBudgetId, budgetId]);
+    }, [editingBudgetId, editingAmountBudgetId, budgetId]);
 
     const handleCardClick = () => {
       if (!isClickable || !budgetId) return;
@@ -600,7 +611,78 @@ export function BudgetSummary({
                       <span className={budgetStatus.textClasses}>
                         {formatCurrency(spent, currency)}
                       </span>
-                      <span className="text-muted-foreground"> / {formatCurrency(amount, currency)}</span>
+                      <span className="text-muted-foreground"> / </span>
+                      {editingAmountBudgetId === budgetId && budgetId ? (
+                        <div 
+                          ref={editAmountContainerRef}
+                          className="inline-flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Input
+                            value={editBudgetAmount}
+                            onChange={(e) => setEditBudgetAmount(e.target.value)}
+                            className="h-6 w-20 text-sm font-medium text-right"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const newAmount = parseFloat(editBudgetAmount);
+                                if (newAmount > 0 && onUpdateBudgetAmount) {
+                                  onUpdateBudgetAmount(budgetId, newAmount);
+                                }
+                                setEditingAmountBudgetId(null);
+                              }
+                              if (e.key === 'Escape') {
+                                setEditingAmountBudgetId(null);
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newAmount = parseFloat(editBudgetAmount);
+                              if (newAmount > 0 && onUpdateBudgetAmount) {
+                                onUpdateBudgetAmount(budgetId, newAmount);
+                              }
+                              setEditingAmountBudgetId(null);
+                            }}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingAmountBudgetId(null);
+                            }}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span 
+                          className={`font-medium ${
+                            budgetId && onUpdateBudgetAmount ? 'cursor-pointer hover:text-primary transition-colors' : ''
+                          }`}
+                          onClick={(e) => {
+                            if (budgetId && onUpdateBudgetAmount) {
+                              e.stopPropagation();
+                              setEditingAmountBudgetId(budgetId);
+                              setEditBudgetAmount(amount.toString());
+                            }
+                          }}
+                        >
+                          {formatCurrency(amount, currency)}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {percentage.toFixed(0)}% {t('used')}

@@ -694,6 +694,7 @@ const Index = () => {
           onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
           onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
           onUpdateBudgetCategory={(id, category) => updateCategoryMutation.mutate({ budgetId: id, newCategory: category })}
+          onUpdateBudgetAmount={(id, amount) => updateBudgetMutation.mutate({ budgetId: id, amount })}
           onUpdateBudgetOrder={(budgets) => updateBudgetOrderMutation.mutate(budgets)}
           availableCategories={budgets.sort((a, b) => a.sort_order - b.sort_order).map(budget => budget.category)}
           currentPeriod={currentBudgetPeriod}
