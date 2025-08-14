@@ -12,8 +12,9 @@ import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
 import { ExchangeRateSync } from "@/components/exchange/ExchangeRateSync";
+import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
 
-import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages } from "lucide-react";
+import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ const Index = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("spanish");
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
+  const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   
   // Budget period state
@@ -68,29 +70,80 @@ const Index = () => {
     isCurrentPeriod: boolean;
   }
   
-  const getCurrentPeriod = (cutoffDay: number = 1): BudgetPeriod => {
+  const getCurrentPeriod = (cutoffDay: number = 1, periodType: 'calendar_month' | 'specific_day' = 'calendar_month'): BudgetPeriod => {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
     
-    let startDate = new Date(year, month, cutoffDay);
-    if (now.getDate() < cutoffDay) {
-      startDate = new Date(year, month - 1, cutoffDay);
+    if (periodType === 'calendar_month') {
+      // Standard calendar month
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0); // Last day of current month
+      
+      return {
+        startDate,
+        endDate,
+        isCurrentPeriod: true
+      };
+    } else {
+      // Specific day periods
+      let startDate = new Date(year, month, cutoffDay);
+      if (now.getDate() < cutoffDay) {
+        startDate = new Date(year, month - 1, cutoffDay);
+      }
+      
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+      endDate.setDate(endDate.getDate() - 1);
+      
+      return {
+        startDate,
+        endDate,
+        isCurrentPeriod: true
+      };
     }
-    
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 1);
-    endDate.setDate(endDate.getDate() - 1);
-    
-    return {
-      startDate,
-      endDate,
-      isCurrentPeriod: true
-    };
   };
   
   const [currentBudgetPeriod, setCurrentBudgetPeriod] = useState<BudgetPeriod>(getCurrentPeriod());
+  const [userCutoffDay, setUserCutoffDay] = useState<number>(1);
+  const [userPeriodType, setUserPeriodType] = useState<'calendar_month' | 'specific_day'>('calendar_month');
   const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
+
+  // Fetch user preferences
+  const { data: userPreference } = useQuery({
+    queryKey: ['user-preference', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+        throw error;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Update period calculations when user preference changes
+  useEffect(() => {
+    if (userPreference) {
+      setUserCutoffDay(userPreference.specific_day);
+      setUserPeriodType(userPreference.period_type as 'calendar_month' | 'specific_day');
+      setCurrentBudgetPeriod(getCurrentPeriod(userPreference.specific_day, userPreference.period_type as 'calendar_month' | 'specific_day'));
+    }
+  }, [userPreference]);
+
+  const handlePreferenceChange = (preference: { period_type: 'calendar_month' | 'specific_day'; specific_day: number }) => {
+    setUserCutoffDay(preference.specific_day);
+    setUserPeriodType(preference.period_type);
+    setCurrentBudgetPeriod(getCurrentPeriod(preference.specific_day, preference.period_type));
+  };
 
   // Fetch budgets filtered by current period
   const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
@@ -624,16 +677,24 @@ const Index = () => {
                     </AlertDialogContent>
                   </AlertDialog>
 
-                  <Dialog open={isTranslationOpen} onOpenChange={setIsTranslationOpen}>
-                    <DialogTrigger asChild>
-                      <DropdownMenuItem 
-                        onSelect={(e) => e.preventDefault()}
-                        className="cursor-pointer"
-                      >
-                        <Languages className="w-4 h-4 mr-2" />
-                        {t('selectLanguage')}
-                      </DropdownMenuItem>
-                    </DialogTrigger>
+                   <DropdownMenuItem 
+                     onClick={() => setIsPeriodSelectionOpen(true)}
+                     className="cursor-pointer"
+                   >
+                     <Settings className="w-4 h-4 mr-2" />
+                     Period Selection
+                   </DropdownMenuItem>
+
+                   <Dialog open={isTranslationOpen} onOpenChange={setIsTranslationOpen}>
+                     <DialogTrigger asChild>
+                       <DropdownMenuItem 
+                         onSelect={(e) => e.preventDefault()}
+                         className="cursor-pointer"
+                       >
+                         <Languages className="w-4 h-4 mr-2" />
+                         {t('selectLanguage')}
+                       </DropdownMenuItem>
+                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader>
                         <DialogTitle>{t('selectLanguage')}</DialogTitle>
@@ -697,7 +758,7 @@ const Index = () => {
           currentPeriod={currentBudgetPeriod}
           onPeriodChange={setCurrentBudgetPeriod}
           language={selectedLanguage as 'english' | 'spanish'}
-          cutoffDay={1}
+          cutoffDay={userCutoffDay}
         />
 
         {/* Budget Summary */}
@@ -716,7 +777,7 @@ const Index = () => {
           availableCategories={budgets.sort((a, b) => a.sort_order - b.sort_order).map(budget => budget.category)}
           currentPeriod={currentBudgetPeriod}
           onPeriodChange={setCurrentBudgetPeriod}
-          cutoffDay={1}
+          cutoffDay={userCutoffDay}
         />
 
         {/* Recent Transactions */}
@@ -736,6 +797,15 @@ const Index = () => {
           />
         </div>
 
+        {/* Period Selection Modal */}
+        {user && (
+          <PeriodSelectionModal
+            open={isPeriodSelectionOpen}
+            onOpenChange={setIsPeriodSelectionOpen}
+            userId={user.id}
+            onPreferenceChange={handlePreferenceChange}
+          />
+        )}
 
       </div>
     </div>
