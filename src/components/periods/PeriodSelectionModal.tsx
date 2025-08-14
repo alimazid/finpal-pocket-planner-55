@@ -69,14 +69,32 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceC
         .single();
 
       if (error) throw error;
+
+      // Recalculate existing budgets with new period settings
+      const recalculateResponse = await supabase.functions.invoke('recalculate-user-budgets', {
+        body: {
+          userId: userId,
+          periodType: preference.period_type,
+          specificDay: preference.specific_day
+        }
+      });
+
+      if (recalculateResponse.error) {
+        console.error('Error recalculating budgets:', recalculateResponse.error);
+        throw new Error('Failed to recalculate existing budgets');
+      }
+
+      console.log('Budget recalculation result:', recalculateResponse.data);
+
       return data as UserPreference;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user-preference', userId] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] }); // Invalidate budgets to refresh UI
       onPreferenceChange(data);
       toast({
         title: "Period Settings Saved",
-        description: "Your period preferences have been updated successfully.",
+        description: "Your period preferences and existing budgets have been updated successfully.",
       });
       onOpenChange(false);
     },
