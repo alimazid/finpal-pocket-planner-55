@@ -64,6 +64,8 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceC
           user_id: userId,
           period_type: preference.period_type,
           specific_day: preference.specific_day,
+        }, {
+          onConflict: 'user_id'
         })
         .select()
         .single();

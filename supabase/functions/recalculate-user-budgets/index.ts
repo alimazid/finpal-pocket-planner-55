@@ -21,6 +21,7 @@ interface Budget {
   created_at: string
   period_start: string
   period_end: string
+  user_id: string
 }
 
 function calculatePeriodDates(
@@ -80,7 +81,7 @@ serve(async (req) => {
     // Get all budgets for the user
     const { data: budgets, error: budgetsError } = await supabase
       .from('budgets')
-      .select('*')
+      .select('id, category, amount, currency, sort_order, created_at, period_start, period_end, user_id')
       .eq('user_id', userId)
 
     if (budgetsError) {
@@ -120,6 +121,43 @@ serve(async (req) => {
         console.error(`Error updating budget ${budget.id}:`, updateError)
         throw updateError
       }
+
+      // Recalculate spent amount for the new period
+      const { data: transactions, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('amount, currency')
+        .eq('user_id', budget.user_id)
+        .eq('category', budget.category)
+        .eq('type', 'expense')
+        .gte('date', periodStart)
+        .lte('date', periodEnd)
+
+      if (transactionsError) {
+        console.error(`Error fetching transactions for budget ${budget.id}:`, transactionsError)
+        throw transactionsError
+      }
+
+      // Calculate total spent with currency conversion
+      let totalSpent = 0
+      for (const transaction of transactions || []) {
+        // For now, assume same currency. TODO: Add currency conversion if needed
+        if (transaction.currency === budget.currency) {
+          totalSpent += transaction.amount
+        }
+      }
+
+      // Update the spent amount
+      const { error: spentUpdateError } = await supabase
+        .from('budgets')
+        .update({ spent: totalSpent })
+        .eq('id', budget.id)
+
+      if (spentUpdateError) {
+        console.error(`Error updating spent amount for budget ${budget.id}:`, spentUpdateError)
+        throw spentUpdateError
+      }
+
+      console.log(`Updated budget ${budget.id} spent amount to ${totalSpent}`)
 
       return budget.id
     })

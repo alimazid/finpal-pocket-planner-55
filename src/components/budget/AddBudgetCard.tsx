@@ -61,11 +61,11 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200 aspect-square cursor-pointer border-2 border-dashed border-muted-foreground/30 hover:border-primary/50">
-          <CardContent className="flex flex-col items-center justify-center h-full p-4">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Plus className="h-8 w-8 text-primary" />
+        <Card className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-200 cursor-pointer border-2 border-dashed border-muted-foreground/30 hover:border-primary/50">
+          <CardContent className="flex items-center justify-center p-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Plus className="h-5 w-5 text-primary" />
               </div>
               <span className="text-lg font-medium text-muted-foreground">Add Budget</span>
             </div>
