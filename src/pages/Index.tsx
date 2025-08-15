@@ -38,18 +38,27 @@ interface Transaction {
   updated_at: string;
 }
 
+interface BudgetCategory {
+  id: string;
+  user_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 interface Budget {
   id: string;
   user_id: string;
-  category: string;
+  budget_category_id: string;
   amount: number;
   spent: number;
   currency: string;
-  sort_order: number;
   created_at: string;
   updated_at: string;
   period_start: string;
   period_end: string;
+  budget_categories?: BudgetCategory;
 }
 
 const Index = () => {
@@ -145,7 +154,7 @@ const Index = () => {
     setCurrentBudgetPeriod(getCurrentPeriod(preference.specific_day, preference.period_type));
   };
 
-  // Fetch budgets filtered by current period
+  // Fetch budgets with categories filtered by current period
   const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
     queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()],
     queryFn: async () => {
@@ -154,11 +163,18 @@ const Index = () => {
       
       const { data, error } = await supabase
         .from('budgets')
-        .select('*')
+        .select(`
+          *,
+          budget_categories (
+            id,
+            name,
+            sort_order
+          )
+        `)
         .eq('user_id', user!.id)
         .eq('period_start', startDateStr)
         .eq('period_end', endDateStr)
-        .order('sort_order', { ascending: true });
+        .order('budget_categories(sort_order)', { ascending: true });
       
       if (error) throw error;
       return data as Budget[];
@@ -237,31 +253,66 @@ const Index = () => {
       const startDate = periodStart || currentBudgetPeriod.startDate.toISOString().split('T')[0];
       const endDate = periodEnd || currentBudgetPeriod.endDate.toISOString().split('T')[0];
       
-      // Get the highest sort_order for this user and period to append new budget at the end
-      const { data: maxSortOrder } = await supabase
-        .from('budgets')
-        .select('sort_order')
+      // First, create or get the budget category
+      let budgetCategory;
+      const { data: existingCategory, error: categorySelectError } = await supabase
+        .from('budget_categories')
+        .select('*')
         .eq('user_id', user!.id)
-        .eq('period_start', startDate)
-        .eq('period_end', endDate)
-        .order('sort_order', { ascending: false })
-        .limit(1)
+        .eq('name', category)
         .single();
+
+      if (categorySelectError && categorySelectError.code !== 'PGRST116') {
+        throw categorySelectError;
+      }
+
+      if (existingCategory) {
+        budgetCategory = existingCategory;
+      } else {
+        // Get the highest sort_order for this user to append new category at the end
+        const { data: maxSortOrder } = await supabase
+          .from('budget_categories')
+          .select('sort_order')
+          .eq('user_id', user!.id)
+          .order('sort_order', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        const nextSortOrder = ((maxSortOrder as any)?.sort_order || 0) + 1;
+        
+        const { data: newCategory, error: categoryInsertError } = await supabase
+          .from('budget_categories')
+          .insert([{
+            user_id: user!.id,
+            name: category,
+            sort_order: nextSortOrder,
+          }])
+          .select()
+          .single();
+        
+        if (categoryInsertError) throw categoryInsertError;
+        budgetCategory = newCategory;
+      }
       
-      const nextSortOrder = ((maxSortOrder as any)?.sort_order || 0) + 1;
-      
+      // Now create the budget
       const { data, error } = await supabase
         .from('budgets')
         .insert([{
           user_id: user!.id,
-          category,
+          budget_category_id: budgetCategory.id,
           amount,
           spent: 0,
-          sort_order: nextSortOrder,
           period_start: startDate,
           period_end: endDate,
         }])
-        .select()
+        .select(`
+          *,
+          budget_categories (
+            id,
+            name,
+            sort_order
+          )
+        `)
         .single();
       
       if (error) throw error;
@@ -271,14 +322,14 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
       toast({
         title: "Budget Created",
-        description: `Budget for ${newBudget.category} ($${newBudget.amount.toFixed(2)}) has been added`,
+        description: `Budget for ${newBudget.budget_categories?.name} ($${newBudget.amount.toFixed(2)}) has been added`,
       });
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message?.includes('unique_user_category') 
-          ? "A budget for this category already exists"
+        description: error.message?.includes('Budget periods cannot overlap') 
+          ? "A budget for this category already exists for this period"
           : "Failed to create budget",
         variant: "destructive",
       });
@@ -307,13 +358,14 @@ const Index = () => {
   const deleteBudgetMutation = useMutation({
     mutationFn: async (budgetId: string) => {
       const budget = budgets?.find(b => b.id === budgetId);
+      const categoryName = budget?.budget_categories?.name;
       
       // Delete related transactions first
       await supabase
         .from('transactions')
         .delete()
         .eq('user_id', user!.id)
-        .eq('category', budget!.category);
+        .eq('category', categoryName);
 
       // Delete budget
       const { error } = await supabase
@@ -322,17 +374,17 @@ const Index = () => {
         .eq('id', budgetId);
       
       if (error) throw error;
-      return { budget };
+      return { budget, categoryName };
     },
-    onSuccess: ({ budget }) => {
-      const relatedTransactions = transactions?.filter(t => t.category === budget.category) || [];
+    onSuccess: ({ budget, categoryName }) => {
+      const relatedTransactions = transactions?.filter(t => t.category === categoryName) || [];
       
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
 
       toast({
         title: "Budget Deleted",
-        description: `Budget for ${budget.category}${relatedTransactions.length > 0 ? ` and ${relatedTransactions.length} related transaction${relatedTransactions.length === 1 ? '' : 's'}` : ''} removed`,
+        description: `Budget for ${categoryName}${relatedTransactions.length > 0 ? ` and ${relatedTransactions.length} related transaction${relatedTransactions.length === 1 ? '' : 's'}` : ''} removed`,
       });
     },
   });
@@ -413,12 +465,13 @@ const Index = () => {
   const updateCategoryMutation = useMutation({
     mutationFn: async ({ budgetId, newCategory }: { budgetId: string; newCategory: string }) => {
       const budget = budgets?.find(b => b.id === budgetId);
+      const oldCategoryName = budget?.budget_categories?.name;
       
-      // Update budget category
+      // Update the budget category name
       const { data, error } = await supabase
-        .from('budgets')
-        .update({ category: newCategory })
-        .eq('id', budgetId)
+        .from('budget_categories')
+        .update({ name: newCategory })
+        .eq('id', budget!.budget_category_id)
         .select()
         .single();
       
@@ -429,7 +482,7 @@ const Index = () => {
         .from('transactions')
         .update({ category: newCategory })
         .eq('user_id', user!.id)
-        .eq('category', budget!.category);
+        .eq('category', oldCategoryName);
 
       return data;
     },
@@ -442,16 +495,16 @@ const Index = () => {
   // Update budget order mutation
   const updateBudgetOrderMutation = useMutation({
     mutationFn: async (budgets: Budget[]) => {
-      const updates = budgets.map(budget => ({
-        id: budget.id,
-        sort_order: budget.sort_order
+      const updates = budgets.map((budget, index) => ({
+        id: budget.budget_category_id,
+        sort_order: index
       }));
 
-      // Update all budgets with new sort order
+      // Update all budget categories with new sort order
       for (const update of updates) {
         const { error } = await supabase
-          .from('budgets')
-          .update({ sort_order: update.sort_order } as any)
+          .from('budget_categories')
+          .update({ sort_order: update.sort_order })
           .eq('id', update.id);
         
         if (error) throw error;
@@ -747,7 +800,7 @@ const Index = () => {
         {/* Uncategorized Transactions */}
         <UncategorizedTransactions
           transactions={transactions}
-          availableCategories={budgets.sort((a, b) => a.sort_order - b.sort_order).map(budget => budget.category)}
+          availableCategories={budgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0)).map(budget => budget.budget_categories?.name || '')}
           onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
           language={selectedLanguage as 'english' | 'spanish'}
@@ -775,7 +828,7 @@ const Index = () => {
           onUpdateBudgetCategory={(id, category) => updateCategoryMutation.mutate({ budgetId: id, newCategory: category })}
           onUpdateBudgetAmount={(id, amount) => updateBudgetMutation.mutate({ budgetId: id, amount })}
           onUpdateBudgetOrder={(budgets) => updateBudgetOrderMutation.mutate(budgets)}
-          availableCategories={budgets.sort((a, b) => a.sort_order - b.sort_order).map(budget => budget.category)}
+          availableCategories={budgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0)).map(budget => budget.budget_categories?.name || '')}
           currentPeriod={currentBudgetPeriod}
           onPeriodChange={setCurrentBudgetPeriod}
           cutoffDay={userCutoffDay}
@@ -793,7 +846,7 @@ const Index = () => {
             onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
             onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
             onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
-            availableCategories={budgets.sort((a, b) => a.sort_order - b.sort_order).map(budget => budget.category)}
+            availableCategories={budgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0)).map(budget => budget.budget_categories?.name || '')}
             language={selectedLanguage as 'english' | 'spanish'}
           />
         </div>

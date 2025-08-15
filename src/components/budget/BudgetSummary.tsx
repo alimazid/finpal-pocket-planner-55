@@ -31,18 +31,27 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { AddBudgetCard } from './AddBudgetCard';
 
+interface BudgetCategory {
+  id: string;
+  user_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 interface Budget {
   id: string;
   user_id: string;
-  category: string;
+  budget_category_id: string;
   amount: number;
   spent: number;
   currency: string;
-  sort_order: number;
   created_at: string;
   updated_at: string;
   period_start: string;
   period_end: string;
+  budget_categories?: BudgetCategory;
 }
 
 interface BudgetPeriod {
@@ -133,7 +142,7 @@ export function BudgetSummary({
   );
 
   // Sort budgets by sort_order (use optimistic state during drag operations)
-  const sortedBudgets = (optimisticBudgets || [...budgets]).sort((a, b) => a.sort_order - b.sort_order);
+  const sortedBudgets = (optimisticBudgets || [...budgets]).sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0));
 
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
@@ -141,7 +150,7 @@ export function BudgetSummary({
 
     if (active.id !== over?.id) {
       const baseBudgets = optimisticBudgets || [...budgets];
-      const sortedBaseBudgets = baseBudgets.sort((a, b) => a.sort_order - b.sort_order);
+      const sortedBaseBudgets = baseBudgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0));
       
       const oldIndex = sortedBaseBudgets.findIndex((budget) => budget.id === active.id);
       const newIndex = sortedBaseBudgets.findIndex((budget) => budget.id === over?.id);
@@ -149,10 +158,13 @@ export function BudgetSummary({
       if (oldIndex !== -1 && newIndex !== -1) {
         const reorderedBudgets = arrayMove(sortedBaseBudgets, oldIndex, newIndex);
         
-        // Update sort_order for all budgets
+        // Update sort_order for all budget categories
         const budgetsWithNewOrder = reorderedBudgets.map((budget, index) => ({
           ...budget,
-          sort_order: index + 1
+          budget_categories: budget.budget_categories ? {
+            ...budget.budget_categories,
+            sort_order: index + 1
+          } : undefined
         }));
         
         // Immediately update optimistic state for smooth UI
@@ -234,7 +246,7 @@ export function BudgetSummary({
 
   const handleEditBudget = (budget: Budget) => {
     setEditingBudget(budget);
-    setEditCategory(budget.category);
+    setEditCategory(budget.budget_categories?.name || '');
     setEditAmount(budget.amount.toString());
     setEditDialogOpen(true);
   };
@@ -244,7 +256,7 @@ export function BudgetSummary({
     
     if (editingBudget && editCategory.trim() && editAmount && parseFloat(editAmount) > 0) {
       // Update category if changed
-      if (editCategory.trim() !== editingBudget.category && onUpdateBudgetCategory) {
+      if (editCategory.trim() !== editingBudget.budget_categories?.name && onUpdateBudgetCategory) {
         onUpdateBudgetCategory(editingBudget.id, editCategory.trim());
       }
       
@@ -434,7 +446,7 @@ export function BudgetSummary({
     };
 
     const categoryTransactions = transactions.filter(
-      t => t.category === budget.category && t.type === 'expense'
+      t => t.category === budget.budget_categories?.name && t.type === 'expense'
     );
 
     return (
@@ -445,7 +457,7 @@ export function BudgetSummary({
         className="select-none touch-manipulation"
       >
         <BudgetDisplayCard
-          title={budget.category}
+          title={budget.budget_categories?.name || ''}
           spent={budget.spent}
           amount={budget.amount}
           currency={budget.currency}
@@ -746,7 +758,7 @@ export function BudgetSummary({
                     <AlertDialogHeader>
                       <AlertDialogTitle>{t('deleteBudget')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t('deleteBudgetConfirm')} "{editingBudget.category}"? {t('actionCannotBeUndoneSimple')}
+                        {t('deleteBudgetConfirm')} "{editingBudget.budget_categories?.name}"? {t('actionCannotBeUndoneSimple')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

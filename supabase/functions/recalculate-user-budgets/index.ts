@@ -14,14 +14,18 @@ interface RecalculateRequest {
 
 interface Budget {
   id: string
-  category: string
+  budget_category_id: string
   amount: number
   currency: string
-  sort_order: number
   created_at: string
   period_start: string
   period_end: string
   user_id: string
+  budget_categories: {
+    id: string
+    name: string
+    sort_order: number
+  }
 }
 
 function calculatePeriodDates(
@@ -78,10 +82,24 @@ serve(async (req) => {
 
     console.log(`Recalculating budgets for user ${userId} with period type: ${periodType}, specific day: ${specificDay}`)
 
-    // Get all budgets for the user
+    // Get all budgets for the user with their categories
     const { data: budgets, error: budgetsError } = await supabase
       .from('budgets')
-      .select('id, category, amount, currency, sort_order, created_at, period_start, period_end, user_id')
+      .select(`
+        id, 
+        budget_category_id, 
+        amount, 
+        currency, 
+        created_at, 
+        period_start, 
+        period_end, 
+        user_id,
+        budget_categories (
+          id,
+          name,
+          sort_order
+        )
+      `)
       .eq('user_id', userId)
 
     if (budgetsError) {
@@ -99,7 +117,7 @@ serve(async (req) => {
 
     console.log(`Found ${budgets.length} budgets to update`)
 
-    // Update each budget with new period dates
+    // Update each budget with new period dates based on budget category creation date
     const updatePromises = budgets.map(async (budget: Budget) => {
       const { periodStart, periodEnd } = calculatePeriodDates(
         budget.created_at,
@@ -107,7 +125,7 @@ serve(async (req) => {
         specificDay
       )
 
-      console.log(`Updating budget ${budget.id} (${budget.category}) from ${budget.period_start}-${budget.period_end} to ${periodStart}-${periodEnd}`)
+      console.log(`Updating budget ${budget.id} (${budget.budget_categories.name}) from ${budget.period_start}-${budget.period_end} to ${periodStart}-${periodEnd}`)
 
       const { error: updateError } = await supabase
         .from('budgets')
@@ -127,7 +145,7 @@ serve(async (req) => {
         .from('transactions')
         .select('amount, currency')
         .eq('user_id', budget.user_id)
-        .eq('category', budget.category)
+        .eq('category', budget.budget_categories.name)
         .eq('type', 'expense')
         .gte('date', periodStart)
         .lte('date', periodEnd)
