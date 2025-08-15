@@ -158,6 +158,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          language: string
           period_type: string
           specific_day: number | null
           updated_at: string
@@ -166,6 +167,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          language?: string
           period_type?: string
           specific_day?: number | null
           updated_at?: string
@@ -174,6 +176,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          language?: string
           period_type?: string
           specific_day?: number | null
           updated_at?: string

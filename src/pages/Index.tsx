@@ -139,12 +139,13 @@ const Index = () => {
     enabled: !!user?.id,
   });
 
-  // Update period calculations when user preference changes
+  // Update period calculations and language when user preference changes
   useEffect(() => {
     if (userPreference) {
       setUserCutoffDay(userPreference.specific_day);
       setUserPeriodType(userPreference.period_type as 'calendar_month' | 'specific_day');
       setCurrentBudgetPeriod(getCurrentPeriod(userPreference.specific_day, userPreference.period_type as 'calendar_month' | 'specific_day'));
+      setSelectedLanguage(userPreference.language || 'spanish');
     }
   }, [userPreference]);
 
@@ -573,6 +574,41 @@ const Index = () => {
     },
   });
 
+  // Update language preference mutation
+  const updateLanguagePreferenceMutation = useMutation({
+    mutationFn: async (language: string) => {
+      if (!user?.id) throw new Error('User not found');
+      
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          language,
+          period_type: userPreference?.period_type || 'calendar_month',
+          specific_day: userPreference?.specific_day || 1,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-preference', user?.id] });
+      toast({
+        title: t('languageUpdated'),
+        description: `${t('languageChangedTo')} ${selectedLanguage === 'english' ? t('english') : t('spanish')}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save language preference",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -771,10 +807,7 @@ const Index = () => {
                           {t('cancel')}
                         </Button>
                         <Button onClick={() => {
-                          toast({
-                            title: t('languageUpdated'),
-                            description: `${t('languageChangedTo')} ${selectedLanguage === 'english' ? t('english') : t('spanish')}`,
-                          });
+                          updateLanguagePreferenceMutation.mutate(selectedLanguage);
                           setIsTranslationOpen(false);
                         }}>
                           {t('apply')}

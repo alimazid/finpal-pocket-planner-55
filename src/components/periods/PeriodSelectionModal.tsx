@@ -13,6 +13,7 @@ interface UserPreference {
   user_id: string;
   period_type: 'calendar_month' | 'specific_day';
   specific_day: number;
+  language?: string;
 }
 
 interface PeriodSelectionModalProps {
@@ -64,6 +65,7 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceC
           user_id: userId,
           period_type: preference.period_type,
           specific_day: preference.specific_day,
+          language: userPreference?.language || 'spanish', // Preserve existing language
         }, {
           onConflict: 'user_id'
         })
