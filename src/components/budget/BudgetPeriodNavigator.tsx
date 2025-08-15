@@ -16,6 +16,7 @@ interface BudgetPeriodNavigatorProps {
   currentPeriod: BudgetPeriod;
   onPeriodChange: (period: BudgetPeriod) => void;
   language: 'english' | 'spanish';
+  periodType?: 'calendar_month' | 'specific_day';
   cutoffDay?: number; // Day of month when budget resets (1-31)
 }
 
@@ -23,33 +24,42 @@ export function BudgetPeriodNavigator({
   currentPeriod, 
   onPeriodChange, 
   language,
+  periodType = 'calendar_month',
   cutoffDay = 1 
 }: BudgetPeriodNavigatorProps) {
   const { t } = useTranslation(language);
 
-  const calculatePeriodDates = (baseDate: Date, cutoffDay: number) => {
-    const year = baseDate.getFullYear();
-    const month = baseDate.getMonth();
-    
-    // Start date is the cutoff day of the current month
-    let startDate = new Date(year, month, cutoffDay);
-    
-    // If we're before the cutoff day, the period started last month
-    if (baseDate.getDate() < cutoffDay) {
-      startDate = new Date(year, month - 1, cutoffDay);
+  const calculatePeriodDates = (baseDate: Date) => {
+    if (periodType === 'calendar_month') {
+      // Calendar month: first day to last day of the month
+      const startDate = startOfMonth(baseDate);
+      const endDate = endOfMonth(baseDate);
+      return { startDate, endDate };
+    } else {
+      // Specific day: cutoff day to day before next cutoff
+      const year = baseDate.getFullYear();
+      const month = baseDate.getMonth();
+      
+      // Start date is the cutoff day of the current month
+      let startDate = new Date(year, month, cutoffDay);
+      
+      // If we're before the cutoff day, the period started last month
+      if (baseDate.getDate() < cutoffDay) {
+        startDate = new Date(year, month - 1, cutoffDay);
+      }
+      
+      // End date is the day before the next cutoff
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+      endDate.setDate(endDate.getDate() - 1);
+      
+      return { startDate, endDate };
     }
-    
-    // End date is the day before the next cutoff
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 1);
-    endDate.setDate(endDate.getDate() - 1);
-    
-    return { startDate, endDate };
   };
 
   const getCurrentPeriod = (): BudgetPeriod => {
     const now = new Date();
-    const { startDate, endDate } = calculatePeriodDates(now, cutoffDay);
+    const { startDate, endDate } = calculatePeriodDates(now);
     
     return {
       startDate,
@@ -60,7 +70,7 @@ export function BudgetPeriodNavigator({
 
   const getPreviousPeriod = (period: BudgetPeriod): BudgetPeriod => {
     const previousMonth = subMonths(period.startDate, 1);
-    const { startDate, endDate } = calculatePeriodDates(previousMonth, cutoffDay);
+    const { startDate, endDate } = calculatePeriodDates(previousMonth);
     
     return {
       startDate,
@@ -71,7 +81,7 @@ export function BudgetPeriodNavigator({
 
   const getNextPeriod = (period: BudgetPeriod): BudgetPeriod => {
     const nextMonth = addMonths(period.startDate, 1);
-    const { startDate, endDate } = calculatePeriodDates(nextMonth, cutoffDay);
+    const { startDate, endDate } = calculatePeriodDates(nextMonth);
     const now = new Date();
     
     return {

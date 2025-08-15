@@ -758,6 +758,7 @@ const Index = () => {
           currentPeriod={currentBudgetPeriod}
           onPeriodChange={setCurrentBudgetPeriod}
           language={selectedLanguage as 'english' | 'spanish'}
+          periodType={(userPreference?.period_type as 'calendar_month' | 'specific_day') || 'calendar_month'}
           cutoffDay={userCutoffDay}
         />
 
