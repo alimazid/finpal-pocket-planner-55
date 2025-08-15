@@ -586,6 +586,8 @@ const Index = () => {
           language,
           period_type: userPreference?.period_type || 'calendar_month',
           specific_day: userPreference?.specific_day || 1,
+        }, {
+          onConflict: 'user_id'
         })
         .select()
         .single();
