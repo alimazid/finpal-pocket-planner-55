@@ -446,7 +446,18 @@ export function BudgetSummary({
     };
 
     const categoryTransactions = transactions.filter(
-      t => t.category === budget.budget_categories?.name && t.type === 'expense'
+      t => {
+        if (t.category !== budget.budget_categories?.name || t.type !== 'expense') {
+          return false;
+        }
+        
+        // Filter by period dates
+        const transactionDate = new Date(t.date);
+        const periodStart = new Date(activePeriod.startDate);
+        const periodEnd = new Date(activePeriod.endDate);
+        
+        return transactionDate >= periodStart && transactionDate <= periodEnd;
+      }
     );
 
     return (
