@@ -137,12 +137,27 @@ serve(async (req) => {
         throw transactionsError
       }
 
-      // Calculate total spent with currency conversion
+      // Calculate total spent with currency conversion using the database function
       let totalSpent = 0
       for (const transaction of transactions || []) {
-        // For now, assume same currency. TODO: Add currency conversion if needed
         if (transaction.currency === budget.currency) {
           totalSpent += transaction.amount
+        } else {
+          // Use the database function to get exchange rate
+          const { data: exchangeRateResult, error: exchangeError } = await supabase
+            .rpc('get_exchange_rate', {
+              p_from_currency: transaction.currency,
+              p_to_currency: budget.currency
+            })
+
+          if (exchangeError) {
+            console.error(`Error getting exchange rate from ${transaction.currency} to ${budget.currency}:`, exchangeError)
+            // Fallback to 1:1 if exchange rate fails
+            totalSpent += transaction.amount
+          } else {
+            const convertedAmount = transaction.amount * (exchangeRateResult || 1)
+            totalSpent += convertedAmount
+          }
         }
       }
 
