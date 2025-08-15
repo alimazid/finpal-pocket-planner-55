@@ -7,20 +7,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-interface UserPreference {
-  id: string;
-  user_id: string;
-  period_type: 'calendar_month' | 'specific_day';
-  specific_day: number;
-  language?: string;
-}
+import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
 
 interface PeriodSelectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
-  onPreferenceChange: (preference: UserPreference) => void;
+  onPreferenceChange: (preference: { period_type: 'calendar_month' | 'specific_day'; specific_day: number }) => void;
 }
 
 export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceChange }: PeriodSelectionModalProps) {
@@ -28,89 +21,38 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceC
   const queryClient = useQueryClient();
   const [periodType, setPeriodType] = useState<'calendar_month' | 'specific_day'>('calendar_month');
   const [specificDay, setSpecificDay] = useState<number>(1);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fetch user preferences
-  const { data: userPreference } = useQuery({
-    queryKey: ['user-preference', userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-        throw error;
-      }
-      
-      return data as UserPreference | null;
-    },
-    enabled: !!userId,
-  });
+  // Use the budget period template hook
+  const { 
+    template, 
+    updateTemplate, 
+    isLoading: templateLoading,
+    isUpdating 
+  } = useBudgetPeriodTemplate(userId);
 
-  // Update form state when preference loads
+  // Reset initialization when modal opens
   useEffect(() => {
-    if (userPreference) {
-      setPeriodType(userPreference.period_type);
-      setSpecificDay(userPreference.specific_day);
+    if (open) {
+      setIsInitialized(false);
     }
-  }, [userPreference]);
+  }, [open]);
 
-  // Save preference mutation
-  const savePreferenceMutation = useMutation({
-    mutationFn: async (preference: { period_type: 'calendar_month' | 'specific_day'; specific_day: number }) => {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: userId,
-          period_type: preference.period_type,
-          specific_day: preference.specific_day,
-          language: userPreference?.language || 'spanish', // Preserve existing language
-        }, {
-          onConflict: 'user_id'
-        })
-        .select()
-        .single();
+  // Update form state when template loads (only once per modal open)
+  useEffect(() => {
+    if (template && !isInitialized) {
+      setPeriodType(template.period_type);
+      setSpecificDay(template.specific_day);
+      setIsInitialized(true);
+    }
+  }, [template, isInitialized]);
 
-      if (error) throw error;
-
-      // Recalculate existing budgets with new period settings
-      const recalculateResponse = await supabase.functions.invoke('recalculate-user-budgets', {
-        body: {
-          userId: userId,
-          periodType: preference.period_type,
-          specificDay: preference.specific_day
-        }
-      });
-
-      if (recalculateResponse.error) {
-        console.error('Error recalculating budgets:', recalculateResponse.error);
-        throw new Error('Failed to recalculate existing budgets');
-      }
-
-      console.log('Budget recalculation result:', recalculateResponse.data);
-
-      return data as UserPreference;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['user-preference', userId] });
-      queryClient.invalidateQueries({ queryKey: ['budgets'] }); // Invalidate budgets to refresh UI
-      onPreferenceChange(data);
-      toast({
-        title: "Period Settings Saved",
-        description: "Your period preferences and existing budgets have been updated successfully.",
-      });
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      console.error('Error saving preference:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save period preferences. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  // Save preference using the template hook
+  const handleSavePreference = (preference: { period_type: 'calendar_month' | 'specific_day'; specific_day: number }) => {
+    updateTemplate(preference);
+    onPreferenceChange(preference);
+    onOpenChange(false);
+  };
 
   const handleSave = () => {
     if (periodType === 'specific_day' && (specificDay < 1 || specificDay > 31)) {
@@ -122,7 +64,7 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceC
       return;
     }
 
-    savePreferenceMutation.mutate({
+    handleSavePreference({
       period_type: periodType,
       specific_day: specificDay,
     });
@@ -188,8 +130,8 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceC
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={savePreferenceMutation.isPending}>
-              {savePreferenceMutation.isPending ? "Saving..." : "Save"}
+            <Button onClick={handleSave} disabled={isUpdating || templateLoading}>
+              {isUpdating ? "Saving..." : "Save"}
             </Button>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState, useEffect, useRef } from "react";
+import { filterTransactionsByPeriod } from "@/lib/periodCalculations";
 import {
   DndContext,
   closestCenter,
@@ -77,7 +78,7 @@ interface BudgetSummaryProps {
   budgets: Budget[];
   transactions?: Transaction[];
   language: 'english' | 'spanish';
-  onAddBudget?: (category: string, amount: number, periodStart?: string, periodEnd?: string) => void;
+  onAddBudget?: (category: string, amount: number) => void;
   onDeleteBudget?: (id: string) => void;
   onDeleteTransaction?: (id: string) => void;
   onUpdateTransaction?: (id: string, amount: number) => void;
@@ -445,19 +446,10 @@ export function BudgetSummary({
       touchAction: isDragging ? 'none' : 'auto',
     };
 
-    const categoryTransactions = transactions.filter(
-      t => {
-        if (t.category !== budget.budget_categories?.name || t.type !== 'expense') {
-          return false;
-        }
-        
-        // Filter by period dates
-        const transactionDate = new Date(t.date);
-        const periodStart = new Date(activePeriod.startDate);
-        const periodEnd = new Date(activePeriod.endDate);
-        
-        return transactionDate >= periodStart && transactionDate <= periodEnd;
-      }
+    const categoryTransactions = filterTransactionsByPeriod(
+      transactions.filter(t => t.category === budget.budget_categories?.name && t.type === 'expense'),
+      budget.period_start,
+      budget.period_end
     );
 
     return (

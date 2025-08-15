@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +24,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatCurrency } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
+import { addCalculatedPeriods, getCurrentPeriodSequence, calculatePeriodDates, getNextSequenceNumber, calculateCategoryStartDate } from "@/lib/periodCalculations";
+import type { CalculatedBudget } from "@/lib/periodCalculations";
 
 interface Transaction {
   id: string;
@@ -56,8 +59,11 @@ interface Budget {
   currency: string;
   created_at: string;
   updated_at: string;
-  period_start: string;
-  period_end: string;
+  period_sequence: number;
+  category_start_date: string;
+  // Legacy fields (will be removed in Phase 3)
+  period_start?: string;
+  period_end?: string;
   budget_categories?: BudgetCategory;
 }
 
@@ -117,6 +123,13 @@ const Index = () => {
   const [userCutoffDay, setUserCutoffDay] = useState<number>(1);
   const [userPeriodType, setUserPeriodType] = useState<'calendar_month' | 'specific_day'>('calendar_month');
   const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
+  
+  // Budget period template management
+  const { 
+    template: periodTemplate, 
+    updateTemplate: updatePeriodTemplate,
+    getDefaultTemplate 
+  } = useBudgetPeriodTemplate(user?.id);
 
   // Fetch user preferences
   const { data: userPreference } = useQuery({
@@ -155,13 +168,10 @@ const Index = () => {
     setCurrentBudgetPeriod(getCurrentPeriod(preference.specific_day, preference.period_type));
   };
 
-  // Fetch budgets with categories filtered by current period
-  const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
-    queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()],
+  // Fetch all budgets and calculate current period budgets
+  const { data: allBudgets = [], isLoading: budgetsLoading } = useQuery({
+    queryKey: ['budgets', user?.id],
     queryFn: async () => {
-      const startDateStr = currentBudgetPeriod.startDate.toISOString().split('T')[0];
-      const endDateStr = currentBudgetPeriod.endDate.toISOString().split('T')[0];
-      
       const { data, error } = await supabase
         .from('budgets')
         .select(`
@@ -173,8 +183,6 @@ const Index = () => {
           )
         `)
         .eq('user_id', user!.id)
-        .eq('period_start', startDateStr)
-        .eq('period_end', endDateStr)
         .order('budget_categories(sort_order)', { ascending: true });
       
       if (error) throw error;
@@ -182,6 +190,49 @@ const Index = () => {
     },
     enabled: !!user,
   });
+
+  // Calculate current period budgets
+  const budgets: CalculatedBudget[] = React.useMemo(() => {
+    if (!periodTemplate || !allBudgets.length) return [];
+    
+    // Add calculated periods to all budgets
+    const budgetsWithPeriods = addCalculatedPeriods(allBudgets, periodTemplate);
+    
+    // Filter to current period budgets
+    const currentSequence = getCurrentPeriodSequence(
+      periodTemplate, 
+      new Date(), // We'll use current date as reference
+      new Date()
+    );
+    
+    // Group by category and find budgets for current period
+    const currentPeriodBudgets: CalculatedBudget[] = [];
+    const budgetsByCategory = new Map<string, CalculatedBudget[]>();
+    
+    // Group budgets by category
+    budgetsWithPeriods.forEach(budget => {
+      const categoryId = budget.budget_category_id;
+      if (!budgetsByCategory.has(categoryId)) {
+        budgetsByCategory.set(categoryId, []);
+      }
+      budgetsByCategory.get(categoryId)!.push(budget);
+    });
+    
+    // For each category, find the budget for the current period sequence
+    budgetsByCategory.forEach((categoryBudgets) => {
+      // Calculate the current sequence for this category
+      const categoryStartDate = new Date(categoryBudgets[0].category_start_date);
+      const categoryCurrentSequence = getCurrentPeriodSequence(periodTemplate, categoryStartDate, new Date());
+      
+      // Find the budget with matching sequence
+      const currentBudget = categoryBudgets.find(b => b.period_sequence === categoryCurrentSequence);
+      if (currentBudget) {
+        currentPeriodBudgets.push(currentBudget);
+      }
+    });
+    
+    return currentPeriodBudgets;
+  }, [allBudgets, periodTemplate]);
 
   // Fetch transactions
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
@@ -227,7 +278,7 @@ const Index = () => {
     },
     onSuccess: (newTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
         title: "Expense Added",
@@ -245,14 +296,11 @@ const Index = () => {
 
   // Add budget mutation
   const addBudgetMutation = useMutation({
-    mutationFn: async ({ category, amount, periodStart, periodEnd }: { 
+    mutationFn: async ({ category, amount }: { 
       category: string; 
-      amount: number; 
-      periodStart?: string;
-      periodEnd?: string;
+      amount: number;
     }) => {
-      const startDate = periodStart || currentBudgetPeriod.startDate.toISOString().split('T')[0];
-      const endDate = periodEnd || currentBudgetPeriod.endDate.toISOString().split('T')[0];
+      if (!periodTemplate) throw new Error('Period template not loaded');
       
       // First, create or get the budget category
       let budgetCategory;
@@ -295,7 +343,29 @@ const Index = () => {
         budgetCategory = newCategory;
       }
       
-      // Now create the budget
+      // Get existing budgets for this category to determine sequence
+      const { data: existingBudgets } = await supabase
+        .from('budgets')
+        .select('period_sequence, category_start_date')
+        .eq('budget_category_id', budgetCategory.id)
+        .order('period_sequence', { ascending: false });
+      
+      // Calculate sequence number and category start date
+      let periodSequence: number;
+      let categoryStartDate: string;
+      
+      if (!existingBudgets || existingBudgets.length === 0) {
+        // First budget in this category
+        periodSequence = 0;
+        categoryStartDate = calculateCategoryStartDate(periodTemplate, new Date())
+          .toISOString().split('T')[0];
+      } else {
+        // Next budget in sequence
+        periodSequence = getNextSequenceNumber(existingBudgets);
+        categoryStartDate = existingBudgets[0].category_start_date;
+      }
+      
+      // Now create the budget with sequence
       const { data, error } = await supabase
         .from('budgets')
         .insert([{
@@ -303,8 +373,11 @@ const Index = () => {
           budget_category_id: budgetCategory.id,
           amount,
           spent: 0,
-          period_start: startDate,
-          period_end: endDate,
+          period_sequence: periodSequence,
+          category_start_date: categoryStartDate,
+          // Legacy fields (will be removed in Phase 3)
+          period_start: calculatePeriodDates(periodTemplate, new Date(categoryStartDate), periodSequence).startDate.toISOString().split('T')[0],
+          period_end: calculatePeriodDates(periodTemplate, new Date(categoryStartDate), periodSequence).endDate.toISOString().split('T')[0],
         }])
         .select(`
           *,
@@ -320,7 +393,7 @@ const Index = () => {
       return data;
     },
     onSuccess: (newBudget) => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
       toast({
         title: "Budget Created",
         description: `Budget for ${newBudget.budget_categories?.name} ($${newBudget.amount.toFixed(2)}) has been added`,
@@ -351,7 +424,7 @@ const Index = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
     },
   });
 
@@ -380,7 +453,7 @@ const Index = () => {
     onSuccess: ({ budget, categoryName }) => {
       const relatedTransactions = transactions?.filter(t => t.category === categoryName) || [];
       
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
 
       toast({
@@ -405,7 +478,7 @@ const Index = () => {
     },
     onSuccess: (transaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
         title: "Transaction Deleted",
@@ -429,7 +502,7 @@ const Index = () => {
     },
     onSuccess: (updatedTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
         title: "Transaction Updated",
@@ -453,7 +526,7 @@ const Index = () => {
     },
     onSuccess: (updatedTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
         title: "Category Updated",
@@ -488,7 +561,7 @@ const Index = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
     },
   });
@@ -512,7 +585,7 @@ const Index = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
     },
   });
 
@@ -529,7 +602,7 @@ const Index = () => {
     },
     onSuccess: (transactionCount) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
         title: "All Transactions Cleared",
@@ -557,7 +630,7 @@ const Index = () => {
       return budgets.length;
     },
     onSuccess: (budgetCount) => {
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentBudgetPeriod.startDate.toISOString(), currentBudgetPeriod.endDate.toISOString()] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
 
       toast({
@@ -855,7 +928,7 @@ const Index = () => {
           budgets={budgets} 
           transactions={transactions}
           language={selectedLanguage as 'english' | 'spanish'} 
-          onAddBudget={(category, amount, periodStart, periodEnd) => addBudgetMutation.mutate({ category, amount, periodStart, periodEnd })}
+          onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })}
           onDeleteBudget={(id) => deleteBudgetMutation.mutate(id)}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
           onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}

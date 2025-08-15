@@ -14,7 +14,7 @@ interface BudgetPeriod {
 }
 
 interface AddBudgetCardProps {
-  onAddBudget: (category: string, amount: number, periodStart?: string, periodEnd?: string) => void;
+  onAddBudget: (category: string, amount: number) => void;
   currentPeriod?: BudgetPeriod;
 }
 
@@ -30,11 +30,7 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
     e.preventDefault();
     
     if (category.trim() && amount && parseFloat(amount) > 0) {
-      if (customPeriod && periodStart && periodEnd) {
-        onAddBudget(category.trim(), parseFloat(amount), periodStart, periodEnd);
-      } else {
-        onAddBudget(category.trim(), parseFloat(amount));
-      }
+      onAddBudget(category.trim(), parseFloat(amount));
       setCategory("");
       setAmount("");
       setCustomPeriod(false);
