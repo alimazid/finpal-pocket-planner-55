@@ -322,6 +322,20 @@ const translations: Translations = {
   of: {
     english: 'of',
     spanish: 'de'
+  },
+  
+  // Budget editing
+  editBudget: {
+    english: 'Edit Budget',
+    spanish: 'Editar Presupuesto'
+  },
+  updateBudgetDetails: {
+    english: 'Update the budget details for this category.',
+    spanish: 'Actualiza los detalles del presupuesto para esta categoría.'
+  },
+  updateBudget: {
+    english: 'Update Budget',
+    spanish: 'Actualizar Presupuesto'
   }
 };
 

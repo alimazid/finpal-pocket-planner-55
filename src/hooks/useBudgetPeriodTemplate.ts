@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { BudgetPeriodTemplate } from "@/lib/periodCalculations";
 import { useToast } from "@/hooks/use-toast";
 
-export interface BudgetPeriodTemplateRow {
+export interface UserPreferencesRow {
   id: string;
   user_id: string;
+  language: string;
   period_type: 'calendar_month' | 'specific_day';
-  specific_day: number;
+  specific_day: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -16,14 +17,14 @@ export function useBudgetPeriodTemplate(userId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch user's period template
-  const { data: template, isLoading } = useQuery({
-    queryKey: ['budget-period-template', userId],
-    queryFn: async (): Promise<BudgetPeriodTemplateRow | null> => {
+  // Fetch user's preferences (including period settings)
+  const { data: userPreferences, isLoading } = useQuery({
+    queryKey: ['user-preferences', userId],
+    queryFn: async (): Promise<UserPreferencesRow | null> => {
       if (!userId) return null;
       
       const { data, error } = await supabase
-        .from('budget_period_templates')
+        .from('user_preferences')
         .select('*')
         .eq('user_id', userId)
         .single();
@@ -37,17 +38,19 @@ export function useBudgetPeriodTemplate(userId?: string) {
     enabled: !!userId,
   });
 
-  // Create or update period template
+  // Create or update period preferences
   const updateTemplateMutation = useMutation({
     mutationFn: async (newTemplate: BudgetPeriodTemplate) => {
       if (!userId) throw new Error('User ID is required');
       
+      // Update user preferences with new period settings
       const { data, error } = await supabase
-        .from('budget_period_templates')
+        .from('user_preferences')
         .upsert({
           user_id: userId,
           period_type: newTemplate.period_type,
           specific_day: newTemplate.specific_day,
+          language: userPreferences?.language || 'spanish', // Preserve existing language
         }, {
           onConflict: 'user_id'
         })
@@ -55,11 +58,14 @@ export function useBudgetPeriodTemplate(userId?: string) {
         .single();
       
       if (error) throw error;
+
+      // No recalculation needed with target month/year approach
+      
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['budget-period-template', userId] });
-      queryClient.invalidateQueries({ queryKey: ['budgets'] }); // Refresh budgets to recalculate periods
+      queryClient.invalidateQueries({ queryKey: ['user-preferences', userId] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] }); // Refresh budgets display
       
       toast({
         title: "Period Settings Updated",
@@ -77,9 +83,9 @@ export function useBudgetPeriodTemplate(userId?: string) {
   });
 
   // Get template as BudgetPeriodTemplate interface
-  const budgetTemplate: BudgetPeriodTemplate | null = template ? {
-    period_type: template.period_type as 'calendar_month' | 'specific_day',
-    specific_day: template.specific_day,
+  const budgetTemplate: BudgetPeriodTemplate | null = userPreferences ? {
+    period_type: userPreferences.period_type as 'calendar_month' | 'specific_day',
+    specific_day: userPreferences.specific_day || 1,
   } : null;
 
   // Get default template for new users
@@ -90,7 +96,7 @@ export function useBudgetPeriodTemplate(userId?: string) {
 
   return {
     template: budgetTemplate,
-    templateRow: template,
+    templateRow: userPreferences,
     isLoading,
     updateTemplate: updateTemplateMutation.mutate,
     isUpdating: updateTemplateMutation.isPending,

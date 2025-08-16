@@ -13,10 +13,9 @@ interface PeriodSelectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
-  onPreferenceChange: (preference: { period_type: 'calendar_month' | 'specific_day'; specific_day: number }) => void;
 }
 
-export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceChange }: PeriodSelectionModalProps) {
+export function PeriodSelectionModal({ open, onOpenChange, userId }: PeriodSelectionModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [periodType, setPeriodType] = useState<'calendar_month' | 'specific_day'>('calendar_month');
@@ -50,7 +49,6 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, onPreferenceC
   // Save preference using the template hook
   const handleSavePreference = (preference: { period_type: 'calendar_month' | 'specific_day'; specific_day: number }) => {
     updateTemplate(preference);
-    onPreferenceChange(preference);
     onOpenChange(false);
   };
 

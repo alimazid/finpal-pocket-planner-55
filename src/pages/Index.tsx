@@ -14,7 +14,7 @@ import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
 import { ExchangeRateSync } from "@/components/exchange/ExchangeRateSync";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
 
-import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings } from "lucide-react";
+import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { formatCurrency } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
-import { addCalculatedPeriods, getCurrentPeriodSequence, calculatePeriodDates, getNextSequenceNumber, calculateCategoryStartDate } from "@/lib/periodCalculations";
+import { addCalculatedPeriods, getCurrentTargetMonth, calculatePeriodDates, getNextPeriod, getPreviousPeriod } from "@/lib/periodCalculations";
 import type { CalculatedBudget } from "@/lib/periodCalculations";
 
 interface Transaction {
@@ -59,11 +59,8 @@ interface Budget {
   currency: string;
   created_at: string;
   updated_at: string;
-  period_sequence: number;
-  category_start_date: string;
-  // Legacy fields (will be removed in Phase 3)
-  period_start?: string;
-  period_end?: string;
+  target_year: number;
+  target_month: number;
   budget_categories?: BudgetCategory;
 }
 
@@ -78,95 +75,82 @@ const Index = () => {
   const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Budget period state
-  interface BudgetPeriod {
-    startDate: Date;
-    endDate: Date;
-    isCurrentPeriod: boolean;
-  }
-  
-  const getCurrentPeriod = (cutoffDay: number = 1, periodType: 'calendar_month' | 'specific_day' = 'calendar_month'): BudgetPeriod => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    
-    if (periodType === 'calendar_month') {
-      // Standard calendar month
-      const startDate = new Date(year, month, 1);
-      const endDate = new Date(year, month + 1, 0); // Last day of current month
-      
-      return {
-        startDate,
-        endDate,
-        isCurrentPeriod: true
-      };
-    } else {
-      // Specific day periods
-      let startDate = new Date(year, month, cutoffDay);
-      if (now.getDate() < cutoffDay) {
-        startDate = new Date(year, month - 1, cutoffDay);
-      }
-      
-      const endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + 1);
-      endDate.setDate(endDate.getDate() - 1);
-      
-      return {
-        startDate,
-        endDate,
-        isCurrentPeriod: true
-      };
-    }
-  };
-  
-  const [currentBudgetPeriod, setCurrentBudgetPeriod] = useState<BudgetPeriod>(getCurrentPeriod());
-  const [userCutoffDay, setUserCutoffDay] = useState<number>(1);
-  const [userPeriodType, setUserPeriodType] = useState<'calendar_month' | 'specific_day'>('calendar_month');
   const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
   
   // Budget period template management
   const { 
     template: periodTemplate, 
+    templateRow: userPreferences,
     updateTemplate: updatePeriodTemplate,
     getDefaultTemplate 
   } = useBudgetPeriodTemplate(user?.id);
 
-  // Fetch user preferences
-  const { data: userPreference } = useQuery({
-    queryKey: ['user-preference', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-        throw error;
-      }
-      
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Update period calculations and language when user preference changes
+  // Budget period state - using target month/year approach
+  const [currentTargetYear, setCurrentTargetYear] = useState(new Date().getFullYear());
+  const [currentTargetMonth, setCurrentTargetMonth] = useState(new Date().getMonth() + 1);
+  const [hasInitializedPeriod, setHasInitializedPeriod] = useState(false);
+  
+  // Initialize target month/year based on current period template (only once)
   useEffect(() => {
-    if (userPreference) {
-      setUserCutoffDay(userPreference.specific_day);
-      setUserPeriodType(userPreference.period_type as 'calendar_month' | 'specific_day');
-      setCurrentBudgetPeriod(getCurrentPeriod(userPreference.specific_day, userPreference.period_type as 'calendar_month' | 'specific_day'));
-      setSelectedLanguage(userPreference.language || 'spanish');
+    if (periodTemplate && !hasInitializedPeriod) {
+      const currentTarget = getCurrentTargetMonth(periodTemplate);
+      setCurrentTargetYear(currentTarget.targetYear);
+      setCurrentTargetMonth(currentTarget.targetMonth);
+      setHasInitializedPeriod(true);
+    } else if (!periodTemplate && !hasInitializedPeriod) {
+      // Fallback to current month if template not loaded yet
+      const now = new Date();
+      setCurrentTargetYear(now.getFullYear());
+      setCurrentTargetMonth(now.getMonth() + 1);
+      setHasInitializedPeriod(true);
     }
-  }, [userPreference]);
+  }, [periodTemplate, hasInitializedPeriod]);
 
-  const handlePreferenceChange = (preference: { period_type: 'calendar_month' | 'specific_day'; specific_day: number }) => {
-    setUserCutoffDay(preference.specific_day);
-    setUserPeriodType(preference.period_type);
-    setCurrentBudgetPeriod(getCurrentPeriod(preference.specific_day, preference.period_type));
+  // Navigation functions for target month/year
+  const handlePreviousPeriod = () => {
+    const previous = getPreviousPeriod(currentTargetYear, currentTargetMonth);
+    console.log('Navigating to previous period:', previous);
+    setCurrentTargetYear(previous.targetYear);
+    setCurrentTargetMonth(previous.targetMonth);
   };
+
+  const handleNextPeriod = () => {
+    const next = getNextPeriod(currentTargetYear, currentTargetMonth);
+    console.log('Navigating to next period:', next);
+    setCurrentTargetYear(next.targetYear);
+    setCurrentTargetMonth(next.targetMonth);
+  };
+
+  const handleGoToCurrent = () => {
+    if (periodTemplate) {
+      const currentTarget = getCurrentTargetMonth(periodTemplate);
+      setCurrentTargetYear(currentTarget.targetYear);
+      setCurrentTargetMonth(currentTarget.targetMonth);
+    }
+  };
+
+  // Calculate current period for display
+  const currentPeriodDisplay = React.useMemo(() => {
+    if (!periodTemplate) {
+      // Fallback to calendar month if template not loaded
+      const startDate = new Date(currentTargetYear, currentTargetMonth - 1, 1);
+      const endDate = new Date(currentTargetYear, currentTargetMonth, 0);
+      return {
+        startDate,
+        endDate,
+        targetYear: currentTargetYear,
+        targetMonth: currentTargetMonth
+      };
+    }
+    return calculatePeriodDates(periodTemplate, currentTargetYear, currentTargetMonth);
+  }, [periodTemplate, currentTargetYear, currentTargetMonth]);
+
+  // Update language when user preference changes (from the hook)
+  useEffect(() => {
+    if (userPreferences) {
+      setSelectedLanguage(userPreferences.language || 'spanish');
+    }
+  }, [userPreferences]);
 
   // Fetch all budgets and calculate current period budgets
   const { data: allBudgets = [], isLoading: budgetsLoading } = useQuery({
@@ -191,64 +175,53 @@ const Index = () => {
     enabled: !!user,
   });
 
-  // Calculate current period budgets
+  // Calculate budgets for the selected period (from period controls)
   const budgets: CalculatedBudget[] = React.useMemo(() => {
-    if (!periodTemplate || !allBudgets.length) return [];
+    if (!allBudgets.length) return [];
     
-    // Add calculated periods to all budgets
-    const budgetsWithPeriods = addCalculatedPeriods(allBudgets, periodTemplate);
-    
-    // Filter to current period budgets
-    const currentSequence = getCurrentPeriodSequence(
-      periodTemplate, 
-      new Date(), // We'll use current date as reference
-      new Date()
+    // Filter budgets for the current target month/year
+    const selectedPeriodBudgets = allBudgets.filter(budget => 
+      budget.target_year === currentTargetYear && budget.target_month === currentTargetMonth
     );
     
-    // Group by category and find budgets for current period
-    const currentPeriodBudgets: CalculatedBudget[] = [];
-    const budgetsByCategory = new Map<string, CalculatedBudget[]>();
+    // Add calculated periods to the filtered budgets if template is available
+    if (periodTemplate) {
+      return addCalculatedPeriods(selectedPeriodBudgets, periodTemplate);
+    }
     
-    // Group budgets by category
-    budgetsWithPeriods.forEach(budget => {
-      const categoryId = budget.budget_category_id;
-      if (!budgetsByCategory.has(categoryId)) {
-        budgetsByCategory.set(categoryId, []);
-      }
-      budgetsByCategory.get(categoryId)!.push(budget);
-    });
-    
-    // For each category, find the budget for the current period sequence
-    budgetsByCategory.forEach((categoryBudgets) => {
-      // Calculate the current sequence for this category
-      const categoryStartDate = new Date(categoryBudgets[0].category_start_date);
-      const categoryCurrentSequence = getCurrentPeriodSequence(periodTemplate, categoryStartDate, new Date());
-      
-      // Find the budget with matching sequence
-      const currentBudget = categoryBudgets.find(b => b.period_sequence === categoryCurrentSequence);
-      if (currentBudget) {
-        currentPeriodBudgets.push(currentBudget);
-      }
-    });
-    
-    return currentPeriodBudgets;
-  }, [allBudgets, periodTemplate]);
+    // Return budgets without calculated periods if template not loaded yet
+    return selectedPeriodBudgets.map(budget => ({
+      ...budget,
+      period_start: new Date(budget.target_year, budget.target_month - 1, 1).toISOString().split('T')[0],
+      period_end: new Date(budget.target_year, budget.target_month, 0).toISOString().split('T')[0]
+    }));
+  }, [allBudgets, periodTemplate, currentTargetYear, currentTargetMonth]);
 
   // Fetch transactions
-  const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+  const { data: transactions = [], isLoading: transactionsLoading, error: transactionsError } = useQuery({
     queryKey: ['transactions', user?.id],
     queryFn: async () => {
+      if (!user?.id) throw new Error('User ID is required');
+      
       const { data, error } = await supabase
         .from('transactions')
-        .select('*')
-        .eq('user_id', user!.id)
+        .select('id, user_id, amount, description, category, date, type, currency, created_at, updated_at')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Transactions query error:', error);
+        throw error;
+      }
       return data as Transaction[];
     },
-    enabled: !!user,
+    enabled: !!user?.id,
   });
+
+  // Log transaction errors for debugging
+  if (transactionsError) {
+    console.error('Transactions error:', transactionsError);
+  }
 
   // Add expense mutation
   const addExpenseMutation = useMutation({
@@ -259,10 +232,12 @@ const Index = () => {
       date: string;
       currency: string;
     }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
       const { data, error } = await supabase
         .from('transactions')
         .insert([{
-          user_id: user!.id,
+          user_id: user.id,
           amount: expense.amount,
           description: expense.description,
           category: expense.category,
@@ -273,7 +248,10 @@ const Index = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Add transaction error:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: (newTransaction) => {
@@ -300,8 +278,6 @@ const Index = () => {
       category: string; 
       amount: number;
     }) => {
-      if (!periodTemplate) throw new Error('Period template not loaded');
-      
       // First, create or get the budget category
       let budgetCategory;
       const { data: existingCategory, error: categorySelectError } = await supabase
@@ -327,7 +303,7 @@ const Index = () => {
           .limit(1)
           .maybeSingle();
         
-        const nextSortOrder = ((maxSortOrder as any)?.sort_order || 0) + 1;
+        const nextSortOrder = (maxSortOrder?.sort_order || 0) + 1;
         
         const { data: newCategory, error: categoryInsertError } = await supabase
           .from('budget_categories')
@@ -343,29 +319,20 @@ const Index = () => {
         budgetCategory = newCategory;
       }
       
-      // Get existing budgets for this category to determine sequence
-      const { data: existingBudgets } = await supabase
+      // Check if a budget already exists for this target month/year in this category
+      const { data: existingBudget } = await supabase
         .from('budgets')
-        .select('period_sequence, category_start_date')
+        .select('id')
         .eq('budget_category_id', budgetCategory.id)
-        .order('period_sequence', { ascending: false });
-      
-      // Calculate sequence number and category start date
-      let periodSequence: number;
-      let categoryStartDate: string;
-      
-      if (!existingBudgets || existingBudgets.length === 0) {
-        // First budget in this category
-        periodSequence = 0;
-        categoryStartDate = calculateCategoryStartDate(periodTemplate, new Date())
-          .toISOString().split('T')[0];
-      } else {
-        // Next budget in sequence
-        periodSequence = getNextSequenceNumber(existingBudgets);
-        categoryStartDate = existingBudgets[0].category_start_date;
+        .eq('target_year', currentTargetYear)
+        .eq('target_month', currentTargetMonth)
+        .maybeSingle();
+        
+      if (existingBudget) {
+        throw new Error(`A budget already exists for this period in the ${category} category`);
       }
       
-      // Now create the budget with sequence
+      // Create the budget with target month/year
       const { data, error } = await supabase
         .from('budgets')
         .insert([{
@@ -373,11 +340,8 @@ const Index = () => {
           budget_category_id: budgetCategory.id,
           amount,
           spent: 0,
-          period_sequence: periodSequence,
-          category_start_date: categoryStartDate,
-          // Legacy fields (will be removed in Phase 3)
-          period_start: calculatePeriodDates(periodTemplate, new Date(categoryStartDate), periodSequence).startDate.toISOString().split('T')[0],
-          period_end: calculatePeriodDates(periodTemplate, new Date(categoryStartDate), periodSequence).endDate.toISOString().split('T')[0],
+          target_year: currentTargetYear,
+          target_month: currentTargetMonth,
         }])
         .select(`
           *,
@@ -399,12 +363,16 @@ const Index = () => {
         description: `Budget for ${newBudget.budget_categories?.name} ($${newBudget.amount.toFixed(2)}) has been added`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
+      const message = error.message?.includes('already exists for this period') 
+        ? error.message
+        : error.message?.includes('Budget periods cannot overlap')
+        ? "A budget for this category already exists for this period"
+        : "Failed to create budget";
+        
       toast({
         title: "Error",
-        description: error.message?.includes('Budget periods cannot overlap') 
-          ? "A budget for this category already exists for this period"
-          : "Failed to create budget",
+        description: message,
         variant: "destructive",
       });
     },
@@ -657,8 +625,8 @@ const Index = () => {
         .upsert({
           user_id: user.id,
           language,
-          period_type: userPreference?.period_type || 'calendar_month',
-          specific_day: userPreference?.specific_day || 1,
+          period_type: userPreferences?.period_type || 'calendar_month',
+          specific_day: userPreferences?.specific_day || 1,
         }, {
           onConflict: 'user_id'
         })
@@ -669,7 +637,7 @@ const Index = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-preference', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-preferences', user?.id] });
       toast({
         title: t('languageUpdated'),
         description: `${t('languageChangedTo')} ${selectedLanguage === 'english' ? t('english') : t('spanish')}`,
@@ -915,13 +883,55 @@ const Index = () => {
         />
 
         {/* Budget Period Navigator */}
-        <BudgetPeriodNavigator
-          currentPeriod={currentBudgetPeriod}
-          onPeriodChange={setCurrentBudgetPeriod}
-          language={selectedLanguage as 'english' | 'spanish'}
-          periodType={(userPreference?.period_type as 'calendar_month' | 'specific_day') || 'calendar_month'}
-          cutoffDay={userCutoffDay}
-        />
+        {currentPeriodDisplay && (
+          <div className="bg-gradient-card shadow-soft mb-6 p-4 rounded-lg">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousPeriod}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+
+              <div className="flex-1 text-center">
+                <div className="font-semibold text-foreground">
+                  {new Date(currentTargetYear, currentTargetMonth - 1).toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                  })}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {currentPeriodDisplay.startDate.toLocaleDateString()} - {currentPeriodDisplay.endDate.toLocaleDateString()}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGoToCurrent}
+                  className="flex items-center gap-2"
+                >
+                  <Home className="h-4 w-4" />
+                  <span className="hidden sm:inline">Current</span>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextPeriod}
+                  className="flex items-center gap-2"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Budget Summary */}
         <BudgetSummary 
@@ -937,9 +947,6 @@ const Index = () => {
           onUpdateBudgetAmount={(id, amount) => updateBudgetMutation.mutate({ budgetId: id, amount })}
           onUpdateBudgetOrder={(budgets) => updateBudgetOrderMutation.mutate(budgets)}
           availableCategories={budgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0)).map(budget => budget.budget_categories?.name || '')}
-          currentPeriod={currentBudgetPeriod}
-          onPeriodChange={setCurrentBudgetPeriod}
-          cutoffDay={userCutoffDay}
         />
 
         {/* Recent Transactions */}
@@ -965,7 +972,6 @@ const Index = () => {
             open={isPeriodSelectionOpen}
             onOpenChange={setIsPeriodSelectionOpen}
             userId={user.id}
-            onPreferenceChange={handlePreferenceChange}
           />
         )}
 

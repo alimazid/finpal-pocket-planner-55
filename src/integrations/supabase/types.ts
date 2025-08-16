@@ -41,73 +41,40 @@ export type Database = {
         }
         Relationships: []
       }
-      budget_period_templates: {
-        Row: {
-          created_at: string
-          id: string
-          period_type: string
-          specific_day: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          period_type?: string
-          specific_day?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          period_type?: string
-          specific_day?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       budgets: {
         Row: {
           amount: number
           budget_category_id: string
-          category_start_date: string
           created_at: string
           currency: string
           id: string
-          period_end: string
-          period_sequence: number
-          period_start: string
           spent: number
+          target_month: number
+          target_year: number
           updated_at: string
           user_id: string
         }
         Insert: {
           amount?: number
           budget_category_id: string
-          category_start_date: string
           created_at?: string
           currency?: string
           id?: string
-          period_end?: string
-          period_sequence?: number
-          period_start?: string
           spent?: number
+          target_month: number
+          target_year: number
           updated_at?: string
           user_id: string
         }
         Update: {
           amount?: number
           budget_category_id?: string
-          category_start_date?: string
           created_at?: string
           currency?: string
           id?: string
-          period_end?: string
-          period_sequence?: number
-          period_start?: string
           spent?: number
+          target_month?: number
+          target_year?: number
           updated_at?: string
           user_id?: string
         }

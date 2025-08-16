@@ -22,9 +22,6 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
   const [isOpen, setIsOpen] = useState(false);
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
-  const [customPeriod, setCustomPeriod] = useState(false);
-  const [periodStart, setPeriodStart] = useState("");
-  const [periodEnd, setPeriodEnd] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,9 +30,6 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
       onAddBudget(category.trim(), parseFloat(amount));
       setCategory("");
       setAmount("");
-      setCustomPeriod(false);
-      setPeriodStart("");
-      setPeriodEnd("");
       setIsOpen(false);
     }
   };
@@ -43,9 +37,6 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
   const handleCancel = () => {
     setCategory("");
     setAmount("");
-    setCustomPeriod(false);
-    setPeriodStart("");
-    setPeriodEnd("");
     setIsOpen(false);
   };
 
@@ -103,65 +94,18 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
             />
           </div>
 
-          {/* Period Selection */}
-          <div className="space-y-3">
-            <Label>Budget Period</Label>
+          {/* Show selected period */}
+          {currentPeriod && (
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="current-period"
-                  name="period"
-                  checked={!customPeriod}
-                  onChange={() => setCustomPeriod(false)}
-                  className="text-primary"
-                />
-                <Label htmlFor="current-period" className="font-normal">
-                  Current Period: {getCurrentPeriodDisplay()}
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="custom-period"
-                  name="period"
-                  checked={customPeriod}
-                  onChange={() => setCustomPeriod(true)}
-                  className="text-primary"
-                />
-                <Label htmlFor="custom-period" className="font-normal">
-                  Custom Period
-                </Label>
+              <Label>Budget Period</Label>
+              <div className="flex items-center space-x-2 p-3 bg-muted rounded-md">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  This budget will be created for: <strong>{getCurrentPeriodDisplay()}</strong>
+                </span>
               </div>
             </div>
-
-            {customPeriod && (
-              <div className="grid grid-cols-2 gap-4 ml-6">
-                <div className="space-y-2">
-                  <Label htmlFor="period-start" className="text-sm">Start Date</Label>
-                  <Input
-                    id="period-start"
-                    type="date"
-                    value={periodStart}
-                    onChange={(e) => setPeriodStart(e.target.value)}
-                    required={customPeriod}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="period-end" className="text-sm">End Date</Label>
-                  <Input
-                    id="period-end"
-                    type="date"
-                    value={periodEnd}
-                    onChange={(e) => setPeriodEnd(e.target.value)}
-                    required={customPeriod}
-                    min={periodStart}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
+          )}
           
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleCancel}>
