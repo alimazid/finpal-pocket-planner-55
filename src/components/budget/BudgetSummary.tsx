@@ -118,11 +118,22 @@ export function BudgetSummary({
   const [optimisticBudgets, setOptimisticBudgets] = useState<Budget[] | null>(null);
 
   // Clear optimistic state when budgets prop updates (after database sync)
+  // Only clear if the new budgets order matches our optimistic order
   useEffect(() => {
     if (optimisticBudgets && budgets.length > 0) {
-      setOptimisticBudgets(null);
+      const optimisticOrder = optimisticBudgets
+        .sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0))
+        .map(b => b.id);
+      const actualOrder = budgets
+        .sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0))
+        .map(b => b.id);
+      
+      // Only clear optimistic state if the database order matches our expectation
+      if (JSON.stringify(optimisticOrder) === JSON.stringify(actualOrder)) {
+        setOptimisticBudgets(null);
+      }
     }
-  }, [budgets]);
+  }, [budgets, optimisticBudgets]);
 
   // Drag and drop sensors with mobile support
   const sensors = useSensors(

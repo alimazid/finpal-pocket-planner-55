@@ -59,7 +59,15 @@ export function useBudgetPeriodTemplate(userId?: string) {
       
       if (error) throw error;
 
-      // No recalculation needed with target month/year approach
+      // Recalculate all budget spent amounts by calling the trigger function for existing budgets
+      const { error: triggerError } = await supabase.rpc('recalculate_all_budget_spent', {
+        user_id_param: userId
+      });
+      
+      if (triggerError) {
+        console.error('Error recalculating budget spent amounts:', triggerError);
+        // Don't throw error here as the preference update succeeded
+      }
       
       return data;
     },
