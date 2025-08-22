@@ -644,6 +644,52 @@ const translations: Translations = {
   updatedToCurrentRate: {
     english: 'Updated to current rate:',
     spanish: 'Actualizado a la tasa actual:'
+  },
+
+  // Create missing from last period feature
+  createMissingFromLastPeriod: {
+    english: 'Create missing from last period',
+    spanish: 'Crear faltantes del período anterior'
+  },
+  missingBudgetCategories: {
+    english: 'missing categories',
+    spanish: 'categorías faltantes'
+  },
+  missingBudgetCategory: {
+    english: 'missing category',
+    spanish: 'categoría faltante'
+  },
+  confirmCreateMissing: {
+    english: 'Create budgets for these missing categories:',
+    spanish: 'Crear presupuestos para estas categorías faltantes:'
+  },
+  missingBudgetsCreated: {
+    english: 'Missing Budgets Created',
+    spanish: 'Presupuestos Faltantes Creados'
+  },
+  createdXMissingBudgets: {
+    english: 'Created',
+    spanish: 'Se crearon'
+  },
+  noMissingBudgets: {
+    english: 'All categories from last period already exist',
+    spanish: 'Todas las categorías del período anterior ya existen'
+  },
+  fromPreviousPeriod: {
+    english: 'from previous period',
+    spanish: 'del período anterior'
+  },
+  createMissingBudgetsDescription: {
+    english: 'Add budget categories that exist in the previous period but are missing in the current period.',
+    spanish: 'Agregar categorías de presupuesto que existen en el período anterior pero faltan en el período actual.'
+  },
+  total: {
+    english: 'Total',
+    spanish: 'Total'
+  },
+  createMissingBudgets: {
+    english: 'Create Missing Budgets',
+    spanish: 'Crear Presupuestos Faltantes'
   }
 };
 

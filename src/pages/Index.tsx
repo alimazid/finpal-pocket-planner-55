@@ -241,6 +241,45 @@ const Index = () => {
     console.error('Transactions error:', transactionsError);
   }
 
+  // Calculate missing budgets from previous period
+  const missingBudgets: Budget[] = React.useMemo(() => {
+    if (!allBudgets.length || currentTargetYear === null || currentTargetMonth === null) return [];
+    
+    // Get previous period target
+    const previousPeriod = getPreviousPeriod(currentTargetYear, currentTargetMonth);
+    
+    // Filter budgets for current period
+    const currentPeriodBudgets = allBudgets.filter(budget => 
+      budget.target_year === currentTargetYear && budget.target_month === currentTargetMonth
+    );
+    
+    // Filter budgets for previous period
+    const previousPeriodBudgets = allBudgets.filter(budget => 
+      budget.target_year === previousPeriod.targetYear && budget.target_month === previousPeriod.targetMonth
+    );
+    
+    // Get current period category names
+    const currentCategoryNames = new Set(
+      currentPeriodBudgets.map(budget => budget.budget_categories?.name).filter(Boolean)
+    );
+    
+    // Find missing categories (exist in previous but not in current)
+    const missing = previousPeriodBudgets.filter(budget => 
+      budget.budget_categories?.name && !currentCategoryNames.has(budget.budget_categories.name)
+    );
+    
+    return missing;
+  }, [allBudgets, currentTargetYear, currentTargetMonth]);
+
+  // Calculate previous period for display
+  const previousPeriodDisplay = React.useMemo(() => {
+    if (currentTargetYear === null || currentTargetMonth === null || !periodTemplate) return null;
+    
+    const previousPeriod = getPreviousPeriod(currentTargetYear, currentTargetMonth);
+    const activeTemplate = periodTemplate || getDefaultTemplate();
+    return calculatePeriodDates(activeTemplate, previousPeriod.targetYear, previousPeriod.targetMonth);
+  }, [currentTargetYear, currentTargetMonth, periodTemplate, getDefaultTemplate]);
+
   // Add expense mutation
   const addExpenseMutation = useMutation({
     mutationFn: async (expense: {
@@ -391,6 +430,57 @@ const Index = () => {
       toast({
         title: t('error'),
         description: message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Create missing budgets mutation
+  const createMissingBudgetsMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id || currentTargetYear === null || currentTargetMonth === null) {
+        throw new Error('User not authenticated or period not selected');
+      }
+
+      const budgetsToCreate = missingBudgets.map(budget => ({
+        user_id: user.id,
+        budget_category_id: budget.budget_category_id,
+        amount: budget.amount,
+        spent: 0,
+        currency: budget.currency,
+        target_year: currentTargetYear,
+        target_month: currentTargetMonth,
+      }));
+
+      const { data, error } = await supabase
+        .from('budgets')
+        .insert(budgetsToCreate)
+        .select(`
+          *,
+          budget_categories (
+            id,
+            name,
+            sort_order
+          )
+        `);
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (newBudgets) => {
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      
+      const count = newBudgets?.length || 0;
+      toast({
+        title: t('missingBudgetsCreated'),
+        description: `${t('createdXMissingBudgets')} ${count} ${count === 1 ? t('budget') : t('budgets')}`,
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Error creating missing budgets:', error);
+      toast({
+        title: t('error'),
+        description: t('failedToCreateBudget'),
         variant: "destructive",
       });
     },
@@ -965,6 +1055,14 @@ const Index = () => {
           onUpdateBudgetAmount={(id, amount) => updateBudgetMutation.mutate({ budgetId: id, amount })}
           onUpdateBudgetOrder={(budgets) => updateBudgetOrderMutation.mutate(budgets)}
           availableCategories={budgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0)).map(budget => budget.budget_categories?.name || '')}
+          missingBudgets={missingBudgets}
+          onCreateMissingBudgets={() => createMissingBudgetsMutation.mutate()}
+          previousPeriod={previousPeriodDisplay ? {
+            startDate: previousPeriodDisplay.startDate,
+            endDate: previousPeriodDisplay.endDate,
+            isCurrentPeriod: false
+          } : undefined}
+          isCreatingMissingBudgets={createMissingBudgetsMutation.isPending}
         />
 
         {/* Recent Transactions */}

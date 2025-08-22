@@ -31,6 +31,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AddBudgetCard } from './AddBudgetCard';
+import { CreateMissingBudgetsCard } from './CreateMissingBudgetsCard';
 
 interface BudgetCategory {
   id: string;
@@ -90,6 +91,10 @@ interface BudgetSummaryProps {
   currentPeriod?: BudgetPeriod;
   onPeriodChange?: (period: BudgetPeriod) => void;
   cutoffDay?: number;
+  missingBudgets?: Budget[];
+  onCreateMissingBudgets?: () => void;
+  previousPeriod?: BudgetPeriod;
+  isCreatingMissingBudgets?: boolean;
 }
 
 export function BudgetSummary({ 
@@ -107,7 +112,11 @@ export function BudgetSummary({
   availableCategories = [],
   currentPeriod,
   onPeriodChange,
-  cutoffDay = 1 
+  cutoffDay = 1,
+  missingBudgets = [],
+  onCreateMissingBudgets,
+  previousPeriod,
+  isCreatingMissingBudgets = false
 }: BudgetSummaryProps) {
   const { t } = useTranslation(language);
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
@@ -507,7 +516,7 @@ export function BudgetSummary({
     budget?: Budget;
     isClickable?: boolean;
     categoryTransactions?: Transaction[];
-    dragListeners?: any;
+    dragListeners?: Record<string, unknown>;
   }) => {
     const percentage = getSpentPercentage(spent, amount);
     const budgetStatus = getBudgetStatus(spent, amount);
@@ -660,14 +669,28 @@ export function BudgetSummary({
           </CardContent>
         </Card>
         
-        {/* Add Budget Card */}
-        {onAddBudget && (
-          <AddBudgetCard 
-            onAddBudget={onAddBudget}
-            currentPeriod={currentPeriod}
-            language={language}
-          />
-        )}
+        {/* Budget Creation Cards */}
+        <div className={`grid gap-4 ${onCreateMissingBudgets && missingBudgets.length > 0 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+          {/* Add Budget Card */}
+          {onAddBudget && (
+            <AddBudgetCard 
+              onAddBudget={onAddBudget}
+              currentPeriod={currentPeriod}
+              language={language}
+            />
+          )}
+          
+          {/* Create Missing from Last Period Card */}
+          {onCreateMissingBudgets && missingBudgets.length > 0 && (
+            <CreateMissingBudgetsCard
+              missingBudgets={missingBudgets}
+              onCreateMissingBudgets={onCreateMissingBudgets}
+              previousPeriod={previousPeriod}
+              language={language}
+              isCreating={isCreatingMissingBudgets}
+            />
+          )}
+        </div>
       </>
     );
   }
@@ -708,16 +731,28 @@ export function BudgetSummary({
         </DndContext>
       </div>
       
-      {/* Add Budget Card - always available when there are budgets */}
-      {onAddBudget && (
-        <div className="mt-4">
+      {/* Budget Creation Cards - always available when there are budgets */}
+      <div className={`mt-4 grid gap-4 ${onCreateMissingBudgets && missingBudgets.length > 0 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+        {/* Add Budget Card */}
+        {onAddBudget && (
           <AddBudgetCard 
             onAddBudget={onAddBudget}
             currentPeriod={currentPeriod}
             language={language}
           />
-        </div>
-      )}
+        )}
+        
+        {/* Create Missing from Last Period Card */}
+        {onCreateMissingBudgets && missingBudgets.length > 0 && (
+          <CreateMissingBudgetsCard
+            missingBudgets={missingBudgets}
+            onCreateMissingBudgets={onCreateMissingBudgets}
+            previousPeriod={previousPeriod}
+            language={language}
+            isCreating={isCreatingMissingBudgets}
+          />
+        )}
+      </div>
 
       {/* Edit Budget Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
