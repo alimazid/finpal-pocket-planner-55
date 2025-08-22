@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Calendar } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface BudgetPeriod {
   startDate: Date;
@@ -16,9 +17,11 @@ interface BudgetPeriod {
 interface AddBudgetCardProps {
   onAddBudget: (category: string, amount: number) => void;
   currentPeriod?: BudgetPeriod;
+  language: 'english' | 'spanish';
 }
 
-export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps) {
+export function AddBudgetCard({ onAddBudget, currentPeriod, language }: AddBudgetCardProps) {
+  const { t } = useTranslation(language);
   const [isOpen, setIsOpen] = useState(false);
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
@@ -54,7 +57,7 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Plus className="h-5 w-5 text-primary" />
               </div>
-              <span className="text-lg font-medium text-muted-foreground">Add Budget</span>
+              <span className="text-lg font-medium text-muted-foreground">{t('addBudget')}</span>
             </div>
           </CardContent>
         </Card>
@@ -62,18 +65,18 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
       
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Budget</DialogTitle>
+          <DialogTitle>{t('addNewBudget')}</DialogTitle>
           <DialogDescription>
-            Create a new budget category to track your expenses for the selected period.
+            {t('createBudgetCategory')}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="category">Budget Name</Label>
+            <Label htmlFor="category">{t('budgetName')}</Label>
             <Input
               id="category"
-              placeholder="e.g., Groceries, Gas, Entertainment"
+              placeholder={t('budgetNamePlaceholder')}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               required
@@ -81,11 +84,11 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="amount">Budget Amount ($)</Label>
+            <Label htmlFor="amount">{t('budgetAmount')}</Label>
             <Input
               id="amount"
               type="number"
-              placeholder="e.g., 500"
+              placeholder={t('budgetAmountPlaceholder')}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               step="0.01"
@@ -97,11 +100,11 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
           {/* Show selected period */}
           {currentPeriod && (
             <div className="space-y-2">
-              <Label>Budget Period</Label>
+              <Label>{t('budgetPeriod')}</Label>
               <div className="flex items-center space-x-2 p-3 bg-muted rounded-md">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  This budget will be created for: <strong>{getCurrentPeriodDisplay()}</strong>
+                  {t('thisBudgetWillBeCreatedFor')} <strong>{getCurrentPeriodDisplay()}</strong>
                 </span>
               </div>
             </div>
@@ -109,9 +112,9 @@ export function AddBudgetCard({ onAddBudget, currentPeriod }: AddBudgetCardProps
           
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancel
+              {t('cancel')}
             </Button>
-            <Button type="submit">Add Budget</Button>
+            <Button type="submit">{t('addBudget')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -161,6 +161,14 @@ const translations: Translations = {
     english: 'Currency',
     spanish: 'Moneda'
   },
+  email: {
+    english: 'Email',
+    spanish: 'Correo Electrónico'
+  },
+  password: {
+    english: 'Password',
+    spanish: 'Contraseña'
+  },
   addExpense: {
     english: 'Add Expense',
     spanish: 'Agregar Gasto'
@@ -323,6 +331,10 @@ const translations: Translations = {
     english: 'of',
     spanish: 'de'
   },
+  and: {
+    english: 'and',
+    spanish: 'y'
+  },
   
   // Budget editing
   editBudget: {
@@ -336,6 +348,302 @@ const translations: Translations = {
   updateBudget: {
     english: 'Update Budget',
     spanish: 'Actualizar Presupuesto'
+  },
+  deleteBudget: {
+    english: 'Delete Budget',
+    spanish: 'Eliminar Presupuesto'
+  },
+  deleteBudgetConfirm: {
+    english: 'Are you sure you want to delete the budget for',
+    spanish: '¿Estás seguro de que quieres eliminar el presupuesto para'
+  },
+
+  // Authentication
+  signIn: {
+    english: 'Sign In',
+    spanish: 'Iniciar Sesión'
+  },
+  signUp: {
+    english: 'Sign Up',
+    spanish: 'Registrarse'
+  },
+  signInError: {
+    english: 'Sign In Error',
+    spanish: 'Error de Inicio de Sesión'
+  },
+  signUpError: {
+    english: 'Sign Up Error',
+    spanish: 'Error de Registro'
+  },
+  signOut: {
+    english: 'Sign Out',
+    spanish: 'Cerrar Sesión'
+  },
+  enterYourEmail: {
+    english: 'Enter your email',
+    spanish: 'Ingresa tu correo electrónico'
+  },
+  enterYourPassword: {
+    english: 'Enter your password',
+    spanish: 'Ingresa tu contraseña'
+  },
+  createPassword: {
+    english: 'Create a password (min 6 characters)',
+    spanish: 'Crear una contraseña (mín. 6 caracteres)'
+  },
+  createAccount: {
+    english: 'Create Account',
+    spanish: 'Crear Cuenta'
+  },
+  checkYourEmail: {
+    english: 'Check your email',
+    spanish: 'Revisa tu correo electrónico'
+  },
+  emailConfirmationSent: {
+    english: "We've sent you a confirmation link to complete your registration.",
+    spanish: 'Te hemos enviado un enlace de confirmación para completar tu registro.'
+  },
+  signInToAccount: {
+    english: 'Sign in to your account or create a new one',
+    spanish: 'Inicia sesión en tu cuenta o crea una nueva'
+  },
+
+  // Loading and status
+  loading: {
+    english: 'Loading...',
+    spanish: 'Cargando...'
+  },
+  saving: {
+    english: 'Save',
+    spanish: 'Guardar'
+  },
+  savingEllipsis: {
+    english: 'Saving...',
+    spanish: 'Guardando...'
+  },
+
+  // General status messages
+  error: {
+    english: 'Error',
+    spanish: 'Error'
+  },
+  success: {
+    english: 'Success',
+    spanish: 'Éxito'
+  },
+  unexpectedError: {
+    english: 'An unexpected error occurred',
+    spanish: 'Ocurrió un error inesperado'
+  },
+
+  // Toast notifications - Success messages
+  expenseAdded: {
+    english: 'Expense Added',
+    spanish: 'Gasto Agregado'
+  },
+  budgetCreated: {
+    english: 'Budget Created',
+    spanish: 'Presupuesto Creado'
+  },
+  budgetDeleted: {
+    english: 'Budget Deleted',
+    spanish: 'Presupuesto Eliminado'
+  },
+  transactionDeleted: {
+    english: 'Transaction Deleted',
+    spanish: 'Transacción Eliminada'
+  },
+  transactionUpdated: {
+    english: 'Transaction Updated',
+    spanish: 'Transacción Actualizada'
+  },
+  categoryUpdated: {
+    english: 'Category Updated',
+    spanish: 'Categoría Actualizada'
+  },
+  allTransactionsCleared: {
+    english: 'All Transactions Cleared',
+    spanish: 'Todas las Transacciones Eliminadas'
+  },
+  allBudgetsCleared: {
+    english: 'All Budgets Cleared',
+    spanish: 'Todos los Presupuestos Eliminados'
+  },
+  signedOut: {
+    english: 'Signed out',
+    spanish: 'Sesión cerrada'
+  },
+  signedOutSuccess: {
+    english: "You've been successfully signed out",
+    spanish: 'Has cerrado sesión exitosamente'
+  },
+  welcomeBack: {
+    english: 'Welcome back!',
+    spanish: '¡Bienvenido de vuelta!'
+  },
+  signedInSuccessfully: {
+    english: "You've successfully signed in.",
+    spanish: 'Has iniciado sesión exitosamente.'
+  },
+  exchangeRateSynced: {
+    english: 'Exchange Rate Synced',
+    spanish: 'Tipo de Cambio Sincronizado'
+  },
+
+  // Toast notifications - Error messages
+  failedToAddExpense: {
+    english: 'Failed to add expense',
+    spanish: 'Error al agregar gasto'
+  },
+  failedToCreateBudget: {
+    english: 'Failed to create budget',
+    spanish: 'Error al crear presupuesto'
+  },
+  budgetExistsForPeriod: {
+    english: 'A budget for this category already exists for this period',
+    spanish: 'Ya existe un presupuesto para esta categoría en este período'
+  },
+  failedToClearTransactions: {
+    english: 'Failed to clear transactions',
+    spanish: 'Error al eliminar transacciones'
+  },
+  failedToClearBudgets: {
+    english: 'Failed to clear budgets',
+    spanish: 'Error al eliminar presupuestos'
+  },
+  failedToSaveLanguagePreference: {
+    english: 'Failed to save language preference',
+    spanish: 'Error al guardar preferencia de idioma'
+  },
+  failedToSignOut: {
+    english: 'Failed to sign out',
+    spanish: 'Error al cerrar sesión'
+  },
+  syncFailed: {
+    english: 'Sync Failed',
+    spanish: 'Error de Sincronización'
+  },
+  failedToSyncExchangeRate: {
+    english: 'Failed to sync exchange rate',
+    spanish: 'Error al sincronizar tipo de cambio'
+  },
+  failedToFetchExchangeRate: {
+    english: 'Failed to fetch exchange rate',
+    spanish: 'Error al obtener tipo de cambio'
+  },
+
+  // Period Selection Modal
+  periodSelection: {
+    english: 'Period Selection',
+    spanish: 'Selección de Período'
+  },
+  periodSelectionDescription: {
+    english: 'Choose how you want your budget periods to be calculated.',
+    spanish: 'Elige cómo quieres que se calculen tus períodos de presupuesto.'
+  },
+  calendarMonth: {
+    english: 'Calendar Month',
+    spanish: 'Mes Calendario'
+  },
+  specificDay: {
+    english: 'Specific Day',
+    spanish: 'Día Específico'
+  },
+  invalidDay: {
+    english: 'Invalid Day',
+    spanish: 'Día Inválido'
+  },
+  invalidDayDescription: {
+    english: 'Please enter a day between 1 and 31.',
+    spanish: 'Por favor ingresa un día entre 1 y 31.'
+  },
+  calendarMonthDescription: {
+    english: 'Budget periods will follow standard calendar months (1st to last day of each month).',
+    spanish: 'Los períodos de presupuesto seguirán los meses calendario estándar (del 1 al último día de cada mes).'
+  },
+  specificDayDescription: {
+    english: 'Budget periods will start on a specific day of each month.',
+    spanish: 'Los períodos de presupuesto comenzarán en un día específico de cada mes.'
+  },
+  startOnDay: {
+    english: 'Start on day:',
+    spanish: 'Comenzar el día:'
+  },
+  ofEachMonth: {
+    english: 'of each month',
+    spanish: 'de cada mes'
+  },
+  budgetPeriod: {
+    english: 'Budget Period',
+    spanish: 'Período del Presupuesto'
+  },
+  thisBudgetWillBeCreatedFor: {
+    english: 'This budget will be created for:',
+    spanish: 'Este presupuesto será creado para:'
+  },
+
+  // Form placeholders and labels
+  selectCurrency: {
+    english: 'Select currency',
+    spanish: 'Seleccionar moneda'
+  },
+  selectALanguage: {
+    english: 'Select a language',
+    spanish: 'Seleccionar un idioma'
+  },
+  dragToReorder: {
+    english: 'Drag to reorder',
+    spanish: 'Arrastra para reordenar'
+  },
+
+  // Budget-specific messages
+  budgetCreatedFor: {
+    english: 'Budget for',
+    spanish: 'Presupuesto para'
+  },
+  hasBeenAdded: {
+    english: 'has been added',
+    spanish: 'ha sido agregado'
+  },
+  spentOn: {
+    english: 'spent on',
+    spanish: 'gastado en'
+  },
+  amountUpdatedTo: {
+    english: 'Amount updated to',
+    spanish: 'Cantidad actualizada a'
+  },
+  categoryUpdatedTo: {
+    english: 'Category updated to',
+    spanish: 'Categoría actualizada a'
+  },
+  transactionRemoved: {
+    english: 'has been removed',
+    spanish: 'ha sido removida'
+  },
+  relatedTransactionsRemoved: {
+    english: 'related transaction',
+    spanish: 'transacción relacionada'
+  },
+  relatedTransactionsRemovedPlural: {
+    english: 'related transactions',
+    spanish: 'transacciones relacionadas'
+  },
+  removed: {
+    english: 'removed',
+    spanish: 'eliminadas'
+  },
+  transactionsRemoved: {
+    english: 'have been removed',
+    spanish: 'han sido eliminadas'
+  },
+  budgetsRemoved: {
+    english: 'have been removed',
+    spanish: 'han sido eliminados'
+  },
+  updatedToCurrentRate: {
+    english: 'Updated to current rate:',
+    spanish: 'Actualizado a la tasa actual:'
   }
 };
 

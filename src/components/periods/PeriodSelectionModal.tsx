@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
@@ -13,10 +14,12 @@ interface PeriodSelectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
+  language: 'english' | 'spanish';
 }
 
-export function PeriodSelectionModal({ open, onOpenChange, userId }: PeriodSelectionModalProps) {
+export function PeriodSelectionModal({ open, onOpenChange, userId, language }: PeriodSelectionModalProps) {
   const { toast } = useToast();
+  const { t } = useTranslation(language);
   const queryClient = useQueryClient();
   const [periodType, setPeriodType] = useState<'calendar_month' | 'specific_day'>('calendar_month');
   const [specificDay, setSpecificDay] = useState<number>(1);
@@ -55,8 +58,8 @@ export function PeriodSelectionModal({ open, onOpenChange, userId }: PeriodSelec
   const handleSave = () => {
     if (periodType === 'specific_day' && (specificDay < 1 || specificDay > 31)) {
       toast({
-        title: "Invalid Day",
-        description: "Please enter a day between 1 and 31.",
+        title: t('invalidDay'),
+        description: t('invalidDayDescription'),
         variant: "destructive",
       });
       return;
@@ -72,9 +75,9 @@ export function PeriodSelectionModal({ open, onOpenChange, userId }: PeriodSelec
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Period Selection</DialogTitle>
+          <DialogTitle>{t('periodSelection')}</DialogTitle>
           <DialogDescription>
-            Choose how you want your budget periods to be calculated.
+            {t('periodSelectionDescription')}
           </DialogDescription>
         </DialogHeader>
         
@@ -84,27 +87,27 @@ export function PeriodSelectionModal({ open, onOpenChange, userId }: PeriodSelec
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="calendar_month" id="calendar_month" />
                 <Label htmlFor="calendar_month" className="font-normal">
-                  Calendar Month
+                  {t('calendarMonth')}
                 </Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Budget periods will follow standard calendar months (1st to last day of each month).
+                {t('calendarMonthDescription')}
               </p>
               
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="specific_day" id="specific_day" />
                 <Label htmlFor="specific_day" className="font-normal">
-                  Specific Day
+                  {t('specificDay')}
                 </Label>
               </div>
               <div className="ml-6 space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  Budget periods will start on a specific day of each month.
+                  {t('specificDayDescription')}
                 </p>
                 {periodType === 'specific_day' && (
                   <div className="flex items-center space-x-2">
                     <Label htmlFor="day-input" className="text-sm">
-                      Start on day:
+                      {t('startOnDay')}
                     </Label>
                     <Input
                       id="day-input"
@@ -116,7 +119,7 @@ export function PeriodSelectionModal({ open, onOpenChange, userId }: PeriodSelec
                       className="w-16"
                     />
                     <span className="text-sm text-muted-foreground">
-                      of each month
+                      {t('ofEachMonth')}
                     </span>
                   </div>
                 )}
@@ -126,10 +129,10 @@ export function PeriodSelectionModal({ open, onOpenChange, userId }: PeriodSelec
           
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={isUpdating || templateLoading}>
-              {isUpdating ? "Saving..." : "Save"}
+              {isUpdating ? t('savingEllipsis') : t('saving')}
             </Button>
           </div>
         </div>

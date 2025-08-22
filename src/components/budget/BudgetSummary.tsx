@@ -543,7 +543,7 @@ export function BudgetSummary({
                       <div
                         {...dragListeners}
                         className="flex items-center justify-center w-8 h-full cursor-grab hover:cursor-grabbing active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors hover:bg-muted/20 rounded px-1 select-none touch-manipulation flex-shrink-0"
-                        title="Drag to reorder"
+                        title={t('dragToReorder')}
                         style={{ touchAction: 'none' }}
                       >
                         <div className="flex flex-col gap-1">
@@ -665,6 +665,7 @@ export function BudgetSummary({
           <AddBudgetCard 
             onAddBudget={onAddBudget}
             currentPeriod={currentPeriod}
+            language={language}
           />
         )}
       </>
@@ -713,13 +714,14 @@ export function BudgetSummary({
           <AddBudgetCard 
             onAddBudget={onAddBudget}
             currentPeriod={currentPeriod}
+            language={language}
           />
         </div>
       )}
 
       {/* Edit Budget Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('editBudget')}</DialogTitle>
             <DialogDescription>
@@ -753,17 +755,18 @@ export function BudgetSummary({
               />
             </div>
             
-            <DialogFooter className="flex justify-between">
-              <div className="flex gap-2">
+            <div className="space-y-4 mt-4">
+              <DialogFooter className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={handleEditCancel}>
                   {t('cancel')}
                 </Button>
                 <Button type="submit">{t('updateBudget')}</Button>
-              </div>
+              </DialogFooter>
+              
               {editingBudget && onDeleteBudget && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" type="button">
+                    <Button variant="destructive" type="button" className="w-full">
                       <Trash2 className="h-4 w-4 mr-2" />
                       {t('deleteBudget')}
                     </Button>
@@ -790,7 +793,7 @@ export function BudgetSummary({
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-            </DialogFooter>
+            </div>
           </form>
         </DialogContent>
       </Dialog>

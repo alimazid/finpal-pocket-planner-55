@@ -102,7 +102,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
         <Label htmlFor="currency">{t('currency')}</Label>
         <Select value={currency} onValueChange={setCurrency}>
           <SelectTrigger className="mt-1">
-            <SelectValue placeholder="Select currency" />
+            <SelectValue placeholder={t('selectCurrency')} />
           </SelectTrigger>
           <SelectContent className="bg-background border shadow-lg z-50">
             {currencies.map((curr) => (

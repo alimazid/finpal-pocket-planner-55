@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 import { exchangeRateService } from '@/lib/exchangeRateService';
 
 interface ExchangeRateData {
@@ -11,8 +12,13 @@ interface ExchangeRateData {
   change?: number;
 }
 
-const ExchangeRateWidget = () => {
+interface ExchangeRateWidgetProps {
+  language: 'english' | 'spanish';
+}
+
+const ExchangeRateWidget = ({ language }: ExchangeRateWidgetProps) => {
   const { toast } = useToast();
+  const { t } = useTranslation(language);
   const [exchangeData, setExchangeData] = useState<ExchangeRateData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
@@ -66,8 +72,8 @@ const ExchangeRateWidget = () => {
       setLastFetchTime(currentTime);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to fetch exchange rate",
+        title: t('error'),
+        description: t('failedToFetchExchangeRate'),
         variant: "destructive",
       });
       console.error('Exchange rate fetch error:', error);

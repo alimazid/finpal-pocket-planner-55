@@ -259,14 +259,14 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
-        title: "Expense Added",
-        description: `$${newTransaction.amount.toFixed(2)} spent on ${newTransaction.category}`,
+        title: t('expenseAdded'),
+        description: `$${newTransaction.amount.toFixed(2)} ${t('spentOn')} ${newTransaction.category}`,
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to add expense",
+        title: t('error'),
+        description: t('failedToAddExpense'),
         variant: "destructive",
       });
     },
@@ -359,19 +359,19 @@ const Index = () => {
     onSuccess: (newBudget) => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
       toast({
-        title: "Budget Created",
-        description: `Budget for ${newBudget.budget_categories?.name} ($${newBudget.amount.toFixed(2)}) has been added`,
+        title: t('budgetCreated'),
+        description: `${t('budgetCreatedFor')} ${newBudget.budget_categories?.name} ($${newBudget.amount.toFixed(2)}) ${t('hasBeenAdded')}`,
       });
     },
     onError: (error: Error) => {
       const message = error.message?.includes('already exists for this period') 
         ? error.message
         : error.message?.includes('Budget periods cannot overlap')
-        ? "A budget for this category already exists for this period"
-        : "Failed to create budget";
+        ? t('budgetExistsForPeriod')
+        : t('failedToCreateBudget');
         
       toast({
-        title: "Error",
+        title: t('error'),
         description: message,
         variant: "destructive",
       });
@@ -425,8 +425,8 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
 
       toast({
-        title: "Budget Deleted",
-        description: `Budget for ${categoryName}${relatedTransactions.length > 0 ? ` and ${relatedTransactions.length} related transaction${relatedTransactions.length === 1 ? '' : 's'}` : ''} removed`,
+        title: t('budgetDeleted'),
+        description: `${t('budgetCreatedFor')} ${categoryName}${relatedTransactions.length > 0 ? ` ${t('and')} ${relatedTransactions.length} ${relatedTransactions.length === 1 ? t('relatedTransactionsRemoved') : t('relatedTransactionsRemovedPlural')}` : ''} ${t('removed')}`,
       });
     },
   });
@@ -449,8 +449,8 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
-        title: "Transaction Deleted",
-        description: `Transaction "${transaction?.description}" has been removed`,
+        title: t('transactionDeleted'),
+        description: `${t('transaction')} "${transaction?.description}" ${t('transactionRemoved')}`,
       });
     },
   });
@@ -473,8 +473,8 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
-        title: "Transaction Updated",
-        description: `Amount updated to $${updatedTransaction.amount.toFixed(2)}`,
+        title: t('transactionUpdated'),
+        description: `${t('amountUpdatedTo')} $${updatedTransaction.amount.toFixed(2)}`,
       });
     },
   });
@@ -497,8 +497,8 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
-        title: "Category Updated",
-        description: `Category updated to ${updatedTransaction.category}`,
+        title: t('categoryUpdated'),
+        description: `${t('categoryUpdatedTo')} ${updatedTransaction.category}`,
       });
     },
   });
@@ -573,14 +573,14 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
       toast({
-        title: "All Transactions Cleared",
-        description: `${transactionCount} transaction${transactionCount === 1 ? '' : 's'} have been removed`,
+        title: t('allTransactionsCleared'),
+        description: `${transactionCount} ${transactionCount === 1 ? t('transaction') : t('transactions')} ${t('transactionsRemoved')}`,
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to clear transactions",
+        title: t('error'),
+        description: t('failedToClearTransactions'),
         variant: "destructive",
       });
     },
@@ -602,14 +602,14 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
 
       toast({
-        title: "All Budgets Cleared",
-        description: `${budgetCount} budget${budgetCount === 1 ? '' : 's'} have been removed`,
+        title: t('allBudgetsCleared'),
+        description: `${budgetCount} ${budgetCount === 1 ? t('budget') : t('budgets')} ${t('budgetsRemoved')}`,
       });
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to clear budgets",
+        title: t('error'),
+        description: t('failedToClearBudgets'),
         variant: "destructive",
       });
     },
@@ -645,8 +645,8 @@ const Index = () => {
     },
     onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to save language preference",
+        title: t('error'),
+        description: t('failedToSaveLanguagePreference'),
         variant: "destructive",
       });
     },
@@ -684,14 +684,14 @@ const Index = () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       toast({
-        title: "Error",
-        description: "Failed to sign out",
+        title: t('error'),
+        description: t('failedToSignOut'),
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Signed out",
-        description: "You've been successfully signed out",
+        title: t('signedOut'),
+        description: t('signedOutSuccess'),
       });
     }
   };
@@ -701,7 +701,7 @@ const Index = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading...</p>
+          <p className="mt-2 text-muted-foreground">{t('loading')}</p>
         </div>
       </div>
     );
@@ -733,8 +733,8 @@ const Index = () => {
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-white" />
               </div>
-              <ExchangeRateWidget />
-              <ExchangeRateSync />
+              <ExchangeRateWidget language={selectedLanguage as 'english' | 'spanish'} />
+              <ExchangeRateSync language={selectedLanguage as 'english' | 'spanish'} />
               
             </div>
             <div className="flex items-center gap-2">
@@ -814,7 +814,7 @@ const Index = () => {
                      className="cursor-pointer"
                    >
                      <Settings className="w-4 h-4 mr-2" />
-                     Period Selection
+                     {t('periodSelection')}
                    </DropdownMenuItem>
 
                    <Dialog open={isTranslationOpen} onOpenChange={setIsTranslationOpen}>
@@ -837,7 +837,7 @@ const Index = () => {
                       <div className="grid gap-4 py-4">
                         <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a language" />
+                            <SelectValue placeholder={t('selectALanguage')} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="english">{t('english')}</SelectItem>
@@ -863,7 +863,7 @@ const Index = () => {
                   
                   <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                     <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
+                    {t('signOut')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -893,7 +893,7 @@ const Index = () => {
                 className="flex items-center gap-2"
               >
                 <ChevronLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Previous</span>
+                <span className="hidden sm:inline">{t('previous')}</span>
               </Button>
 
               <div className="flex-1 text-center">
@@ -916,7 +916,7 @@ const Index = () => {
                   className="flex items-center gap-2"
                 >
                   <Home className="h-4 w-4" />
-                  <span className="hidden sm:inline">Current</span>
+                  <span className="hidden sm:inline">{t('current')}</span>
                 </Button>
                 
                 <Button
@@ -925,7 +925,7 @@ const Index = () => {
                   onClick={handleNextPeriod}
                   className="flex items-center gap-2"
                 >
-                  <span className="hidden sm:inline">Next</span>
+                  <span className="hidden sm:inline">{t('next')}</span>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -972,6 +972,7 @@ const Index = () => {
             open={isPeriodSelectionOpen}
             onOpenChange={setIsPeriodSelectionOpen}
             userId={user.id}
+            language={selectedLanguage as 'english' | 'spanish'}
           />
         )}
 

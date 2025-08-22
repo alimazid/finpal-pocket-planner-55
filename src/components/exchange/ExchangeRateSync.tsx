@@ -3,10 +3,16 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from '@/hooks/useTranslation';
 
-export function ExchangeRateSync() {
+interface ExchangeRateSyncProps {
+  language: 'english' | 'spanish';
+}
+
+export function ExchangeRateSync({ language }: ExchangeRateSyncProps) {
   const [isForceSync, setIsForceSync] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation(language);
 
   const syncExchangeRate = async (showToast = false) => {
     try {
@@ -55,8 +61,8 @@ export function ExchangeRateSync() {
       
       if (showToast) {
         toast({
-          title: "Exchange Rate Synced",
-          description: `Updated to current rate: ${dopRate.toFixed(2)}`,
+          title: t('exchangeRateSynced'),
+          description: `${t('updatedToCurrentRate')} ${dopRate.toFixed(2)}`,
         });
       }
       
@@ -64,8 +70,8 @@ export function ExchangeRateSync() {
       console.error('❌ Failed to sync exchange rate:', error);
       if (showToast) {
         toast({
-          title: "Sync Failed",
-          description: "Failed to sync exchange rate",
+          title: t('syncFailed'),
+          description: t('failedToSyncExchangeRate'),
           variant: "destructive",
         });
       }
