@@ -96,6 +96,7 @@ export function useBudgetPeriodTemplate(userId?: string) {
     specific_day: userPreferences.specific_day || 1,
   } : null;
 
+
   // Get default template for new users
   const getDefaultTemplate = (): BudgetPeriodTemplate => ({
     period_type: 'calendar_month',

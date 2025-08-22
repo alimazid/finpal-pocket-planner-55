@@ -96,18 +96,18 @@ export function getCurrentTargetMonth(
     const specificDay = Math.min(Math.max(1, template.specific_day), 31);
     const currentDay = currentDate.getDate();
     
-    if (currentDay < specificDay) {
-      // We're in a period that ends in the current month
-      return {
-        targetYear: currentDate.getFullYear(),
-        targetMonth: currentDate.getMonth() + 1
-      };
-    } else {
-      // We're in a period that ends in the next month
+    if (currentDay >= specificDay) {
+      // We're in a period that ends in the next month (period starts today or already started)
       const nextMonth = addMonths(currentDate, 1);
       return {
         targetYear: nextMonth.getFullYear(),
         targetMonth: nextMonth.getMonth() + 1
+      };
+    } else {
+      // We're in a period that ends in the current month (period hasn't started yet)
+      return {
+        targetYear: currentDate.getFullYear(),
+        targetMonth: currentDate.getMonth() + 1
       };
     }
   }

@@ -64,6 +64,15 @@ interface Budget {
   budget_categories?: BudgetCategory;
 }
 
+// Helper function to get current period as fallback (moved outside component to prevent re-creation)
+const getCurrentPeriodFallback = () => {
+  const now = new Date();
+  return {
+    targetYear: now.getFullYear(),
+    targetMonth: now.getMonth() + 1
+  };
+};
+
 const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -85,40 +94,61 @@ const Index = () => {
     getDefaultTemplate 
   } = useBudgetPeriodTemplate(user?.id);
 
-  // Budget period state - using target month/year approach
-  const [currentTargetYear, setCurrentTargetYear] = useState(new Date().getFullYear());
-  const [currentTargetMonth, setCurrentTargetMonth] = useState(new Date().getMonth() + 1);
+
+  // Budget period state - wait for template to initialize properly
+  const [currentTargetYear, setCurrentTargetYear] = useState<number | null>(null);
+  const [currentTargetMonth, setCurrentTargetMonth] = useState<number | null>(null);
   const [hasInitializedPeriod, setHasInitializedPeriod] = useState(false);
   
-  // Initialize target month/year based on current period template (only once)
+  // Initialize period to always show current period on page load
   useEffect(() => {
-    if (periodTemplate && !hasInitializedPeriod) {
-      const currentTarget = getCurrentTargetMonth(periodTemplate);
-      setCurrentTargetYear(currentTarget.targetYear);
-      setCurrentTargetMonth(currentTarget.targetMonth);
-      setHasInitializedPeriod(true);
-    } else if (!periodTemplate && !hasInitializedPeriod) {
-      // Fallback to current month if template not loaded yet
-      const now = new Date();
-      setCurrentTargetYear(now.getFullYear());
-      setCurrentTargetMonth(now.getMonth() + 1);
-      setHasInitializedPeriod(true);
+    // Wait for both user and preferences to be loaded, and ensure we haven't initialized yet
+    if (!user?.id || hasInitializedPeriod) return;
+    
+    // Only initialize once we have the actual user preferences (not default template)
+    // This prevents the race condition where default template initializes first
+    if (!userPreferences && periodTemplate === null) {
+      return;
     }
-  }, [periodTemplate, hasInitializedPeriod]);
+    
+    // Use template if available, otherwise use default template
+    const activeTemplate = periodTemplate || getDefaultTemplate();
+    
+    // Always calculate and show the current period
+    const currentTarget = getCurrentTargetMonth(activeTemplate);
+    
+    setCurrentTargetYear(currentTarget.targetYear);
+    setCurrentTargetMonth(currentTarget.targetMonth);
+    setHasInitializedPeriod(true);
+    
+    // Verification: confirm the period was set correctly
+    const periodDates = calculatePeriodDates(activeTemplate, currentTarget.targetYear, currentTarget.targetMonth);
+    const today = new Date();
+    const isCurrentPeriod = today >= periodDates.startDate && today <= periodDates.endDate;
+    
+    console.log('✅ Period initialized:', {
+      period: `${periodDates.startDate.toISOString().split('T')[0]} to ${periodDates.endDate.toISOString().split('T')[0]}`,
+      isCurrentPeriod
+    });
+  }, [periodTemplate, hasInitializedPeriod, user?.id, getDefaultTemplate, userPreferences]);
+
+
 
   // Navigation functions for target month/year
   const handlePreviousPeriod = () => {
-    const previous = getPreviousPeriod(currentTargetYear, currentTargetMonth);
-    console.log('Navigating to previous period:', previous);
-    setCurrentTargetYear(previous.targetYear);
-    setCurrentTargetMonth(previous.targetMonth);
+    if (currentTargetYear !== null && currentTargetMonth !== null) {
+      const previous = getPreviousPeriod(currentTargetYear, currentTargetMonth);
+      setCurrentTargetYear(previous.targetYear);
+      setCurrentTargetMonth(previous.targetMonth);
+    }
   };
 
   const handleNextPeriod = () => {
-    const next = getNextPeriod(currentTargetYear, currentTargetMonth);
-    console.log('Navigating to next period:', next);
-    setCurrentTargetYear(next.targetYear);
-    setCurrentTargetMonth(next.targetMonth);
+    if (currentTargetYear !== null && currentTargetMonth !== null) {
+      const next = getNextPeriod(currentTargetYear, currentTargetMonth);
+      setCurrentTargetYear(next.targetYear);
+      setCurrentTargetMonth(next.targetMonth);
+    }
   };
 
   const handleGoToCurrent = () => {
@@ -131,19 +161,14 @@ const Index = () => {
 
   // Calculate current period for display
   const currentPeriodDisplay = React.useMemo(() => {
-    if (!periodTemplate) {
-      // Fallback to calendar month if template not loaded
-      const startDate = new Date(currentTargetYear, currentTargetMonth - 1, 1);
-      const endDate = new Date(currentTargetYear, currentTargetMonth, 0);
-      return {
-        startDate,
-        endDate,
-        targetYear: currentTargetYear,
-        targetMonth: currentTargetMonth
-      };
+    if (currentTargetYear === null || currentTargetMonth === null) {
+      return null; // Don't show anything until period is loaded
     }
-    return calculatePeriodDates(periodTemplate, currentTargetYear, currentTargetMonth);
-  }, [periodTemplate, currentTargetYear, currentTargetMonth]);
+    // Use template if available, otherwise use default template
+    const activeTemplate = periodTemplate || getDefaultTemplate();
+    return calculatePeriodDates(activeTemplate, currentTargetYear, currentTargetMonth);
+  }, [periodTemplate, currentTargetYear, currentTargetMonth, getDefaultTemplate]);
+
 
   // Update language when user preference changes (from the hook)
   useEffect(() => {
@@ -177,25 +202,18 @@ const Index = () => {
 
   // Calculate budgets for the selected period (from period controls)
   const budgets: CalculatedBudget[] = React.useMemo(() => {
-    if (!allBudgets.length) return [];
+    if (!allBudgets.length || currentTargetYear === null || currentTargetMonth === null) return [];
     
     // Filter budgets for the current target month/year
     const selectedPeriodBudgets = allBudgets.filter(budget => 
       budget.target_year === currentTargetYear && budget.target_month === currentTargetMonth
     );
     
-    // Add calculated periods to the filtered budgets if template is available
-    if (periodTemplate) {
-      return addCalculatedPeriods(selectedPeriodBudgets, periodTemplate);
-    }
     
-    // Return budgets without calculated periods if template not loaded yet
-    return selectedPeriodBudgets.map(budget => ({
-      ...budget,
-      period_start: new Date(budget.target_year, budget.target_month - 1, 1).toISOString().split('T')[0],
-      period_end: new Date(budget.target_year, budget.target_month, 0).toISOString().split('T')[0]
-    }));
-  }, [allBudgets, periodTemplate, currentTargetYear, currentTargetMonth]);
+    // Use template if available, otherwise use default template
+    const activeTemplate = periodTemplate || getDefaultTemplate();
+    return addCalculatedPeriods(selectedPeriodBudgets, activeTemplate);
+  }, [allBudgets, periodTemplate, currentTargetYear, currentTargetMonth, getDefaultTemplate]);
 
   // Fetch transactions
   const { data: transactions = [], isLoading: transactionsLoading, error: transactionsError } = useQuery({
@@ -324,8 +342,8 @@ const Index = () => {
         .from('budgets')
         .select('id')
         .eq('budget_category_id', budgetCategory.id)
-        .eq('target_year', currentTargetYear)
-        .eq('target_month', currentTargetMonth)
+        .eq('target_year', currentTargetYear!)
+        .eq('target_month', currentTargetMonth!)
         .maybeSingle();
         
       if (existingBudget) {
@@ -340,8 +358,8 @@ const Index = () => {
           budget_category_id: budgetCategory.id,
           amount,
           spent: 0,
-          target_year: currentTargetYear,
-          target_month: currentTargetMonth,
+          target_year: currentTargetYear!,
+          target_month: currentTargetMonth!,
         }])
         .select(`
           *,
@@ -898,13 +916,13 @@ const Index = () => {
 
               <div className="flex-1 text-center">
                 <div className="font-semibold text-foreground">
-                  {new Date(currentTargetYear, currentTargetMonth - 1).toLocaleDateString('en-US', { 
+                  {currentTargetYear && currentTargetMonth ? new Date(currentTargetYear, currentTargetMonth - 1).toLocaleDateString('en-US', { 
                     month: 'long', 
                     year: 'numeric' 
-                  })}
+                  }) : 'Loading...'}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {currentPeriodDisplay.startDate.toLocaleDateString()} - {currentPeriodDisplay.endDate.toLocaleDateString()}
+                  {currentPeriodDisplay ? `${currentPeriodDisplay.startDate.toLocaleDateString()} - ${currentPeriodDisplay.endDate.toLocaleDateString()}` : 'Loading...'}
                 </div>
               </div>
 
