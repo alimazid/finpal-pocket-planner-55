@@ -14,7 +14,7 @@ import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
 import { ExchangeRateSync } from "@/components/exchange/ExchangeRateSync";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
 
-import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home } from "lucide-react";
+import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
 import { addCalculatedPeriods, getCurrentTargetMonth, calculatePeriodDates, getNextPeriod, getPreviousPeriod } from "@/lib/periodCalculations";
 import type { CalculatedBudget } from "@/lib/periodCalculations";
+import { exportAllFinancialData, downloadJSON } from "@/lib/exportFinancialData";
 
 interface Transaction {
   id: string;
@@ -831,6 +832,45 @@ const Index = () => {
   // Get primary currency from first budget or default to USD
   const primaryCurrency = budgets.length > 0 ? budgets[0].currency : 'USD';
 
+  // Handle export data
+  const handleExportData = () => {
+    if (!user || (!allBudgets.length && !transactions.length)) {
+      toast({
+        title: "No data to export",
+        description: "You don't have any financial data to export yet.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const exportData = exportAllFinancialData({
+        user,
+        allBudgets,
+        transactions,
+        currentTargetYear: currentTargetYear || new Date().getFullYear(),
+        currentTargetMonth: currentTargetMonth || new Date().getMonth() + 1,
+        periodTemplate,
+        currentPeriodDisplay,
+        selectedLanguage
+      });
+
+      downloadJSON(exportData);
+      
+      toast({
+        title: "Export successful",
+        description: `Your financial data has been exported successfully.`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: "There was an error exporting your data. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Action Bar */}
@@ -916,6 +956,19 @@ const Index = () => {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem 
+                    onClick={handleExportData}
+                    className="cursor-pointer"
+                    disabled={!allBudgets.length && !transactions.length}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export All Data
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator />
 
                    <DropdownMenuItem 
                      onClick={() => setIsPeriodSelectionOpen(true)}
