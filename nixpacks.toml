@@ -8,13 +8,18 @@
 
 # Download caddy from nix
 [phases.caddy]
-    dependsOn = ['setup'] # make sure this phase runs after the default 'setup' phase
+    dependsOn = ['install'] # make sure this phase runs after the 'install' phase
     nixpkgsArchive = 'ba913eda2df8eb72147259189d55932012df6301' # Caddy v2.8.4
     nixPkgs = ['caddy'] # install caddy as a nix package
 
+# Build the application
+[phases.build]
+    dependsOn = ['caddy'] # make sure this phase runs after the 'caddy' phase
+    cmds = ['npm run build'] # build the application
+
 # Format the Caddyfile with fmt
 [phases.fmt]
-    dependsOn = ['caddy'] # make sure this phase runs after the 'caddy' phase
+    dependsOn = ['build'] # make sure this phase runs after the 'build' phase
     cmds = ['caddy fmt --overwrite Caddyfile'] # format the Caddyfile to fix any formatting inconsistencies
 
 # Start the caddy web server

@@ -1,6 +1,5 @@
 [build]
     builder = "nixpacks"
-    buildCommand = "npm run build"
 
 [deploy]
     startCommand = "exec caddy run --config Caddyfile --adapter caddyfile 2>&1"
