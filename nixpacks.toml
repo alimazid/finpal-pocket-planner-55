@@ -2,8 +2,7 @@
 # https://nixpacks.com/docs/configuration/file
 
 # Force Node.js provider (prevent Deno detection from supabase functions)
-[providers]
-    nodejs = {}
+providers = ["nodejs"]
 
 # Set up some variables to minimize annoyance
 [variables]
