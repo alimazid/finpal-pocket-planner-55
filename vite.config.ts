@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -11,8 +10,18 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    // Only include lovable-tagger in development mode
+    ...(mode === 'development' ? [
+      async () => {
+        try {
+          const { componentTagger } = await import("lovable-tagger");
+          return componentTagger();
+        } catch {
+          // Gracefully handle missing lovable-tagger in production
+          return null;
+        }
+      }
+    ] : [])
   ].filter(Boolean),
   resolve: {
     alias: {
