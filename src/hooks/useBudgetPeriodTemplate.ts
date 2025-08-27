@@ -1,16 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { BudgetPeriodTemplate } from "@/lib/periodCalculations";
 import { useToast } from "@/hooks/use-toast";
 
 export interface UserPreferencesRow {
   id: string;
-  user_id: string;
+  userId: string;
   language: string;
-  period_type: 'calendar_month' | 'specific_day';
-  specific_day: number | null;
-  created_at: string;
-  updated_at: string;
+  periodType: 'calendar_month' | 'specific_day';
+  specificDay: number | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export function useBudgetPeriodTemplate(userId?: string) {
@@ -23,17 +23,13 @@ export function useBudgetPeriodTemplate(userId?: string) {
     queryFn: async (): Promise<UserPreferencesRow | null> => {
       if (!userId) return null;
       
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      const response = await apiClient.getPreferences();
       
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-        throw error;
+      if (!response.success || !response.data) {
+        return null;
       }
       
-      return data;
+      return response.data as UserPreferencesRow;
     },
     enabled: !!userId,
   });
@@ -44,32 +40,25 @@ export function useBudgetPeriodTemplate(userId?: string) {
       if (!userId) throw new Error('User ID is required');
       
       // Update user preferences with new period settings
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: userId,
-          period_type: newTemplate.period_type,
-          specific_day: newTemplate.specific_day,
-          language: userPreferences?.language || 'spanish', // Preserve existing language
-        }, {
-          onConflict: 'user_id'
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-
-      // Recalculate all budget spent amounts by calling the trigger function for existing budgets
-      const { error: triggerError } = await supabase.rpc('recalculate_all_budget_spent', {
-        user_id_param: userId
+      const response = await apiClient.updatePreferences({
+        periodType: newTemplate.periodType,
+        specificDay: newTemplate.specificDay,
+        language: userPreferences?.language || 'spanish', // Preserve existing language
       });
       
-      if (triggerError) {
-        console.error('Error recalculating budget spent amounts:', triggerError);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update preferences');
+      }
+
+      // Recalculate all budget spent amounts
+      try {
+        await apiClient.recalculateSpentAmounts();
+      } catch (error) {
+        console.error('Error recalculating budget spent amounts:', error);
         // Don't throw error here as the preference update succeeded
       }
       
-      return data;
+      return response.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user-preferences', userId] });
@@ -92,15 +81,15 @@ export function useBudgetPeriodTemplate(userId?: string) {
 
   // Get template as BudgetPeriodTemplate interface
   const budgetTemplate: BudgetPeriodTemplate | null = userPreferences ? {
-    period_type: userPreferences.period_type as 'calendar_month' | 'specific_day',
-    specific_day: userPreferences.specific_day || 1,
+    periodType: userPreferences.periodType as 'calendar_month' | 'specific_day',
+    specificDay: userPreferences.specificDay || 1,
   } : null;
 
 
   // Get default template for new users
   const getDefaultTemplate = (): BudgetPeriodTemplate => ({
-    period_type: 'calendar_month',
-    specific_day: 1,
+    periodType: 'calendar_month',
+    specificDay: 1,
   });
 
   return {

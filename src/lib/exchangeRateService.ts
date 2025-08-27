@@ -102,20 +102,8 @@ class ExchangeRateService {
   // Store rate in database for budget calculations
   private async storeRateInDatabase(fromCurrency: string, toCurrency: string, rate: number): Promise<void> {
     try {
-      // Dynamic import to avoid circular dependencies
-      const { supabase } = await import('@/integrations/supabase/client');
-      
-      const { error } = await (supabase.rpc as any)('upsert_exchange_rate', {
-        p_from_currency: fromCurrency,
-        p_to_currency: toCurrency,
-        p_rate: rate
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      console.log(`📦 Stored exchange rate: ${fromCurrency}/${toCurrency} = ${rate}`);
+      // TODO: Implement exchange rate storage in new API
+      console.log(`📦 Exchange rate storage disabled during migration: ${fromCurrency}/${toCurrency} = ${rate}`);
     } catch (error) {
       console.warn(`Failed to store ${fromCurrency}/${toCurrency} rate in database:`, error);
       throw error;

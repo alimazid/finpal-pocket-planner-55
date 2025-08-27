@@ -1,8 +1,6 @@
-import { addMonths, startOfMonth, endOfMonth } from 'date-fns';
-
 export interface BudgetPeriodTemplate {
   periodType: 'calendar_month' | 'specific_day';
-  specificDay: number;
+  specificDay?: number;
 }
 
 export interface BudgetPeriod {
@@ -10,27 +8,6 @@ export interface BudgetPeriod {
   endDate: Date;
   targetYear: number;
   targetMonth: number;
-}
-
-export interface CalculatedBudget {
-  id: string;
-  budget_category_id: string;
-  amount: number;
-  spent: number;
-  currency: string;
-  target_year: number;
-  target_month: number;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  // Calculated fields
-  period_start: string;
-  period_end: string;
-  budget_categories?: {
-    id: string;
-    name: string;
-    sort_order: number;
-  };
 }
 
 /**
@@ -44,7 +21,7 @@ export function calculatePeriodDates(
   if (template.periodType === 'calendar_month') {
     // Calendar month periods: from 1st to last day of target month
     const periodStart = new Date(targetYear, targetMonth - 1, 1);
-    const periodEnd = endOfMonth(periodStart);
+    const periodEnd = new Date(targetYear, targetMonth, 0); // Last day of target month
     
     return {
       startDate: periodStart,
@@ -55,7 +32,7 @@ export function calculatePeriodDates(
   } else {
     // Specific day periods: target month is the END month
     // So we need to work backwards to find the start date
-    const specificDay = Math.min(Math.max(1, template.specificDay), 31);
+    const specificDay = Math.min(Math.max(1, template.specificDay || 1), 31);
     
     // Target month is where period ENDS, so period ends on (specificDay - 1) of target month
     const daysInTargetMonth = new Date(targetYear, targetMonth, 0).getDate();
@@ -63,12 +40,16 @@ export function calculatePeriodDates(
     const periodEnd = new Date(targetYear, targetMonth - 1, adjustedEndDay);
     
     // Period starts one month before, on the specific day
-    const startMonth = addMonths(periodEnd, -1);
-    const startYear = startMonth.getFullYear();
-    const startMonthNum = startMonth.getMonth();
-    const daysInStartMonth = new Date(startYear, startMonthNum + 1, 0).getDate();
+    const startDate = new Date(periodEnd);
+    startDate.setMonth(startDate.getMonth() - 1);
+    startDate.setDate(specificDay);
+    
+    // Adjust if the specific day doesn't exist in the start month
+    const startMonth = new Date(targetYear, targetMonth - 2, 1); // Month before target
+    const daysInStartMonth = new Date(startMonth.getFullYear(), startMonth.getMonth() + 1, 0).getDate();
     const adjustedStartDay = Math.min(specificDay, daysInStartMonth);
-    const periodStart = new Date(startYear, startMonthNum, adjustedStartDay);
+    
+    const periodStart = new Date(startMonth.getFullYear(), startMonth.getMonth(), adjustedStartDay);
     
     return {
       startDate: periodStart,
@@ -93,12 +74,13 @@ export function getCurrentTargetMonth(
     };
   } else {
     // Specific day periods - target month is where period ENDS
-    const specificDay = Math.min(Math.max(1, template.specificDay), 31);
+    const specificDay = Math.min(Math.max(1, template.specificDay || 1), 31);
     const currentDay = currentDate.getDate();
     
     if (currentDay >= specificDay) {
       // We're in a period that ends in the next month (period starts today or already started)
-      const nextMonth = addMonths(currentDate, 1);
+      const nextMonth = new Date(currentDate);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
       return {
         targetYear: nextMonth.getFullYear(),
         targetMonth: nextMonth.getMonth() + 1
@@ -114,33 +96,12 @@ export function getCurrentTargetMonth(
 }
 
 /**
- * Add calculated period dates to budget objects
- */
-export function addCalculatedPeriods<T extends {
-  target_year: number;
-  target_month: number;
-}>(
-  budgets: T[],
-  template: BudgetPeriodTemplate
-): (T & { period_start: string; period_end: string })[] {
-  return budgets.map(budget => {
-    const period = calculatePeriodDates(template, budget.target_year, budget.target_month);
-    
-    return {
-      ...budget,
-      period_start: period.startDate.toISOString().split('T')[0],
-      period_end: period.endDate.toISOString().split('T')[0]
-    };
-  });
-}
-
-/**
  * Filter transactions by calculated period dates
  */
-export function filterTransactionsByPeriod<T extends { date: string }>(
+export function filterTransactionsByPeriod<T extends { date: Date }>(
   transactions: T[],
-  periodStart: string,
-  periodEnd: string
+  periodStart: Date,
+  periodEnd: Date
 ): T[] {
   return transactions.filter(transaction => 
     transaction.date >= periodStart && transaction.date <= periodEnd
@@ -165,4 +126,17 @@ export function getPreviousPeriod(targetYear: number, targetMonth: number): { ta
     return { targetYear: targetYear - 1, targetMonth: 12 };
   }
   return { targetYear, targetMonth: targetMonth - 1 };
+}
+
+/**
+ * Check if a date falls within a specific period
+ */
+export function isDateInPeriod(
+  date: Date,
+  template: BudgetPeriodTemplate,
+  targetYear: number,
+  targetMonth: number
+): boolean {
+  const period = calculatePeriodDates(template, targetYear, targetMonth);
+  return date >= period.startDate && date <= period.endDate;
 }

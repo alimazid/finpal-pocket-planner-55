@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  preferences   UserPreference?
+  categories    BudgetCategory[]
+  budgets       Budget[]
+  transactions  Transaction[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model UserPreference {
+  id          String   @id @default(cuid())
+  userId      String   @unique @map("user_id")
+  language    String   @default("spanish")
+  periodType  String   @default("calendar_month") @map("period_type")
+  specificDay Int?     @map("specific_day")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model BudgetCategory {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  name      String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budgets Budget[]
+
+  @@unique([userId, name])
+  @@index([userId, sortOrder])
+  @@map("budget_categories")
+}
+
+model Budget {
+  id          String  @id @default(cuid())
+  userId      String  @map("user_id")
+  categoryId  String  @map("budget_category_id")
+  amount      Decimal @db.Decimal(10, 2)
+  spent       Decimal @db.Decimal(10, 2) @default(0)
+  currency    String  @default("USD")
+  targetYear  Int     @map("target_year")
+  targetMonth Int     @map("target_month")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, targetYear, targetMonth])
+  @@index([userId, targetYear, targetMonth])
+  @@map("budgets")
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  userId      String          @map("user_id")
+  amount      Decimal         @db.Decimal(10, 2)
+  description String
+  category    String?
+  date        DateTime        @db.Date
+  type        TransactionType
+  currency    String          @default("USD")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, category])
+  @@map("transactions")
+}
+
+model ExchangeRate {
+  id           String  @id @default(cuid())
+  fromCurrency String  @map("from_currency")
+  toCurrency   String  @map("to_currency")
+  rate         Decimal @db.Decimal(10, 6)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([fromCurrency, toCurrency])
+  @@index([updatedAt])
+  @@map("exchange_rates")
+}
+
+enum TransactionType {
+  expense
+  income
+}

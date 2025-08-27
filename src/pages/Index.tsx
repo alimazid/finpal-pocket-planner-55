@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
+import { apiClient, type User } from "@/lib/api-client";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -31,38 +30,38 @@ import { exportAllFinancialData, downloadJSON } from "@/lib/exportFinancialData"
 
 interface Transaction {
   id: string;
-  user_id: string;
+  userId: string;
   amount: number;
   description: string;
   category: string | null;
-  date: string;
+  date: Date;
   type: 'expense' | 'income';
   currency: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface BudgetCategory {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface Budget {
   id: string;
-  user_id: string;
-  budget_category_id: string;
+  userId: string;
+  categoryId: string;
   amount: number;
   spent: number;
   currency: string;
-  created_at: string;
-  updated_at: string;
-  target_year: number;
-  target_month: number;
-  budget_categories?: BudgetCategory;
+  createdAt: Date;
+  updatedAt: Date;
+  targetYear: number;
+  targetMonth: number;
+  category?: BudgetCategory;
 }
 
 // Helper function to get current period as fallback (moved outside component to prevent re-creation)
@@ -79,7 +78,7 @@ const Index = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("spanish");
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
@@ -178,42 +177,51 @@ const Index = () => {
     }
   }, [userPreferences]);
 
-  // Fetch all budgets and calculate current period budgets
+  // Fetch budgets for current period 
   const { data: allBudgets = [], isLoading: budgetsLoading } = useQuery({
-    queryKey: ['budgets', user?.id],
+    queryKey: ['budgets', user?.id, currentTargetYear, currentTargetMonth],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('budgets')
-        .select(`
-          *,
-          budget_categories (
-            id,
-            name,
-            sort_order
-          )
-        `)
-        .eq('user_id', user!.id)
-        .order('budget_categories(sort_order)', { ascending: true });
+      if (!currentTargetYear || !currentTargetMonth) return [];
       
-      if (error) throw error;
-      return data as Budget[];
+      const response = await apiClient.getBudgets({
+        year: currentTargetYear,
+        month: currentTargetMonth
+      });
+      
+      if (response.success && response.data) {
+        return response.data as Budget[];
+      }
+      throw new Error(response.error || 'Failed to fetch budgets');
     },
-    enabled: !!user,
+    enabled: !!user && currentTargetYear !== null && currentTargetMonth !== null,
   });
 
   // Calculate budgets for the selected period (from period controls)
   const budgets: CalculatedBudget[] = React.useMemo(() => {
     if (!allBudgets.length || currentTargetYear === null || currentTargetMonth === null) return [];
     
-    // Filter budgets for the current target month/year
-    const selectedPeriodBudgets = allBudgets.filter(budget => 
-      budget.target_year === currentTargetYear && budget.target_month === currentTargetMonth
-    );
-    
+    // Budgets are already filtered for current period from API
+    // Convert to old format for now to maintain compatibility with calculations
+    const compatibleBudgets = allBudgets.map(budget => ({
+      ...budget,
+      target_year: budget.targetYear,
+      target_month: budget.targetMonth,
+      budget_category_id: budget.categoryId,
+      user_id: budget.userId,
+      created_at: budget.createdAt.toString(),
+      updated_at: budget.updatedAt.toString(),
+      budget_categories: budget.category ? {
+        ...budget.category,
+        user_id: budget.category.userId,
+        sort_order: budget.category.sortOrder,
+        created_at: budget.category.createdAt.toString(),
+        updated_at: budget.category.updatedAt.toString(),
+      } : undefined
+    }));
     
     // Use template if available, otherwise use default template
     const activeTemplate = periodTemplate || getDefaultTemplate();
-    return addCalculatedPeriods(selectedPeriodBudgets, activeTemplate);
+    return addCalculatedPeriods(compatibleBudgets, activeTemplate);
   }, [allBudgets, periodTemplate, currentTargetYear, currentTargetMonth, getDefaultTemplate]);
 
   // Fetch transactions
@@ -222,17 +230,19 @@ const Index = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('User ID is required');
       
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('id, user_id, amount, description, category, date, type, currency, created_at, updated_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const response = await apiClient.getTransactions();
       
-      if (error) {
-        console.error('Transactions query error:', error);
-        throw error;
+      if (response.success && response.data && response.data.transactions) {
+        // Convert to old format for compatibility
+        return response.data.transactions.map(tx => ({
+          ...tx,
+          user_id: tx.userId,
+          created_at: tx.createdAt.toString(),
+          updated_at: tx.updatedAt.toString(),
+          date: tx.date.toString()
+        })) as Transaction[];
       }
-      return data as Transaction[];
+      throw new Error(response.error || 'Failed to fetch transactions');
     },
     enabled: !!user?.id,
   });
@@ -242,35 +252,12 @@ const Index = () => {
     console.error('Transactions error:', transactionsError);
   }
 
-  // Calculate missing budgets from previous period
+  // Calculate missing budgets from previous period (temporarily disabled for API migration)
   const missingBudgets: Budget[] = React.useMemo(() => {
-    if (!allBudgets.length || currentTargetYear === null || currentTargetMonth === null) return [];
-    
-    // Get previous period target
-    const previousPeriod = getPreviousPeriod(currentTargetYear, currentTargetMonth);
-    
-    // Filter budgets for current period
-    const currentPeriodBudgets = allBudgets.filter(budget => 
-      budget.target_year === currentTargetYear && budget.target_month === currentTargetMonth
-    );
-    
-    // Filter budgets for previous period
-    const previousPeriodBudgets = allBudgets.filter(budget => 
-      budget.target_year === previousPeriod.targetYear && budget.target_month === previousPeriod.targetMonth
-    );
-    
-    // Get current period category names
-    const currentCategoryNames = new Set(
-      currentPeriodBudgets.map(budget => budget.budget_categories?.name).filter(Boolean)
-    );
-    
-    // Find missing categories (exist in previous but not in current)
-    const missing = previousPeriodBudgets.filter(budget => 
-      budget.budget_categories?.name && !currentCategoryNames.has(budget.budget_categories.name)
-    );
-    
-    return missing;
-  }, [allBudgets, currentTargetYear, currentTargetMonth]);
+    // TODO: Implement missing budgets calculation with new API
+    // Need to fetch previous period budgets and compare with current
+    return [];
+  }, []);
 
   // Calculate previous period for display
   const previousPeriodDisplay = React.useMemo(() => {
@@ -292,29 +279,24 @@ const Index = () => {
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert([{
-          user_id: user.id,
-          amount: expense.amount,
-          description: expense.description,
-          category: expense.category,
-          date: expense.date,
-          type: 'expense',
-          currency: expense.currency,
-        }])
-        .select()
-        .single();
+      const response = await apiClient.createTransaction({
+        amount: expense.amount,
+        description: expense.description,
+        category: expense.category,
+        date: new Date(expense.date),
+        type: 'expense',
+        currency: expense.currency,
+      });
       
-      if (error) {
-        console.error('Add transaction error:', error);
-        throw error;
+      if (!response.success) {
+        console.error('Add transaction error:', response.error);
+        throw new Error(response.error || 'Failed to add transaction');
       }
-      return data;
+      return response.data;
     },
     onSuccess: (newTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentTargetYear, currentTargetMonth] });
 
       toast({
         title: t('expenseAdded'),
@@ -762,25 +744,28 @@ const Index = () => {
   });
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    // Check if user is authenticated on page load
+    const checkAuth = async () => {
+      try {
+        const response = await apiClient.getProfile();
+        if (response.success && response.data) {
+          console.log('User authenticated:', response.data.email);
+          setUser(response.data);
+          setIsAuthenticated(true);
+        } else {
+          console.log('User not authenticated');
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.log('Auth check failed:', error);
+        setUser(null);
+        setIsAuthenticated(false);
       }
-    );
-
-    // Check for existing session immediately
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -790,17 +775,20 @@ const Index = () => {
   }, [user, loading, navigate]);
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      await apiClient.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+      toast({
+        title: t('signedOut'),
+        description: t('signedOutSuccess'),
+      });
+      navigate("/auth");
+    } catch (error) {
       toast({
         title: t('error'),
         description: t('failedToSignOut'),
         variant: "destructive",
-      });
-    } else {
-      toast({
-        title: t('signedOut'),
-        description: t('signedOutSuccess'),
       });
     }
   };

@@ -395,6 +395,10 @@ const translations: Translations = {
     english: 'Create Account',
     spanish: 'Crear Cuenta'
   },
+  accountCreatedSuccessfully: {
+    english: 'Account created successfully',
+    spanish: 'Cuenta creada exitosamente'
+  },
   checkYourEmail: {
     english: 'Check your email',
     spanish: 'Revisa tu correo electrónico'

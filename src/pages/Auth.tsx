@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,24 +25,23 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const response = await apiClient.register({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`
-        }
+        name: email.split('@')[0] // Use email prefix as default name
       });
 
-      if (error) {
+      if (response.success) {
         toast({
-          title: t('signUpError'),
-          description: error.message,
-          variant: "destructive",
+          title: t('welcomeBack'),
+          description: t('accountCreatedSuccessfully'),
         });
+        navigate("/");
       } else {
         toast({
-          title: t('checkYourEmail'),
-          description: t('emailConfirmationSent'),
+          title: t('signUpError'),
+          description: response.error || t('unexpectedError'),
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -61,23 +60,23 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const response = await apiClient.login({
         email,
         password,
       });
 
-      if (error) {
-        toast({
-          title: t('signInError'),
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
+      if (response.success) {
         toast({
           title: t('welcomeBack'),
           description: t('signedInSuccessfully'),
         });
         navigate("/");
+      } else {
+        toast({
+          title: t('signInError'),
+          description: response.error || t('unexpectedError'),
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({

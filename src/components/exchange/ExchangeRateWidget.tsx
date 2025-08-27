@@ -17,6 +17,8 @@ interface ExchangeRateWidgetProps {
 }
 
 const ExchangeRateWidget = ({ language }: ExchangeRateWidgetProps) => {
+  // TODO: Migrate exchange rate functionality to new API
+  return null;
   const { toast } = useToast();
   const { t } = useTranslation(language);
   const [exchangeData, setExchangeData] = useState<ExchangeRateData | null>(null);

@@ -10,6 +10,8 @@ interface ExchangeRateSyncProps {
 }
 
 export function ExchangeRateSync({ language }: ExchangeRateSyncProps) {
+  // TODO: Migrate exchange rate functionality to new API
+  return null;
   const [isForceSync, setIsForceSync] = useState(false);
   const { toast } = useToast();
   const { t } = useTranslation(language);

@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
 
 interface PeriodSelectionModalProps {
@@ -43,14 +42,14 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, language }: P
   // Update form state when template loads (only once per modal open)
   useEffect(() => {
     if (template && !isInitialized) {
-      setPeriodType(template.period_type);
-      setSpecificDay(template.specific_day);
+      setPeriodType(template.periodType);
+      setSpecificDay(template.specificDay);
       setIsInitialized(true);
     }
   }, [template, isInitialized]);
 
   // Save preference using the template hook
-  const handleSavePreference = (preference: { period_type: 'calendar_month' | 'specific_day'; specific_day: number }) => {
+  const handleSavePreference = (preference: { periodType: 'calendar_month' | 'specific_day'; specificDay: number }) => {
     updateTemplate(preference);
     onOpenChange(false);
   };
@@ -66,8 +65,8 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, language }: P
     }
 
     handleSavePreference({
-      period_type: periodType,
-      specific_day: specificDay,
+      periodType: periodType,
+      specificDay: specificDay,
     });
   };
 
