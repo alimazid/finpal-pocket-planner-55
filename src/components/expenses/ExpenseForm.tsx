@@ -23,13 +23,14 @@ interface ExpenseFormProps {
   availableCategories: string[];
   showCard?: boolean;
   language: 'english' | 'spanish';
+  defaultCurrency?: string;
 }
 
-export function ExpenseForm({ onAddExpense, availableCategories, showCard = true, language }: ExpenseFormProps) {
+export function ExpenseForm({ onAddExpense, availableCategories, showCard = true, language, defaultCurrency }: ExpenseFormProps) {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState(defaultCurrency || "DOP");
   const [date, setDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const { t } = useTranslation(language);
@@ -53,7 +54,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
       setAmount("");
       setDescription("");
       setCategory("");
-      setCurrency("USD");
+      setCurrency(defaultCurrency || "DOP");
     }
   };
 

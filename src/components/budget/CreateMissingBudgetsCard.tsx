@@ -69,7 +69,7 @@ export function CreateMissingBudgetsCard({
   };
 
   const totalAmount = missingBudgets.reduce((sum, budget) => sum + budget.amount, 0);
-  const primaryCurrency = missingBudgets.length > 0 ? missingBudgets[0].currency : 'USD';
+  const primaryCurrency = missingBudgets.length > 0 ? missingBudgets[0].currency : 'DOP';
   const missingCount = missingBudgets.length;
 
   if (missingCount === 0) {

@@ -63,13 +63,14 @@ model Session {
 }
 
 model UserPreference {
-  id          String   @id @default(cuid())
-  userId      String   @unique @map("user_id")
-  language    String   @default("spanish")
-  periodType  String   @default("calendar_month") @map("period_type")
-  specificDay Int?     @map("specific_day")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")
+  language        String   @default("spanish")
+  periodType      String   @default("calendar_month") @map("period_type")
+  specificDay     Int?     @map("specific_day")
+  defaultCurrency String   @default("DOP") @map("default_currency")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

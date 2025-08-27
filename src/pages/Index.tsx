@@ -396,10 +396,11 @@ const Index = () => {
       }
       
       // Create the budget with target month/year
+      const defaultCurrency = userPreferences?.defaultCurrency || 'DOP';
       const response = await apiClient.createBudget({
         categoryId: budgetCategory.id,
         amount,
-        currency: 'USD',
+        currency: defaultCurrency,
         targetYear: currentTargetYear!,
         targetMonth: currentTargetMonth!
       });
@@ -795,8 +796,8 @@ const Index = () => {
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
   const remainingBudget = totalBudget - totalSpent;
 
-  // Get primary currency from first budget or default to USD
-  const primaryCurrency = budgets.length > 0 ? budgets[0].currency : 'USD';
+  // Get primary currency from first budget or user's default currency
+  const primaryCurrency = budgets.length > 0 ? budgets[0].currency : (userPreferences?.defaultCurrency || 'DOP');
 
   // Handle export data
   const handleExportData = () => {
@@ -1098,6 +1099,7 @@ const Index = () => {
             onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
             availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
             language={selectedLanguage as 'english' | 'spanish'}
+            defaultCurrency={userPreferences?.defaultCurrency}
           />
         </div>
 
@@ -1108,6 +1110,7 @@ const Index = () => {
             onOpenChange={setIsPeriodSelectionOpen}
             userId={user.id}
             language={selectedLanguage as 'english' | 'spanish'}
+            userPreferences={userPreferences}
           />
         )}
 

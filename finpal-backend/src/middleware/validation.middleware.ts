@@ -59,7 +59,7 @@ export const schemas = {
   createBudget: z.object({
     categoryId: z.string().cuid(),
     amount: z.number().positive(),
-    currency: z.string().length(3).default('USD'),
+    currency: z.string().length(3).default('DOP'),
     targetYear: z.number().int().min(2020),
     targetMonth: z.number().int().min(1).max(12)
   }),
@@ -74,16 +74,16 @@ export const schemas = {
   createTransaction: z.object({
     amount: z.number().positive(),
     description: z.string().min(1),
-    category: z.string().optional(),
+    category: z.string().optional().nullable(),
     date: z.coerce.date(),
     type: z.enum(['expense', 'income']),
-    currency: z.string().length(3).default('USD')
+    currency: z.string().length(3).default('DOP')
   }),
 
   updateTransaction: z.object({
     amount: z.number().positive().optional(),
     description: z.string().min(1).optional(),
-    category: z.string().optional(),
+    category: z.string().optional().nullable(),
     date: z.coerce.date().optional(),
     type: z.enum(['expense', 'income']).optional(),
     currency: z.string().length(3).optional()
@@ -101,7 +101,8 @@ export const schemas = {
   updatePreferences: z.object({
     language: z.enum(['english', 'spanish']).optional(),
     periodType: z.enum(['calendar_month', 'specific_day']).optional(),
-    specificDay: z.number().int().min(1).max(31).optional()
+    specificDay: z.number().int().min(1).max(31).optional(),
+    defaultCurrency: z.string().length(3).optional()
   }),
 
   budgetQuery: z.object({

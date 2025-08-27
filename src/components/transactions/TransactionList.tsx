@@ -36,9 +36,10 @@ interface TransactionListProps {
   }) => void;
   availableCategories?: string[];
   language: 'english' | 'spanish';
+  defaultCurrency?: string;
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onAddExpense, availableCategories, language }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onAddExpense, availableCategories, language, defaultCurrency }: TransactionListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
@@ -146,7 +147,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
               </DialogDescription>
             </DialogHeader>
             
-            <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} language={language} />
+            <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} language={language} defaultCurrency={defaultCurrency} />
           </DialogContent>
         </Dialog>
       )}

@@ -301,7 +301,7 @@ export function BudgetSummary({
   const totalSpent = budgets.reduce((sum, budget) => sum + budget.spent, 0);
   const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
   const totalPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-  const primaryCurrency = budgets.length > 0 ? budgets[0].currency : 'USD';
+  const primaryCurrency = budgets.length > 0 ? budgets[0].currency : 'DOP';
   const totalBudgetStatus = getBudgetStatus(totalSpent, totalBudget);
 
   // Transaction Accordion Component

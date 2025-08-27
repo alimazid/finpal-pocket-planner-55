@@ -15,9 +15,10 @@ interface FloatingExpenseButtonProps {
   }) => void;
   availableCategories: string[];
   language: 'english' | 'spanish';
+  defaultCurrency?: string;
 }
 
-export function FloatingExpenseButton({ onAddExpense, availableCategories, language }: FloatingExpenseButtonProps) {
+export function FloatingExpenseButton({ onAddExpense, availableCategories, language, defaultCurrency }: FloatingExpenseButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useTranslation(language);
 
@@ -51,7 +52,7 @@ export function FloatingExpenseButton({ onAddExpense, availableCategories, langu
           </DialogDescription>
         </DialogHeader>
         
-        <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} language={language} />
+        <ExpenseForm onAddExpense={handleAddExpense} availableCategories={availableCategories} showCard={false} language={language} defaultCurrency={defaultCurrency} />
       </DialogContent>
     </Dialog>
   );

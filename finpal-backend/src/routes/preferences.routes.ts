@@ -38,12 +38,14 @@ router.put('/',
           ...(req.body.language !== undefined && { language: req.body.language }),
           ...(req.body.periodType !== undefined && { periodType: req.body.periodType }),
           ...(req.body.specificDay !== undefined && { specificDay: req.body.specificDay }),
+          ...(req.body.defaultCurrency !== undefined && { defaultCurrency: req.body.defaultCurrency }),
         },
         create: {
           userId: req.userId!,
           language: req.body.language || 'english',
           periodType: req.body.periodType || 'calendar_month',
-          specificDay: req.body.specificDay || 1
+          specificDay: req.body.specificDay || 1,
+          defaultCurrency: req.body.defaultCurrency || 'DOP'
         }
       });
 

@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
  * Formats a number as currency with custom display formats
  * Maps common invalid currency codes to valid ISO codes
  */
-export function formatCurrency(amount: number, currency: string = 'USD'): string {
+export function formatCurrency(amount: number, currency: string = 'DOP'): string {
   // Map invalid/shorthand currency codes to valid ISO codes
   const currencyMap: Record<string, string> = {
     'RD': 'DOP',    // Dominican Peso

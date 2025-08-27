@@ -69,6 +69,7 @@ export interface UserPreferences {
   language: 'english' | 'spanish';
   periodType: 'calendar_month' | 'specific_day';
   specificDay?: number;
+  defaultCurrency: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -339,7 +340,7 @@ class ApiClient {
     return response.data;
   }
 
-  async updatePreferences(data: { language?: 'english' | 'spanish'; periodType?: 'calendar_month' | 'specific_day'; specificDay?: number }) {
+  async updatePreferences(data: { language?: 'english' | 'spanish'; periodType?: 'calendar_month' | 'specific_day'; specificDay?: number; defaultCurrency?: string }) {
     const response = await this.client.put<ApiResponse<UserPreferences>>('/preferences', data);
     return response.data;
   }

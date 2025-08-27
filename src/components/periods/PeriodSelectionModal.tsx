@@ -4,25 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
+import apiClient from "@/lib/api-client";
 
 interface PeriodSelectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string;
   language: 'english' | 'spanish';
+  userPreferences?: { 
+    language: 'english' | 'spanish'; 
+    periodType: 'calendar_month' | 'specific_day'; 
+    specificDay?: number;
+    defaultCurrency: string;
+  };
 }
 
-export function PeriodSelectionModal({ open, onOpenChange, userId, language }: PeriodSelectionModalProps) {
+export function PeriodSelectionModal({ open, onOpenChange, userId, language, userPreferences }: PeriodSelectionModalProps) {
   const { toast } = useToast();
   const { t } = useTranslation(language);
   const queryClient = useQueryClient();
   const [periodType, setPeriodType] = useState<'calendar_month' | 'specific_day'>('calendar_month');
   const [specificDay, setSpecificDay] = useState<number>(1);
+  const [defaultCurrency, setDefaultCurrency] = useState<string>('DOP');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
 
   // Use the budget period template hook
   const { 
@@ -48,13 +58,15 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, language }: P
     }
   }, [template, isInitialized]);
 
-  // Save preference using the template hook
-  const handleSavePreference = (preference: { periodType: 'calendar_month' | 'specific_day'; specificDay: number }) => {
-    updateTemplate(preference);
-    onOpenChange(false);
-  };
+  // Update currency when userPreferences loads
+  useEffect(() => {
+    if (userPreferences?.defaultCurrency) {
+      setDefaultCurrency(userPreferences.defaultCurrency);
+    }
+  }, [userPreferences]);
 
-  const handleSave = () => {
+  // Save preferences including currency
+  const handleSave = async () => {
     if (periodType === 'specific_day' && (specificDay < 1 || specificDay > 31)) {
       toast({
         title: t('invalidDay'),
@@ -64,11 +76,48 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, language }: P
       return;
     }
 
-    handleSavePreference({
-      periodType: periodType,
-      specificDay: specificDay,
-    });
+    setIsUpdatingPrefs(true);
+    
+    try {
+      // Update period preferences using the template hook
+      updateTemplate({
+        periodType: periodType,
+        specificDay: specificDay,
+      });
+
+      // Update currency preference separately
+      await apiClient.updatePreferences({
+        defaultCurrency: defaultCurrency
+      });
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['user-preferences', userId] });
+      
+      onOpenChange(false);
+      toast({
+        title: t('preferencesUpdated'),
+        description: t('preferencesUpdatedDescription'),
+      });
+    } catch (error) {
+      console.error('Failed to update preferences:', error);
+      toast({
+        title: t('error'),
+        description: t('failedToUpdatePreferences'),
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingPrefs(false);
+    }
   };
+
+  const currencies = [
+    { value: "DOP", label: "DOP - Dominican Peso" },
+    { value: "USD", label: "USD - US Dollar" },
+    { value: "EUR", label: "EUR - Euro" },
+    { value: "CAD", label: "CAD - Canadian Dollar" },
+    { value: "GBP", label: "GBP - British Pound" },
+    { value: "JPY", label: "JPY - Japanese Yen" },
+  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -125,13 +174,35 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, language }: P
               </div>
             </div>
           </RadioGroup>
+
+          {/* Default Currency Selection */}
+          <div className="space-y-3">
+            <Label htmlFor="currency-select" className="text-sm font-medium">
+              {t('defaultCurrency')}
+            </Label>
+            <Select value={defaultCurrency} onValueChange={setDefaultCurrency}>
+              <SelectTrigger id="currency-select">
+                <SelectValue placeholder={t('selectCurrency')} />
+              </SelectTrigger>
+              <SelectContent>
+                {currencies.map((currency) => (
+                  <SelectItem key={currency.value} value={currency.value}>
+                    {currency.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              {t('defaultCurrencyDescription')}
+            </p>
+          </div>
           
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               {t('cancel')}
             </Button>
-            <Button onClick={handleSave} disabled={isUpdating || templateLoading}>
-              {isUpdating ? t('savingEllipsis') : t('saving')}
+            <Button onClick={handleSave} disabled={isUpdatingPrefs || isUpdating || templateLoading}>
+              {(isUpdatingPrefs || isUpdating) ? t('savingEllipsis') : t('saving')}
             </Button>
           </div>
         </div>
