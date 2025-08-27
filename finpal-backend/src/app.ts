@@ -10,6 +10,7 @@ import budgetRoutes from './routes/budget.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import preferencesRoutes from './routes/preferences.routes.js';
+import currencyRoutes from './routes/currency.routes.js';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/preferences', preferencesRoutes);
+app.use('/api/currencies', currencyRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

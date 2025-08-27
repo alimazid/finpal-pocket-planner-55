@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { z, ZodSchema } from 'zod';
 
+// Supported currencies
+const SUPPORTED_CURRENCIES = ['DOP', 'USD', 'EUR'] as const;
+
 export function validateBody(schema: ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -59,14 +62,14 @@ export const schemas = {
   createBudget: z.object({
     categoryId: z.string().cuid(),
     amount: z.number().positive(),
-    currency: z.string().length(3).default('DOP'),
+    currency: z.enum(SUPPORTED_CURRENCIES).default('DOP'),
     targetYear: z.number().int().min(2020),
     targetMonth: z.number().int().min(1).max(12)
   }),
 
   updateBudget: z.object({
     amount: z.number().positive().optional(),
-    currency: z.string().length(3).optional(),
+    currency: z.enum(SUPPORTED_CURRENCIES).optional(),
     targetYear: z.number().int().min(2020).optional(),
     targetMonth: z.number().int().min(1).max(12).optional()
   }),
@@ -77,7 +80,7 @@ export const schemas = {
     category: z.string().optional().nullable(),
     date: z.coerce.date(),
     type: z.enum(['expense', 'income']),
-    currency: z.string().length(3).default('DOP')
+    currency: z.enum(SUPPORTED_CURRENCIES).default('DOP')
   }),
 
   updateTransaction: z.object({
@@ -86,7 +89,7 @@ export const schemas = {
     category: z.string().optional().nullable(),
     date: z.coerce.date().optional(),
     type: z.enum(['expense', 'income']).optional(),
-    currency: z.string().length(3).optional()
+    currency: z.enum(SUPPORTED_CURRENCIES).optional()
   }),
 
   createCategory: z.object({
@@ -102,7 +105,7 @@ export const schemas = {
     language: z.enum(['english', 'spanish']).optional(),
     periodType: z.enum(['calendar_month', 'specific_day']).optional(),
     specificDay: z.number().int().min(1).max(31).optional(),
-    defaultCurrency: z.string().length(3).optional()
+    defaultCurrency: z.enum(SUPPORTED_CURRENCIES).optional()
   }),
 
   budgetQuery: z.object({

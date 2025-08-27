@@ -9,8 +9,10 @@ import {
   BudgetQueryParams 
 } from '../types/index.js';
 import { NotFoundError, ValidationError } from '../middleware/error.middleware.js';
+import { CurrencyService } from './currency.service.js';
 
 export class BudgetService {
+  private currencyService = new CurrencyService();
 
   async getBudgetsForPeriod(userId: string, params: BudgetQueryParams) {
     const budgets = await prisma.budget.findMany({
@@ -273,8 +275,26 @@ export class BudgetService {
       return 0;
     }
 
-    // Calculate total spent for transactions in this period and category
-    const result = await prisma.transaction.aggregate({
+    // Get the budget for this category and period to determine target currency
+    const budget = await prisma.budget.findUnique({
+      where: {
+        userId_categoryId_targetYear_targetMonth: {
+          userId,
+          categoryId,
+          targetYear,
+          targetMonth
+        }
+      }
+    });
+
+    if (!budget) {
+      return 0;
+    }
+
+    const budgetCurrency = budget.currency;
+
+    // Get all transactions for this period and category (not aggregated)
+    const transactions = await prisma.transaction.findMany({
       where: {
         userId,
         category: category.name,
@@ -284,10 +304,41 @@ export class BudgetService {
           lte: period.endDate
         }
       },
-      _sum: { amount: true }
+      select: {
+        amount: true,
+        currency: true
+      }
     });
 
-    return Number(result._sum.amount || 0);
+    // Convert all transaction amounts to budget currency and sum them
+    let totalSpent = 0;
+
+    for (const transaction of transactions) {
+      const transactionAmount = Number(transaction.amount);
+      const transactionCurrency = transaction.currency;
+
+      if (transactionCurrency === budgetCurrency) {
+        // Same currency, no conversion needed
+        totalSpent += transactionAmount;
+      } else {
+        // Convert transaction currency to budget currency
+        try {
+          const convertedAmount = await this.currencyService.convertAmount(
+            transactionAmount,
+            transactionCurrency,
+            budgetCurrency
+          );
+          totalSpent += convertedAmount;
+        } catch (error) {
+          // If conversion fails, log error but continue with other transactions
+          console.error(`Failed to convert ${transactionAmount} ${transactionCurrency} to ${budgetCurrency}:`, error);
+          // Optionally, you could add the transaction amount as-is or skip it
+          // For now, we'll skip transactions that can't be converted
+        }
+      }
+    }
+
+    return totalSpent;
   }
 
   async recalculateAllSpentAmounts(userId: string) {
