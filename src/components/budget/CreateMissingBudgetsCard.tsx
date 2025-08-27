@@ -9,25 +9,25 @@ import { formatCurrency } from "@/lib/utils";
 
 interface BudgetCategory {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface Budget {
   id: string;
-  user_id: string;
-  budget_category_id: string;
+  userId: string;
+  categoryId: string;
   amount: number;
   spent: number;
   currency: string;
-  created_at: string;
-  updated_at: string;
-  target_year: number;
-  target_month: number;
-  budget_categories?: BudgetCategory;
+  targetYear: number;
+  targetMonth: number;
+  createdAt: Date;
+  updatedAt: Date;
+  category?: BudgetCategory;
 }
 
 interface BudgetPeriod {
@@ -122,7 +122,7 @@ export function CreateMissingBudgetsCard({
             {missingBudgets.map((budget) => (
               <div key={budget.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
                 <span className="font-medium text-foreground">
-                  {budget.budget_categories?.name}
+                  {budget.category?.name}
                 </span>
                 <span className="text-sm font-medium text-muted-foreground">
                   {formatCurrency(budget.amount, budget.currency)}

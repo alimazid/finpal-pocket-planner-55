@@ -35,25 +35,25 @@ import { CreateMissingBudgetsCard } from './CreateMissingBudgetsCard';
 
 interface BudgetCategory {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface Budget {
   id: string;
-  user_id: string;
-  budget_category_id: string;
+  userId: string;
+  categoryId: string;
   amount: number;
   spent: number;
   currency: string;
-  created_at: string;
-  updated_at: string;
-  period_start: string;
-  period_end: string;
-  budget_categories?: BudgetCategory;
+  targetYear: number;
+  targetMonth: number;
+  createdAt: Date;
+  updatedAt: Date;
+  category?: BudgetCategory;
 }
 
 interface BudgetPeriod {
@@ -64,15 +64,15 @@ interface BudgetPeriod {
 
 interface Transaction {
   id: string;
-  user_id: string;
+  userId: string;
   amount: number;
   description: string;
-  category: string | null;
-  date: string;
+  category?: string;
+  date: Date;
   type: 'expense' | 'income';
   currency: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface BudgetSummaryProps {
@@ -131,10 +131,10 @@ export function BudgetSummary({
   useEffect(() => {
     if (optimisticBudgets && budgets.length > 0) {
       const optimisticOrder = optimisticBudgets
-        .sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0))
+        .sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0))
         .map(b => b.id);
       const actualOrder = budgets
-        .sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0))
+        .sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0))
         .map(b => b.id);
       
       // Only clear optimistic state if the database order matches our expectation
@@ -182,9 +182,9 @@ export function BudgetSummary({
         // Update sort_order for all budget categories
         const budgetsWithNewOrder = reorderedBudgets.map((budget, index) => ({
           ...budget,
-          budget_categories: budget.budget_categories ? {
-            ...budget.budget_categories,
-            sort_order: index + 1
+          category: budget.category ? {
+            ...budget.category,
+            sortOrder: index + 1
           } : undefined
         }));
         
@@ -267,7 +267,7 @@ export function BudgetSummary({
 
   const handleEditBudget = (budget: Budget) => {
     setEditingBudget(budget);
-    setEditCategory(budget.budget_categories?.name || '');
+    setEditCategory(budget.category?.name || '');
     setEditAmount(budget.amount.toString());
     setEditDialogOpen(true);
   };
@@ -277,7 +277,7 @@ export function BudgetSummary({
     
     if (editingBudget && editCategory.trim() && editAmount && parseFloat(editAmount) > 0) {
       // Update category if changed
-      if (editCategory.trim() !== editingBudget.budget_categories?.name && onUpdateBudgetCategory) {
+      if (editCategory.trim() !== editingBudget.category?.name && onUpdateBudgetCategory) {
         onUpdateBudgetCategory(editingBudget.id, editCategory.trim());
       }
       
@@ -467,7 +467,7 @@ export function BudgetSummary({
     };
 
     const categoryTransactions = filterTransactionsByPeriod(
-      transactions.filter(t => t.category === budget.budget_categories?.name && t.type === 'expense'),
+      transactions.filter(t => t.category === budget.category?.name && t.type === 'expense'),
       budget.period_start,
       budget.period_end
     );
@@ -480,7 +480,7 @@ export function BudgetSummary({
         className="select-none touch-manipulation"
       >
         <BudgetDisplayCard
-          title={budget.budget_categories?.name || ''}
+          title={budget.category?.name || ''}
           spent={budget.spent}
           amount={budget.amount}
           currency={budget.currency}
@@ -810,7 +810,7 @@ export function BudgetSummary({
                     <AlertDialogHeader>
                       <AlertDialogTitle>{t('deleteBudget')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t('deleteBudgetConfirm')} "{editingBudget.budget_categories?.name}"? {t('actionCannotBeUndoneSimple')}
+                        {t('deleteBudgetConfirm')} "{editingBudget.category?.name}"? {t('actionCannotBeUndoneSimple')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

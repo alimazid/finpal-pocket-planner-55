@@ -196,6 +196,31 @@ const Index = () => {
     enabled: !!user && currentTargetYear !== null && currentTargetMonth !== null,
   });
 
+  // Get previous period for comparison
+  const previousPeriod = React.useMemo(() => {
+    if (currentTargetYear === null || currentTargetMonth === null) return null;
+    return getPreviousPeriod(currentTargetYear, currentTargetMonth);
+  }, [currentTargetYear, currentTargetMonth]);
+
+  // Fetch budgets for previous period to calculate missing budgets
+  const { data: previousPeriodBudgets = [] } = useQuery({
+    queryKey: ['budgets', user?.id, previousPeriod?.targetYear, previousPeriod?.targetMonth],
+    queryFn: async () => {
+      if (!previousPeriod) return [];
+      
+      const response = await apiClient.getBudgets({
+        year: previousPeriod.targetYear,
+        month: previousPeriod.targetMonth
+      });
+      
+      if (response.success && response.data) {
+        return response.data as Budget[];
+      }
+      return []; // Don't throw error for previous period, just return empty array
+    },
+    enabled: !!user && !!previousPeriod,
+  });
+
   // Calculate budgets for the selected period (from period controls)
   const budgets: CalculatedBudget[] = React.useMemo(() => {
     if (!allBudgets.length || currentTargetYear === null || currentTargetMonth === null) return [];
@@ -252,12 +277,27 @@ const Index = () => {
     console.error('Transactions error:', transactionsError);
   }
 
-  // Calculate missing budgets from previous period (temporarily disabled for API migration)
+  // Calculate missing budgets from previous period
   const missingBudgets: Budget[] = React.useMemo(() => {
-    // TODO: Implement missing budgets calculation with new API
-    // Need to fetch previous period budgets and compare with current
-    return [];
-  }, []);
+    if (!previousPeriodBudgets.length || currentTargetYear === null || currentTargetMonth === null) return [];
+    
+    // If current period has no budgets, all previous period budgets are missing
+    if (!allBudgets.length) {
+      return previousPeriodBudgets;
+    }
+    
+    // Get current period category names
+    const currentCategoryNames = new Set(
+      allBudgets.map(budget => budget.category?.name).filter(Boolean)
+    );
+    
+    // Find budgets from previous period that don't exist in current period
+    const missing = previousPeriodBudgets.filter(budget => 
+      budget.category?.name && !currentCategoryNames.has(budget.category.name)
+    );
+    
+    return missing;
+  }, [previousPeriodBudgets, allBudgets, currentTargetYear, currentTargetMonth]);
 
   // Calculate previous period for display
   const previousPeriodDisplay = React.useMemo(() => {
@@ -318,89 +358,63 @@ const Index = () => {
       category: string; 
       amount: number;
     }) => {
-      // First, create or get the budget category
-      let budgetCategory;
-      const { data: existingCategory, error: categorySelectError } = await supabase
-        .from('budget_categories')
-        .select('*')
-        .eq('user_id', user!.id)
-        .eq('name', category)
-        .single();
-
-      if (categorySelectError && categorySelectError.code !== 'PGRST116') {
-        throw categorySelectError;
+      if (!user?.id || currentTargetYear === null || currentTargetMonth === null) {
+        throw new Error('User not authenticated or period not selected');
       }
-
+      
+      // First, find or create the category
+      let budgetCategory;
+      const categoriesResponse = await apiClient.getCategories();
+      if (!categoriesResponse.success) {
+        throw new Error('Failed to fetch categories');
+      }
+      
+      const existingCategory = categoriesResponse.data?.find(cat => cat.name === category);
+      
       if (existingCategory) {
         budgetCategory = existingCategory;
       } else {
-        // Get the highest sort_order for this user to append new category at the end
-        const { data: maxSortOrder } = await supabase
-          .from('budget_categories')
-          .select('sort_order')
-          .eq('user_id', user!.id)
-          .order('sort_order', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        
-        const nextSortOrder = (maxSortOrder?.sort_order || 0) + 1;
-        
-        const { data: newCategory, error: categoryInsertError } = await supabase
-          .from('budget_categories')
-          .insert([{
-            user_id: user!.id,
-            name: category,
-            sort_order: nextSortOrder,
-          }])
-          .select()
-          .single();
-        
-        if (categoryInsertError) throw categoryInsertError;
-        budgetCategory = newCategory;
+        // Create new category
+        const newCategoryResponse = await apiClient.createCategory({ name: category });
+        if (!newCategoryResponse.success || !newCategoryResponse.data) {
+          throw new Error('Failed to create category');
+        }
+        budgetCategory = newCategoryResponse.data;
       }
       
       // Check if a budget already exists for this target month/year in this category
-      const { data: existingBudget } = await supabase
-        .from('budgets')
-        .select('id')
-        .eq('budget_category_id', budgetCategory.id)
-        .eq('target_year', currentTargetYear!)
-        .eq('target_month', currentTargetMonth!)
-        .maybeSingle();
-        
-      if (existingBudget) {
-        throw new Error(`A budget already exists for this period in the ${category} category`);
+      const budgetsResponse = await apiClient.getBudgets({
+        year: currentTargetYear!,
+        month: currentTargetMonth!
+      });
+      
+      if (budgetsResponse.success && budgetsResponse.data) {
+        const existingBudget = budgetsResponse.data.find(b => b.categoryId === budgetCategory.id);
+        if (existingBudget) {
+          throw new Error(`A budget already exists for this period in the ${category} category`);
+        }
       }
       
       // Create the budget with target month/year
-      const { data, error } = await supabase
-        .from('budgets')
-        .insert([{
-          user_id: user!.id,
-          budget_category_id: budgetCategory.id,
-          amount,
-          spent: 0,
-          target_year: currentTargetYear!,
-          target_month: currentTargetMonth!,
-        }])
-        .select(`
-          *,
-          budget_categories (
-            id,
-            name,
-            sort_order
-          )
-        `)
-        .single();
+      const response = await apiClient.createBudget({
+        categoryId: budgetCategory.id,
+        amount,
+        currency: 'USD',
+        targetYear: currentTargetYear!,
+        targetMonth: currentTargetMonth!
+      });
       
-      if (error) throw error;
-      return data;
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to create budget');
+      }
+      
+      return response.data;
     },
     onSuccess: (newBudget) => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
       toast({
         title: t('budgetCreated'),
-        description: `${t('budgetCreatedFor')} ${newBudget.budget_categories?.name} ($${newBudget.amount.toFixed(2)}) ${t('hasBeenAdded')}`,
+        description: `${t('budgetCreatedFor')} ${newBudget.category?.name} ($${newBudget.amount.toFixed(2)}) ${t('hasBeenAdded')}`,
       });
     },
     onError: (error: Error) => {
@@ -425,30 +439,16 @@ const Index = () => {
         throw new Error('User not authenticated or period not selected');
       }
 
-      const budgetsToCreate = missingBudgets.map(budget => ({
-        user_id: user.id,
-        budget_category_id: budget.budget_category_id,
-        amount: budget.amount,
-        spent: 0,
-        currency: budget.currency,
-        target_year: currentTargetYear,
-        target_month: currentTargetMonth,
-      }));
-
-      const { data, error } = await supabase
-        .from('budgets')
-        .insert(budgetsToCreate)
-        .select(`
-          *,
-          budget_categories (
-            id,
-            name,
-            sort_order
-          )
-        `);
+      const response = await apiClient.createMissingBudgets({
+        year: currentTargetYear,
+        month: currentTargetMonth
+      });
       
-      if (error) throw error;
-      return data;
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to create missing budgets');
+      }
+      
+      return response.data;
     },
     onSuccess: (newBudgets) => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
@@ -472,15 +472,13 @@ const Index = () => {
   // Update budget mutation
   const updateBudgetMutation = useMutation({
     mutationFn: async ({ budgetId, amount }: { budgetId: string; amount: number }) => {
-      const { data, error } = await supabase
-        .from('budgets')
-        .update({ amount })
-        .eq('id', budgetId)
-        .select()
-        .single();
+      const response = await apiClient.updateBudget(budgetId, { amount });
       
-      if (error) throw error;
-      return data;
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to update budget');
+      }
+      
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
@@ -491,22 +489,14 @@ const Index = () => {
   const deleteBudgetMutation = useMutation({
     mutationFn: async (budgetId: string) => {
       const budget = budgets?.find(b => b.id === budgetId);
-      const categoryName = budget?.budget_categories?.name;
+      const categoryName = budget?.category?.name;
       
-      // Delete related transactions first
-      await supabase
-        .from('transactions')
-        .delete()
-        .eq('user_id', user!.id)
-        .eq('category', categoryName);
-
-      // Delete budget
-      const { error } = await supabase
-        .from('budgets')
-        .delete()
-        .eq('id', budgetId);
+      const response = await apiClient.deleteBudget(budgetId);
       
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to delete budget');
+      }
+      
       return { budget, categoryName };
     },
     onSuccess: ({ budget, categoryName }) => {
@@ -527,12 +517,12 @@ const Index = () => {
     mutationFn: async (transactionId: string) => {
       const transaction = transactions?.find(t => t.id === transactionId);
       
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', transactionId);
+      const response = await apiClient.deleteTransaction(transactionId);
       
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to delete transaction');
+      }
+      
       return transaction;
     },
     onSuccess: (transaction) => {
@@ -549,15 +539,13 @@ const Index = () => {
   // Update transaction mutation
   const updateTransactionMutation = useMutation({
     mutationFn: async ({ transactionId, amount }: { transactionId: string; amount: number }) => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .update({ amount })
-        .eq('id', transactionId)
-        .select()
-        .single();
+      const response = await apiClient.updateTransaction(transactionId, { amount });
       
-      if (error) throw error;
-      return data;
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to update transaction');
+      }
+      
+      return response.data;
     },
     onSuccess: (updatedTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
@@ -573,15 +561,13 @@ const Index = () => {
   // Update transaction category mutation
   const updateTransactionCategoryMutation = useMutation({
     mutationFn: async ({ transactionId, category }: { transactionId: string; category: string | null }) => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .update({ category })
-        .eq('id', transactionId)
-        .select()
-        .single();
+      const response = await apiClient.updateTransaction(transactionId, { category });
       
-      if (error) throw error;
-      return data;
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to update transaction category');
+      }
+      
+      return response.data;
     },
     onSuccess: (updatedTransaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
@@ -598,26 +584,19 @@ const Index = () => {
   const updateCategoryMutation = useMutation({
     mutationFn: async ({ budgetId, newCategory }: { budgetId: string; newCategory: string }) => {
       const budget = budgets?.find(b => b.id === budgetId);
-      const oldCategoryName = budget?.budget_categories?.name;
+      const categoryId = budget?.categoryId;
       
-      // Update the budget category name
-      const { data, error } = await supabase
-        .from('budget_categories')
-        .update({ name: newCategory })
-        .eq('id', budget!.budget_category_id)
-        .select()
-        .single();
+      if (!categoryId) {
+        throw new Error('Category not found');
+      }
       
-      if (error) throw error;
-
-      // Update related transactions
-      await supabase
-        .from('transactions')
-        .update({ category: newCategory })
-        .eq('user_id', user!.id)
-        .eq('category', oldCategoryName);
-
-      return data;
+      const response = await apiClient.updateCategory(categoryId, { name: newCategory });
+      
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to update category');
+      }
+      
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
@@ -628,20 +607,15 @@ const Index = () => {
   // Update budget order mutation
   const updateBudgetOrderMutation = useMutation({
     mutationFn: async (budgets: Budget[]) => {
-      const updates = budgets.map((budget, index) => ({
-        id: budget.budget_category_id,
-        sort_order: index
-      }));
-
-      // Update all budget categories with new sort order
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('budget_categories')
-          .update({ sort_order: update.sort_order })
-          .eq('id', update.id);
-        
-        if (error) throw error;
+      const categoryIds = budgets.map(budget => budget.categoryId);
+      
+      const response = await apiClient.reorderCategories(categoryIds);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to reorder categories');
       }
+      
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
@@ -651,13 +625,17 @@ const Index = () => {
   // Clear all transactions mutation
   const clearAllTransactionsMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('user_id', user!.id);
+      const transactionCount = transactions.length;
       
-      if (error) throw error;
-      return transactions.length;
+      // Delete all transactions one by one
+      for (const transaction of transactions) {
+        const response = await apiClient.deleteTransaction(transaction.id);
+        if (!response.success) {
+          throw new Error(response.error || `Failed to delete transaction ${transaction.id}`);
+        }
+      }
+      
+      return transactionCount;
     },
     onSuccess: (transactionCount) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
@@ -680,13 +658,17 @@ const Index = () => {
   // Clear all budgets mutation
   const clearAllBudgetsMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase
-        .from('budgets')
-        .delete()
-        .eq('user_id', user!.id);
+      const budgetCount = budgets.length;
       
-      if (error) throw error;
-      return budgets.length;
+      // Delete all budgets one by one
+      for (const budget of budgets) {
+        const response = await apiClient.deleteBudget(budget.id);
+        if (!response.success) {
+          throw new Error(response.error || `Failed to delete budget ${budget.id}`);
+        }
+      }
+      
+      return budgetCount;
     },
     onSuccess: (budgetCount) => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
@@ -711,21 +693,17 @@ const Index = () => {
     mutationFn: async (language: string) => {
       if (!user?.id) throw new Error('User not found');
       
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          language,
-          period_type: userPreferences?.period_type || 'calendar_month',
-          specific_day: userPreferences?.specific_day || 1,
-        }, {
-          onConflict: 'user_id'
-        })
-        .select()
-        .single();
+      const response = await apiClient.updatePreferences({
+        language: language as 'english' | 'spanish',
+        periodType: userPreferences?.periodType || 'calendar_month',
+        specificDay: userPreferences?.specificDay || 1,
+      });
       
-      if (error) throw error;
-      return data;
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to update language preference');
+      }
+      
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-preferences', user?.id] });
@@ -1025,7 +1003,7 @@ const Index = () => {
         {/* Uncategorized Transactions */}
         <UncategorizedTransactions
           transactions={transactions}
-          availableCategories={budgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0)).map(budget => budget.budget_categories?.name || '')}
+          availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
           onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
           language={selectedLanguage as 'english' | 'spanish'}
@@ -1095,7 +1073,7 @@ const Index = () => {
           onUpdateBudgetCategory={(id, category) => updateCategoryMutation.mutate({ budgetId: id, newCategory: category })}
           onUpdateBudgetAmount={(id, amount) => updateBudgetMutation.mutate({ budgetId: id, amount })}
           onUpdateBudgetOrder={(budgets) => updateBudgetOrderMutation.mutate(budgets)}
-          availableCategories={budgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0)).map(budget => budget.budget_categories?.name || '')}
+          availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
           missingBudgets={missingBudgets}
           onCreateMissingBudgets={() => createMissingBudgetsMutation.mutate()}
           previousPeriod={previousPeriodDisplay ? {
@@ -1118,7 +1096,7 @@ const Index = () => {
             onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
             onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
             onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
-            availableCategories={budgets.sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0)).map(budget => budget.budget_categories?.name || '')}
+            availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
             language={selectedLanguage as 'english' | 'spanish'}
           />
         </div>

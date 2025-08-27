@@ -194,33 +194,47 @@ export class BudgetService {
   }
 
   async createMissingBudgets(userId: string, targetYear: number, targetMonth: number) {
-    // Get all categories for the user
-    const categories = await prisma.budgetCategory.findMany({
-      where: { userId },
-      orderBy: { sortOrder: 'asc' }
-    });
-
-    // Get existing budgets for this period
+    // Import getPreviousPeriod
+    const { getPreviousPeriod } = await import('../utils/periodCalculations');
+    
+    // Get previous period
+    const previousPeriod = getPreviousPeriod(targetYear, targetMonth);
+    
+    // Get existing budgets for current period
     const existingBudgets = await prisma.budget.findMany({
       where: { userId, targetYear, targetMonth }
     });
 
+    // Get budgets from previous period
+    const previousPeriodBudgets = await prisma.budget.findMany({
+      where: { 
+        userId, 
+        targetYear: previousPeriod.targetYear, 
+        targetMonth: previousPeriod.targetMonth 
+      },
+      include: { category: true }
+    });
+
     const existingCategoryIds = existingBudgets.map(b => b.categoryId);
 
-    // Find categories without budgets
-    const missingCategories = categories.filter(
-      cat => !existingCategoryIds.includes(cat.id)
+    // Find budgets from previous period that don't exist in current period
+    const missingBudgets = previousPeriodBudgets.filter(
+      budget => !existingCategoryIds.includes(budget.categoryId)
     );
 
-    // Create budgets for missing categories
+    if (missingBudgets.length === 0) {
+      return [];
+    }
+
+    // Create budgets for missing categories, copying amounts from previous period
     const newBudgets = await Promise.all(
-      missingCategories.map(category =>
+      missingBudgets.map(previousBudget =>
         prisma.budget.create({
           data: {
             userId,
-            categoryId: category.id,
-            amount: 0,
-            currency: 'USD',
+            categoryId: previousBudget.categoryId,
+            amount: previousBudget.amount, // Copy amount from previous period
+            currency: previousBudget.currency,
             targetYear,
             targetMonth,
           },
