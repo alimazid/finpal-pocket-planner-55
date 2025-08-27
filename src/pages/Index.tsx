@@ -264,7 +264,7 @@ const Index = () => {
           user_id: tx.userId,
           created_at: tx.createdAt.toString(),
           updated_at: tx.updatedAt.toString(),
-          date: tx.date.toString()
+          date: new Date(tx.date).toISOString().split('T')[0] // Convert to YYYY-MM-DD format
         })) as Transaction[];
       }
       throw new Error(response.error || 'Failed to fetch transactions');
@@ -322,7 +322,7 @@ const Index = () => {
       const response = await apiClient.createTransaction({
         amount: expense.amount,
         description: expense.description,
-        category: expense.category,
+        category: expense.category || undefined,
         date: new Date(expense.date),
         type: 'expense',
         currency: expense.currency,
