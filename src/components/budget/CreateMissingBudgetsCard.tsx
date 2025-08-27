@@ -6,6 +6,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { useTranslation } from "@/hooks/useTranslation";
 import { formatCurrency } from "@/lib/utils";
+import { DEFAULT_CURRENCY } from "@/config/currencies";
 
 interface BudgetCategory {
   id: string;
@@ -69,7 +70,7 @@ export function CreateMissingBudgetsCard({
   };
 
   const totalAmount = missingBudgets.reduce((sum, budget) => sum + budget.amount, 0);
-  const primaryCurrency = missingBudgets.length > 0 ? missingBudgets[0].currency : 'DOP';
+  const primaryCurrency = missingBudgets.length > 0 ? missingBudgets[0].currency : DEFAULT_CURRENCY;
   const missingCount = missingBudgets.length;
 
   if (missingCount === 0) {

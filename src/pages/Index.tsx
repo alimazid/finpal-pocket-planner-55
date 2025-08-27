@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { apiClient, type User } from "@/lib/api-client";
+import { DEFAULT_CURRENCY } from "@/config/currencies";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/StatsCard";
@@ -354,9 +355,10 @@ const Index = () => {
 
   // Add budget mutation
   const addBudgetMutation = useMutation({
-    mutationFn: async ({ category, amount }: { 
+    mutationFn: async ({ category, amount, currency }: { 
       category: string; 
       amount: number;
+      currency: string;
     }) => {
       if (!user?.id || currentTargetYear === null || currentTargetMonth === null) {
         throw new Error('User not authenticated or period not selected');
@@ -396,11 +398,10 @@ const Index = () => {
       }
       
       // Create the budget with target month/year
-      const defaultCurrency = userPreferences?.defaultCurrency || 'DOP';
       const response = await apiClient.createBudget({
         categoryId: budgetCategory.id,
         amount,
-        currency: defaultCurrency,
+        currency: currency,
         targetYear: currentTargetYear!,
         targetMonth: currentTargetMonth!
       });
@@ -797,7 +798,7 @@ const Index = () => {
   const remainingBudget = totalBudget - totalSpent;
 
   // Get primary currency from first budget or user's default currency
-  const primaryCurrency = budgets.length > 0 ? budgets[0].currency : (userPreferences?.defaultCurrency || 'DOP');
+  const primaryCurrency = budgets.length > 0 ? budgets[0].currency : (userPreferences?.defaultCurrency || DEFAULT_CURRENCY);
 
   // Handle export data
   const handleExportData = () => {
@@ -1066,7 +1067,8 @@ const Index = () => {
           budgets={budgets} 
           transactions={transactions}
           language={selectedLanguage as 'english' | 'spanish'} 
-          onAddBudget={(category, amount) => addBudgetMutation.mutate({ category, amount })}
+          defaultCurrency={userPreferences?.defaultCurrency}
+          onAddBudget={(category, amount, currency) => addBudgetMutation.mutate({ category, amount, currency })}
           onDeleteBudget={(id) => deleteBudgetMutation.mutate(id)}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
           onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}

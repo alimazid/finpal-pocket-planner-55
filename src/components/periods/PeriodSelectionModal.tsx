@@ -10,6 +10,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
 import apiClient from "@/lib/api-client";
+import { getCurrencyOptions, DEFAULT_CURRENCY } from "@/config/currencies";
 
 interface PeriodSelectionModalProps {
   open: boolean;
@@ -30,7 +31,7 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, language, use
   const queryClient = useQueryClient();
   const [periodType, setPeriodType] = useState<'calendar_month' | 'specific_day'>('calendar_month');
   const [specificDay, setSpecificDay] = useState<number>(1);
-  const [defaultCurrency, setDefaultCurrency] = useState<string>('DOP');
+  const [defaultCurrency, setDefaultCurrency] = useState<string>(DEFAULT_CURRENCY);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
 
@@ -110,14 +111,8 @@ export function PeriodSelectionModal({ open, onOpenChange, userId, language, use
     }
   };
 
-  const currencies = [
-    { value: "DOP", label: "DOP - Dominican Peso" },
-    { value: "USD", label: "USD - US Dollar" },
-    { value: "EUR", label: "EUR - Euro" },
-    { value: "CAD", label: "CAD - Canadian Dollar" },
-    { value: "GBP", label: "GBP - British Pound" },
-    { value: "JPY", label: "JPY - Japanese Yen" },
-  ];
+  // Use currency options from configuration
+  const currencies = getCurrencyOptions();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

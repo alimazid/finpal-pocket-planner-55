@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Calendar } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getCurrencyOptions, DEFAULT_CURRENCY } from "@/config/currencies";
 
 interface BudgetPeriod {
   startDate: Date;
@@ -15,24 +17,27 @@ interface BudgetPeriod {
 }
 
 interface AddBudgetCardProps {
-  onAddBudget: (category: string, amount: number) => void;
+  onAddBudget: (category: string, amount: number, currency: string) => void;
   currentPeriod?: BudgetPeriod;
   language: 'english' | 'spanish';
+  defaultCurrency?: string;
 }
 
-export function AddBudgetCard({ onAddBudget, currentPeriod, language }: AddBudgetCardProps) {
+export function AddBudgetCard({ onAddBudget, currentPeriod, language, defaultCurrency }: AddBudgetCardProps) {
   const { t } = useTranslation(language);
   const [isOpen, setIsOpen] = useState(false);
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState(defaultCurrency || DEFAULT_CURRENCY);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (category.trim() && amount && parseFloat(amount) > 0) {
-      onAddBudget(category.trim(), parseFloat(amount));
+      onAddBudget(category.trim(), parseFloat(amount), currency);
       setCategory("");
       setAmount("");
+      setCurrency(defaultCurrency || DEFAULT_CURRENCY);
       setIsOpen(false);
     }
   };
@@ -40,6 +45,7 @@ export function AddBudgetCard({ onAddBudget, currentPeriod, language }: AddBudge
   const handleCancel = () => {
     setCategory("");
     setAmount("");
+    setCurrency(defaultCurrency || DEFAULT_CURRENCY);
     setIsOpen(false);
   };
 
@@ -95,6 +101,22 @@ export function AddBudgetCard({ onAddBudget, currentPeriod, language }: AddBudge
               min="0"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">{t('currency')}</Label>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectCurrency')} />
+              </SelectTrigger>
+              <SelectContent>
+                {getCurrencyOptions().map((curr) => (
+                  <SelectItem key={curr.value} value={curr.value}>
+                    {curr.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Show selected period */}

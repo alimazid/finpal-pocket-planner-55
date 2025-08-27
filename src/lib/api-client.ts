@@ -344,6 +344,40 @@ class ApiClient {
     const response = await this.client.put<ApiResponse<UserPreferences>>('/preferences', data);
     return response.data;
   }
+
+  // Currency conversion methods
+  async getExchangeRate(fromCurrency: string, toCurrency: string) {
+    const response = await this.client.get<ApiResponse<{
+      fromCurrency: string;
+      toCurrency: string;
+      rate: number;
+      timestamp: string;
+    }>>(`/currencies/${fromCurrency}/${toCurrency}/rate`);
+    return response.data;
+  }
+
+  async convertAmount(amount: number, fromCurrency: string, toCurrency: string) {
+    const response = await this.client.post<ApiResponse<{
+      originalAmount: number;
+      fromCurrency: string;
+      toCurrency: string;
+      convertedAmount: number;
+      timestamp: string;
+    }>>(`/currencies/${fromCurrency}/${toCurrency}/convert`, { amount });
+    return response.data;
+  }
+
+  async getSupportedCurrencies() {
+    const response = await this.client.get<ApiResponse<{
+      id: string;
+      code: string;
+      displayAlias: string;
+      name: string;
+      sortOrder: number;
+      isActive: boolean;
+    }[]>>('/currencies');
+    return response.data;
+  }
 }
 
 // Create and export a singleton instance

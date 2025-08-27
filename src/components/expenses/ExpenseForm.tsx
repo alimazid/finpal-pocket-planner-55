@@ -10,6 +10,7 @@ import { Plus, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getCurrencyOptions, DEFAULT_CURRENCY } from "@/config/currencies";
 
 
 interface ExpenseFormProps {
@@ -30,16 +31,13 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [currency, setCurrency] = useState(defaultCurrency || "DOP");
+  const [currency, setCurrency] = useState(defaultCurrency || DEFAULT_CURRENCY);
   const [date, setDate] = useState<Date>(new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const { t } = useTranslation(language);
 
-  const currencies = [
-    { value: "USD", label: "USD - US Dollar" },
-    { value: "DOP", label: "DOP - Dominican Peso" },
-    { value: "RD", label: "RD - Peso Dominicano" },
-  ];
+  // Use currency options from configuration
+  const currencies = getCurrencyOptions();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +52,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
       setAmount("");
       setDescription("");
       setCategory("");
-      setCurrency(defaultCurrency || "DOP");
+      setCurrency(defaultCurrency || DEFAULT_CURRENCY);
     }
   };
 

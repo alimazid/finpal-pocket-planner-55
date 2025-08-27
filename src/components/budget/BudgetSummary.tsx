@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
+import { DEFAULT_CURRENCY } from "@/config/currencies";
 import { useState, useEffect, useRef } from "react";
 import { filterTransactionsByPeriod } from "@/lib/periodCalculations";
+import { useConvertedTotals } from "@/hooks/useConvertedTotals";
 import {
   DndContext,
   closestCenter,
@@ -79,7 +81,7 @@ interface BudgetSummaryProps {
   budgets: Budget[];
   transactions?: Transaction[];
   language: 'english' | 'spanish';
-  onAddBudget?: (category: string, amount: number) => void;
+  onAddBudget?: (category: string, amount: number, currency: string) => void;
   onDeleteBudget?: (id: string) => void;
   onDeleteTransaction?: (id: string) => void;
   onUpdateTransaction?: (id: string, amount: number) => void;
@@ -90,6 +92,7 @@ interface BudgetSummaryProps {
   availableCategories?: string[];
   currentPeriod?: BudgetPeriod;
   onPeriodChange?: (period: BudgetPeriod) => void;
+  defaultCurrency?: string;
   cutoffDay?: number;
   missingBudgets?: Budget[];
   onCreateMissingBudgets?: () => void;
@@ -112,6 +115,7 @@ export function BudgetSummary({
   availableCategories = [],
   currentPeriod,
   onPeriodChange,
+  defaultCurrency,
   cutoffDay = 1,
   missingBudgets = [],
   onCreateMissingBudgets,
@@ -298,10 +302,11 @@ export function BudgetSummary({
     setEditDialogOpen(false);
   };
 
-  const totalSpent = budgets.reduce((sum, budget) => sum + budget.spent, 0);
-  const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
+  // Use converted totals hook to handle multi-currency calculations
+  const convertedTotals = useConvertedTotals(budgets, defaultCurrency);
+  const { totalSpent, totalBudget, currency: totalsCurrency, isConverting } = convertedTotals;
+  
   const totalPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-  const primaryCurrency = budgets.length > 0 ? budgets[0].currency : 'DOP';
   const totalBudgetStatus = getBudgetStatus(totalSpent, totalBudget);
 
   // Transaction Accordion Component
@@ -677,6 +682,7 @@ export function BudgetSummary({
               onAddBudget={onAddBudget}
               currentPeriod={currentPeriod}
               language={language}
+              defaultCurrency={defaultCurrency}
             />
           )}
           
@@ -711,7 +717,7 @@ export function BudgetSummary({
           title={t('totalBudgetProgress')}
           spent={totalSpent}
           amount={totalBudget}
-          currency={primaryCurrency}
+          currency={totalsCurrency}
         />
 
         {/* Individual Budget Cards */}
@@ -739,6 +745,7 @@ export function BudgetSummary({
             onAddBudget={onAddBudget}
             currentPeriod={currentPeriod}
             language={language}
+            defaultCurrency={defaultCurrency}
           />
         )}
         
