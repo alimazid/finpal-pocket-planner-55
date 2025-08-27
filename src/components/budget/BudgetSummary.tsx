@@ -694,6 +694,7 @@ export function BudgetSummary({
               previousPeriod={previousPeriod}
               language={language}
               isCreating={isCreatingMissingBudgets}
+              defaultCurrency={defaultCurrency}
             />
           )}
         </div>
@@ -757,6 +758,7 @@ export function BudgetSummary({
             previousPeriod={previousPeriod}
             language={language}
             isCreating={isCreatingMissingBudgets}
+            defaultCurrency={defaultCurrency}
           />
         )}
       </div>

@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useTranslation } from "@/hooks/useTranslation";
 import { formatCurrency } from "@/lib/utils";
 import { DEFAULT_CURRENCY } from "@/config/currencies";
+import { useConvertedTotals } from "@/hooks/useConvertedTotals";
 
 interface BudgetCategory {
   id: string;
@@ -43,6 +44,7 @@ interface CreateMissingBudgetsCardProps {
   previousPeriod?: BudgetPeriod;
   language: 'english' | 'spanish';
   isCreating?: boolean;
+  defaultCurrency?: string;
 }
 
 export function CreateMissingBudgetsCard({ 
@@ -50,7 +52,8 @@ export function CreateMissingBudgetsCard({
   onCreateMissingBudgets, 
   previousPeriod, 
   language,
-  isCreating = false
+  isCreating = false,
+  defaultCurrency
 }: CreateMissingBudgetsCardProps) {
   const { t } = useTranslation(language);
   const [isOpen, setIsOpen] = useState(false);
@@ -69,8 +72,8 @@ export function CreateMissingBudgetsCard({
     return `${format(previousPeriod.startDate, 'MMM dd')} - ${format(previousPeriod.endDate, 'MMM dd, yyyy')}`;
   };
 
-  const totalAmount = missingBudgets.reduce((sum, budget) => sum + budget.amount, 0);
-  const primaryCurrency = missingBudgets.length > 0 ? missingBudgets[0].currency : DEFAULT_CURRENCY;
+  const convertedTotals = useConvertedTotals(missingBudgets, defaultCurrency);
+  const { totalBudget: totalAmount, currency: totalsCurrency, isConverting } = convertedTotals;
   const missingCount = missingBudgets.length;
 
   if (missingCount === 0) {
@@ -138,7 +141,7 @@ export function CreateMissingBudgetsCard({
               {t('total')}:
             </span>
             <span className="font-semibold text-foreground">
-              {formatCurrency(totalAmount, primaryCurrency)}
+              {isConverting ? t('loading') : formatCurrency(totalAmount, totalsCurrency)}
             </span>
           </div>
         </div>
