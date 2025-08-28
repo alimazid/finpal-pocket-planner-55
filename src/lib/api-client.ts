@@ -378,6 +378,18 @@ class ApiClient {
     }[]>>('/currencies');
     return response.data;
   }
+
+  async getExchangeRatesForCurrency(baseCurrency: string) {
+    const response = await this.client.get<ApiResponse<{
+      id: string;
+      fromCurrency: string;
+      toCurrency: string;
+      rate: number;
+      isActive: boolean;
+      updatedAt: Date;
+    }[]>>(`/currencies/${baseCurrency}/rates`);
+    return response.data;
+  }
 }
 
 // Create and export a singleton instance
