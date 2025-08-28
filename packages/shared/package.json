@@ -1,0 +1,17 @@
+{
+  "name": "@finpal/shared",
+  "version": "1.0.0",
+  "description": "Shared utilities and types for FinPal",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  },
+  "keywords": ["shared", "types", "utils"],
+  "author": "FinPal Team",
+  "license": "MIT"
+}

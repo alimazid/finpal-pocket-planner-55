@@ -10,9 +10,6 @@ import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { BudgetPeriodNavigator } from "@/components/budget/BudgetPeriodNavigator";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
-import ExchangeRateWidget from "@/components/exchange/ExchangeRateWidget";
-import { ExchangeRateSync } from "@/components/exchange/ExchangeRateSync";
-import { ExchangeRatesDisplay } from "@/components/exchange/ExchangeRatesDisplay";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
 
 import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download } from "lucide-react";
@@ -850,9 +847,6 @@ const Index = () => {
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-white" />
               </div>
-              <ExchangeRatesDisplay defaultCurrency={primaryCurrency} />
-              <ExchangeRateWidget language={selectedLanguage as 'english' | 'spanish'} />
-              <ExchangeRateSync language={selectedLanguage as 'english' | 'spanish'} />
               
             </div>
             <div className="flex items-center gap-2">
