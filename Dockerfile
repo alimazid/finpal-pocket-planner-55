@@ -40,12 +40,12 @@ FROM base AS backend-builder
 COPY apps/backend/ ./apps/backend/
 COPY packages/ ./packages/
 
-# Build backend
+# Generate Prisma client first (from backend directory but client goes to root node_modules)
 WORKDIR /app/apps/backend
-RUN npm run build
-
-# Generate Prisma client
 RUN npx prisma generate
+
+# Build backend
+RUN npm run build
 
 # Frontend production image
 FROM caddy:2-alpine AS frontend-prod
@@ -76,9 +76,11 @@ RUN npm ci --production
 # Copy built backend and Prisma files
 COPY --from=backend-builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=backend-builder /app/apps/backend/prisma ./apps/backend/prisma
-COPY --from=backend-builder /app/apps/backend/node_modules/.prisma ./apps/backend/node_modules/.prisma
+COPY --from=backend-builder /app/node_modules/.prisma ./node_modules/.prisma
 
+# Generate Prisma client in production (ensure it matches production dependencies)
 WORKDIR /app/apps/backend
+RUN npx prisma generate
 
 EXPOSE 3001
 
