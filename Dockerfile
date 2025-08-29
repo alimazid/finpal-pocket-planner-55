@@ -98,6 +98,3 @@ node dist/server.js' > /start.sh && chmod +x /start.sh
 
 # Run startup script
 CMD ["/start.sh"]
-
-# Default target for Railway (backend)
-FROM backend-prod
