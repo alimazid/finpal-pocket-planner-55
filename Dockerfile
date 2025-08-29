@@ -63,6 +63,9 @@ CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
 # Backend production image
 FROM node:20-alpine AS backend-prod
 
+# Install OpenSSL and other dependencies required by Prisma
+RUN apk add --no-cache openssl openssl-dev libc6-compat
+
 WORKDIR /app
 
 # Copy workspace package files
