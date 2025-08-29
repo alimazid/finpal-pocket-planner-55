@@ -11,7 +11,7 @@ import { NotFoundError, ValidationError } from '../middleware/error.middleware.j
 export class TransactionService {
 
   async getTransactions(userId: string, params: TransactionQueryParams) {
-    const where: Prisma.TransactionWhereInput = {
+    const where: any = {
       userId,
       ...(params.type && { type: params.type }),
       ...(params.category && { category: params.category }),
@@ -125,7 +125,7 @@ export class TransactionService {
   }
 
   async getTransactionSummary(userId: string, startDate?: Date, endDate?: Date) {
-    const where: Prisma.TransactionWhereInput = {
+    const where: any = {
       userId,
       ...(startDate && endDate && {
         date: {
@@ -157,7 +157,7 @@ export class TransactionService {
   }
 
   async getCategorySummary(userId: string, startDate?: Date, endDate?: Date) {
-    const where: Prisma.TransactionWhereInput = {
+    const where: any = {
       userId,
       type: 'expense',
       category: { not: null },

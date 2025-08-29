@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 
 export interface ApiErrorInterface extends Error {
@@ -28,8 +27,8 @@ export function errorHandler(
   }
 
   // Prisma errors
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    switch (error.code) {
+  if (error.name === 'PrismaClientKnownRequestError') {
+    switch ((error as any).code) {
       case 'P2002':
         return res.status(409).json({
           success: false,
