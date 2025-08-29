@@ -84,8 +84,17 @@ RUN npx prisma generate
 
 EXPOSE 3001
 
-# Run migrations and start server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+# Create startup script to handle errors better
+RUN echo '#!/bin/sh\n\
+echo "Starting backend server..."\n\
+echo "DATABASE_URL is set: $(if [ -z "$DATABASE_URL" ]; then echo "NO"; else echo "YES"; fi)"\n\
+echo "Running database migrations..."\n\
+npx prisma migrate deploy || echo "WARNING: Migrations failed, but continuing..."\n\
+echo "Starting Node.js server..."\n\
+node dist/server.js' > /start.sh && chmod +x /start.sh
+
+# Run startup script
+CMD ["/start.sh"]
 
 # Default target for Railway (backend)
 FROM backend-prod
