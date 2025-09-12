@@ -1,0 +1,6 @@
+# Ignore root Dockerfile to force Nixpacks detection
+../../Dockerfile
+../../backend.Dockerfile
+
+# Ignore backend files
+../../apps/backend/
