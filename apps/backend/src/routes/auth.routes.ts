@@ -73,4 +73,9 @@ router.put('/profile',
   }
 );
 
+// Simple test route for debugging
+router.get('/test', (req, res) => {
+  res.json({ success: true, message: 'Auth routes are working' });
+});
+
 export default router;
