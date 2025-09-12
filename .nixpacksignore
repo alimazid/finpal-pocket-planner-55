@@ -1,3 +1,0 @@
-# Ignore supabase functions to prevent Deno detection
-supabase/functions/
-supabase/functions/**

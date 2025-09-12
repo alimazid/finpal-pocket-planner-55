@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FinPal Pocket Planner is a personal finance management application built with React, TypeScript, and Supabase. It features budget tracking with flexible period management, transaction categorization, multi-currency support, and internationalization.
+FinPal Pocket Planner is a personal finance management application built with React, TypeScript, Express, and Prisma. It features budget tracking with flexible period management, transaction categorization, multi-currency support, and internationalization.
 
 ## Development Commands
 
@@ -20,14 +20,14 @@ Always run `npm run lint` before committing changes. No separate TypeScript chec
 
 ## Architecture Overview
 
-### Backend: Supabase
-- **Database**: PostgreSQL with RLS (Row Level Security)
-- **Authentication**: Supabase Auth with email/password
-- **Real-time**: Automatic UI updates via Supabase subscriptions
-- **Functions**: Edge functions for external API calls (exchange rates)
+### Backend: Express + Prisma
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT-based authentication with bcrypt password hashing
+- **API**: RESTful Express.js API with middleware for validation, rate limiting, and CORS
+- **Exchange Rates**: Seeded currency conversion rates with automatic updates
 
 Key tables:
-- `users` - User authentication managed by Supabase Auth
+- `users` - User authentication with password hashing
 - `user_preferences` - Period type settings and language preferences
 - `budget_categories` - User-defined budget categories with sort order
 - `budgets` - Budget allocations with target month/year system
@@ -44,7 +44,7 @@ Key tables:
 **Key Components Structure**:
 - `src/pages/` - Route components (Index, Auth, NotFound)
 - `src/components/` - Feature-specific components organized by domain
-- `src/integrations/supabase/` - Database client and auto-generated types
+- `src/lib/api-client.ts` - API client for backend communication
 - `src/lib/` - Utility functions and business logic
 - `src/hooks/` - Custom React hooks
 

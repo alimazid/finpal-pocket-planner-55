@@ -79,9 +79,7 @@ Create two Railway services from the same GitHub repository:
 
 4. **Environment Variables**:
    ```
-   VITE_API_URL=https://${{finpal-backend.RAILWAY_PUBLIC_DOMAIN}}
-   VITE_SUPABASE_URL=your-supabase-url
-   VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+   VITE_API_URL=https://${{finpal-backend.RAILWAY_PUBLIC_DOMAIN}}/api
    ```
 
 ### Option 2: Single Service (Alternative)
@@ -114,9 +112,7 @@ docker build --target frontend-prod -t finpal-frontend .
 
 ### Frontend (.env)
 ```
-VITE_API_URL=http://localhost:3001        # Backend API URL
-VITE_SUPABASE_URL=your-supabase-url       # Supabase project URL
-VITE_SUPABASE_ANON_KEY=your-supabase-key  # Supabase anonymous key
+VITE_API_URL=http://localhost:3001/api    # Backend API URL with /api prefix
 ```
 
 ### Backend (.env)
