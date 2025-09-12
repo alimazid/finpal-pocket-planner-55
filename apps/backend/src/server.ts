@@ -32,6 +32,19 @@ async function startServer() {
           cwd: process.cwd()
         });
         console.log('✅ Production migration deploy successful');
+        
+        // Run seed after successful migration
+        try {
+          console.log('🌱 Running database seed...');
+          execSync('npm run db:seed', { 
+            stdio: 'inherit',
+            cwd: process.cwd()
+          });
+          console.log('✅ Database seed completed');
+        } catch (seedError) {
+          console.log('⚠️  Database seed failed, but continuing...');
+          console.log('This might be expected if seed data already exists');
+        }
       } catch (migrateError) {
         console.log('❌ Migration deploy failed, trying db push without reset...');
         try {
@@ -41,6 +54,19 @@ async function startServer() {
             cwd: process.cwd()
           });
           console.log('✅ Database push successful');
+          
+          // Run seed after successful db push
+          try {
+            console.log('🌱 Running database seed...');
+            execSync('npm run db:seed', { 
+              stdio: 'inherit',
+              cwd: process.cwd()
+            });
+            console.log('✅ Database seed completed');
+          } catch (seedError) {
+            console.log('⚠️  Database seed failed, but continuing...');
+            console.log('This might be expected if seed data already exists');
+          }
         } catch (dbPushError) {
           console.log('❌ All database setup attempts failed');
           console.log('Database might already be set up or there might be a connection issue');
@@ -57,6 +83,19 @@ async function startServer() {
           cwd: process.cwd()
         });
         console.log('✅ Development database push successful');
+        
+        // Run seed after successful db push
+        try {
+          console.log('🌱 Running database seed...');
+          execSync('npm run db:seed', { 
+            stdio: 'inherit',
+            cwd: process.cwd()
+          });
+          console.log('✅ Database seed completed');
+        } catch (seedError) {
+          console.log('⚠️  Database seed failed, but continuing...');
+          console.log('This might be expected if seed data already exists');
+        }
       } catch (dbPushError) {
         console.log('❌ Database push failed, trying migrate deploy...');
         try {
@@ -65,6 +104,19 @@ async function startServer() {
             cwd: process.cwd()
           });
           console.log('✅ Migration deploy successful');
+          
+          // Run seed after successful migration
+          try {
+            console.log('🌱 Running database seed...');
+            execSync('npm run db:seed', { 
+              stdio: 'inherit',
+              cwd: process.cwd()
+            });
+            console.log('✅ Database seed completed');
+          } catch (seedError) {
+            console.log('⚠️  Database seed failed, but continuing...');
+            console.log('This might be expected if seed data already exists');
+          }
         } catch (migrateError) {
           console.log('❌ All database setup attempts failed');
           console.log('Database might already be set up or there might be a connection issue');
