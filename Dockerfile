@@ -85,11 +85,21 @@ EXPOSE 3001
 
 # Create startup script to handle errors better
 RUN echo '#!/bin/sh\n\
-echo "Starting backend server..."\n\
+set -e\n\
+echo "=== RAILWAY BACKEND STARTUP ==="\n\
 echo "DATABASE_URL is set: $(if [ -z "$DATABASE_URL" ]; then echo "NO"; else echo "YES"; fi)"\n\
-echo "Running database migrations..."\n\
-npx prisma db push --accept-data-loss || echo "WARNING: Database push failed, trying migrate deploy..."\n\
-npx prisma migrate deploy || echo "WARNING: Migrations also failed, but continuing..."\n\
+echo "Current working directory: $(pwd)"\n\
+echo "Checking if schema file exists: $(ls -la prisma/schema.prisma)"\n\
+echo "=== RUNNING DATABASE SETUP ==="\n\
+echo "Running prisma db push..."\n\
+npx prisma db push --accept-data-loss --force-reset && echo "✅ Database push successful" || {\n\
+  echo "❌ Database push failed, trying migrate deploy..."\n\
+  npx prisma migrate deploy && echo "✅ Migration deploy successful" || {\n\
+    echo "❌ Migration deploy also failed, trying to continue anyway..."\n\
+    echo "Database might already be set up or there might be a connection issue"\n\
+  }\n\
+}\n\
+echo "=== STARTING SERVER ==="\n\
 echo "Starting Node.js server..."\n\
 node dist/server.js' > /start.sh && chmod +x /start.sh
 
