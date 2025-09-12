@@ -18,25 +18,57 @@ async function startServer() {
     console.log('=== RUNNING DATABASE SETUP ===');
     console.log('Setting up database schema...');
     
-    // Import and run database push
     const { execSync } = await import('child_process');
-    try {
-      execSync('npx prisma db push --accept-data-loss --force-reset', { 
-        stdio: 'inherit',
-        cwd: process.cwd()
-      });
-      console.log('✅ Database schema setup successful');
-    } catch (dbPushError) {
-      console.log('❌ Database push failed, trying migrate deploy...');
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+    
+    if (isProduction) {
+      console.log('🚀 Production environment detected - using safe migration commands');
+      
+      // In production, use migrate deploy (safe, no data loss)
       try {
+        console.log('Running prisma migrate deploy...');
         execSync('npx prisma migrate deploy', { 
           stdio: 'inherit',
           cwd: process.cwd()
         });
-        console.log('✅ Migration deploy successful');
+        console.log('✅ Production migration deploy successful');
       } catch (migrateError) {
-        console.log('❌ Migration deploy also failed, continuing anyway...');
-        console.log('Database might already be set up or there might be a connection issue');
+        console.log('❌ Migration deploy failed, trying db push without reset...');
+        try {
+          // Fallback: db push without destructive flags
+          execSync('npx prisma db push', { 
+            stdio: 'inherit',
+            cwd: process.cwd()
+          });
+          console.log('✅ Database push successful');
+        } catch (dbPushError) {
+          console.log('❌ All database setup attempts failed');
+          console.log('Database might already be set up or there might be a connection issue');
+        }
+      }
+    } else {
+      console.log('🔧 Development environment detected - using dev-safe commands');
+      
+      // In development, use db push without destructive flags first
+      try {
+        console.log('Running prisma db push...');
+        execSync('npx prisma db push', { 
+          stdio: 'inherit',
+          cwd: process.cwd()
+        });
+        console.log('✅ Development database push successful');
+      } catch (dbPushError) {
+        console.log('❌ Database push failed, trying migrate deploy...');
+        try {
+          execSync('npx prisma migrate deploy', { 
+            stdio: 'inherit',
+            cwd: process.cwd()
+          });
+          console.log('✅ Migration deploy successful');
+        } catch (migrateError) {
+          console.log('❌ All database setup attempts failed');
+          console.log('Database might already be set up or there might be a connection issue');
+        }
       }
     }
     
