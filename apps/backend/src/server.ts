@@ -20,8 +20,13 @@ async function startServer() {
     
     const { execSync } = await import('child_process');
     const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+    const isDevelopmentWatch = process.argv.includes('--watch') || process.env.npm_lifecycle_event === 'dev';
     
-    if (isProduction) {
+    // Skip database setup in development watch mode to prevent tsx restart loops
+    if (isDevelopmentWatch) {
+      console.log('🔧 Development watch mode detected - skipping database setup');
+      console.log('Run "npm run db:push" and "npm run db:seed" manually if needed');
+    } else if (isProduction) {
       console.log('🚀 Production environment detected - using safe migration commands');
       
       // In production, use migrate deploy (safe, no data loss)
