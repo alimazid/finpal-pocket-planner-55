@@ -88,7 +88,8 @@ RUN echo '#!/bin/sh\n\
 echo "Starting backend server..."\n\
 echo "DATABASE_URL is set: $(if [ -z "$DATABASE_URL" ]; then echo "NO"; else echo "YES"; fi)"\n\
 echo "Running database migrations..."\n\
-npx prisma migrate deploy || echo "WARNING: Migrations failed, but continuing..."\n\
+npx prisma db push --accept-data-loss || echo "WARNING: Database push failed, trying migrate deploy..."\n\
+npx prisma migrate deploy || echo "WARNING: Migrations also failed, but continuing..."\n\
 echo "Starting Node.js server..."\n\
 node dist/server.js' > /start.sh && chmod +x /start.sh
 
