@@ -11,6 +11,7 @@ import transactionRoutes from './routes/transaction.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import preferencesRoutes from './routes/preferences.routes.js';
 import currencyRoutes from './routes/currency.routes.js';
+import gmailRoutes from './routes/gmail.routes.js';
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/preferences', preferencesRoutes);
 app.use('/api/currencies', currencyRoutes);
+app.use('/api/gmail', gmailRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

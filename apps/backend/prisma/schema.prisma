@@ -27,6 +27,7 @@ model User {
   categories    BudgetCategory[]
   budgets       Budget[]
   transactions  Transaction[]
+  gmailAccounts GmailAccount[]
 
   @@map("users")
 }
@@ -164,4 +165,26 @@ model Currency {
 enum TransactionType {
   expense
   income
+}
+
+model GmailAccount {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  gmailAddress      String   @map("gmail_address")
+  pennyAccountId    String   @map("penny_account_id")
+  isConnected       Boolean  @default(true) @map("is_connected")
+  monitoringActive  Boolean  @default(false) @map("monitoring_active")
+  lastSyncAt        DateTime? @map("last_sync_at")
+  webhookUrl        String?  @map("webhook_url")
+  oauthState        String?  @map("oauth_state")
+  registeredAt      DateTime @default(now()) @map("registered_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gmailAddress])
+  @@index([userId])
+  @@index([pennyAccountId])
+  @@map("gmail_accounts")
 }

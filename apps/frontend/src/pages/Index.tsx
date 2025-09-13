@@ -12,7 +12,7 @@ import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
 
-import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download } from "lucide-react";
+import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -934,12 +934,20 @@ const Index = () => {
                   
                   <DropdownMenuSeparator />
 
-                   <DropdownMenuItem 
+                   <DropdownMenuItem
                      onClick={() => setIsPeriodSelectionOpen(true)}
                      className="cursor-pointer"
                    >
                      <Settings className="w-4 h-4 mr-2" />
                      {t('periodSelection')}
+                   </DropdownMenuItem>
+
+                   <DropdownMenuItem
+                     onClick={() => navigate('/gmail-settings')}
+                     className="cursor-pointer"
+                   >
+                     <Mail className="w-4 h-4 mr-2" />
+                     Gmail Integration
                    </DropdownMenuItem>
 
                    <Dialog open={isTranslationOpen} onOpenChange={setIsTranslationOpen}>

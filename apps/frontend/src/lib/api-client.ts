@@ -130,6 +130,46 @@ export interface BudgetQueryParams {
   month: number;
 }
 
+export interface GmailAccount {
+  id: string;
+  userId: string;
+  gmailAddress: string;
+  pennyAccountId: string;
+  isConnected: boolean;
+  monitoringActive: boolean;
+  lastSyncAt: Date | null;
+  registeredAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PennyAccountStatus {
+  accountId: string;
+  gmailAddress: string;
+  isConnected: boolean;
+  monitoringActive: boolean;
+  lastSyncAt: string | null;
+  registeredAt: string;
+  externalUserId: string;
+  statistics: {
+    totalEmails: number;
+    financialEmails: number;
+    extractedData: number;
+  };
+}
+
+export interface GmailAuthResponse {
+  authUrl: string;
+  state: string;
+  webhookUrl?: string;
+}
+
+export interface GmailCallbackDto {
+  code: string;
+  state: string;
+  webhookUrl?: string;
+}
+
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
@@ -388,6 +428,43 @@ class ApiClient {
       isActive: boolean;
       updatedAt: Date;
     }[]>>(`/currencies/${baseCurrency}/rates`);
+    return response.data;
+  }
+
+  // Gmail endpoints
+  async generateGmailAuthUrl(webhookUrl?: string) {
+    const params = webhookUrl ? { webhookUrl } : {};
+    const response = await this.client.get<ApiResponse<GmailAuthResponse>>('/gmail/auth', { params });
+    return response.data;
+  }
+
+  async handleGmailCallback(data: GmailCallbackDto) {
+    const response = await this.client.post<ApiResponse<GmailAccount>>('/gmail/callback', data);
+    return response.data;
+  }
+
+  async getGmailAccounts() {
+    const response = await this.client.get<ApiResponse<GmailAccount[]>>('/gmail/accounts');
+    return response.data;
+  }
+
+  async getGmailAccountStatus(accountId: string) {
+    const response = await this.client.get<ApiResponse<PennyAccountStatus>>(`/gmail/accounts/${accountId}/status`);
+    return response.data;
+  }
+
+  async startGmailMonitoring(accountId: string) {
+    const response = await this.client.post<ApiResponse<{ success: boolean }>>(`/gmail/accounts/${accountId}/start-monitoring`);
+    return response.data;
+  }
+
+  async stopGmailMonitoring(accountId: string) {
+    const response = await this.client.post<ApiResponse<{ success: boolean }>>(`/gmail/accounts/${accountId}/stop-monitoring`);
+    return response.data;
+  }
+
+  async removeGmailAccount(accountId: string) {
+    const response = await this.client.delete<ApiResponse<{ success: boolean }>>(`/gmail/accounts/${accountId}`);
     return response.data;
   }
 }
