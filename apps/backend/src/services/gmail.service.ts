@@ -2,6 +2,8 @@ import { OAuth2Client } from 'google-auth-library';
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import { randomBytes } from 'crypto';
+import { TransactionService } from './transaction.service.js';
+import { CreateTransactionDto } from '../types/index.js';
 
 const prisma = new PrismaClient();
 
@@ -46,6 +48,7 @@ export class GmailService {
   private oauth2Client: OAuth2Client;
   private pennyApiUrl: string;
   private pennyApiKey: string;
+  private transactionService: TransactionService;
 
   constructor() {
     if (!process.env.PENNY_CLIENT_ID || !process.env.PENNY_CLIENT_SECRET) {
@@ -64,6 +67,7 @@ export class GmailService {
 
     this.pennyApiUrl = process.env.PENNY_API_URL;
     this.pennyApiKey = process.env.PENNY_API_KEY;
+    this.transactionService = new TransactionService();
   }
 
   // Generate OAuth authorization URL with state parameter
@@ -378,6 +382,79 @@ export class GmailService {
     }
   }
 
+  // Create transaction from extracted email data
+  private async createTransactionFromExtractedData(userId: string, extractedData: any): Promise<void> {
+    try {
+      // Validate required fields
+      if (!extractedData) {
+        console.log(`   ❌ No extracted data provided`);
+        return;
+      }
+
+      const { type, amount, currency, transactionDate, description, merchant } = extractedData;
+
+      // Use merchant as description if available, fallback to description
+      const transactionDescription = merchant || description;
+
+      if (merchant) {
+        console.log(`   💼 Using merchant as description: ${merchant}`);
+      } else {
+        console.log(`   📝 Using description field: ${description}`);
+      }
+
+      // Check required fields
+      if (!amount || !transactionDescription || !transactionDate || !type) {
+        console.log(`   ❌ Missing required fields:`);
+        console.log(`      Amount: ${amount || 'missing'}`);
+        console.log(`      Description/Merchant: ${transactionDescription || 'missing'}`);
+        console.log(`      Date: ${transactionDate || 'missing'}`);
+        console.log(`      Type: ${type || 'missing'}`);
+        return;
+      }
+
+      // Validate transaction type
+      if (type !== 'expense' && type !== 'income') {
+        console.log(`   ⚠️  Invalid transaction type '${type}', defaulting to 'expense'`);
+      }
+
+      // Parse transaction date
+      let parsedDate: Date;
+      try {
+        parsedDate = new Date(transactionDate);
+        if (isNaN(parsedDate.getTime())) {
+          throw new Error('Invalid date');
+        }
+      } catch (error) {
+        console.log(`   ❌ Invalid transaction date format: ${transactionDate}`);
+        return;
+      }
+
+      // Create transaction DTO
+      const transactionDto: CreateTransactionDto = {
+        amount: Number(amount),
+        description: String(transactionDescription),
+        category: null, // Create as uncategorized
+        date: parsedDate,
+        type: (type === 'income') ? 'income' : 'expense',
+        currency: currency || 'USD'
+      };
+
+      // Create transaction
+      const createdTransaction = await this.transactionService.createTransaction(userId, transactionDto);
+
+      console.log(`   ✅ Transaction created successfully:`);
+      console.log(`      ID: ${createdTransaction.id}`);
+      console.log(`      Amount: $${createdTransaction.amount} ${createdTransaction.currency}`);
+      console.log(`      Type: ${createdTransaction.type}`);
+      console.log(`      Description: ${createdTransaction.description}`);
+      console.log(`      Date: ${createdTransaction.date.toISOString().split('T')[0]}`);
+
+    } catch (error) {
+      console.error(`   ❌ Failed to create transaction:`, error);
+      throw error; // Re-throw to be caught by webhook handler
+    }
+  }
+
   // Process webhook from Penny
   async processWebhook(payload: any): Promise<void> {
     const timestamp = new Date().toISOString();
@@ -515,9 +592,9 @@ export class GmailService {
             console.log(`      Merchant: ${data.extractedData.merchant || 'N/A'}`);
             console.log(`      Type: ${data.extractedData.type || 'N/A'}`);
 
-            // TODO: Implement automatic transaction creation
-            console.log(`   🔄 TODO: Create transaction from extracted data`);
-            // await this.createTransactionFromExtractedData(account.userId, data.extractedData);
+            // Create transaction from extracted data
+            console.log(`   🔄 Creating transaction from extracted data...`);
+            await this.createTransactionFromExtractedData(account.userId, data.extractedData);
           }
 
           await prisma.gmailAccount.update({

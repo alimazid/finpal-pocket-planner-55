@@ -243,23 +243,66 @@ router.delete('/accounts/:id',
   }
 );
 
+// Helper function to safely stringify and format objects
+function formatPayloadForLogging(obj: any, maxDepth: number = 3): string {
+  try {
+    return JSON.stringify(obj, null, 2);
+  } catch (error) {
+    return `[Circular/Error: ${error}]`;
+  }
+}
+
+// Helper function to analyze payload structure
+function analyzePayload(payload: any): string {
+  if (!payload || typeof payload !== 'object') return 'Invalid payload';
+
+  const analysis = [];
+  if (payload.event) analysis.push(`Event: ${payload.event}`);
+  if (payload.accountId) analysis.push(`Account: ${payload.accountId}`);
+  if (payload.externalUserId) analysis.push(`User: ${payload.externalUserId}`);
+  if (payload.data) {
+    const dataKeys = Object.keys(payload.data);
+    analysis.push(`Data fields: ${dataKeys.length} (${dataKeys.join(', ')})`);
+
+    // Analyze extractedData if present
+    if (payload.data.extractedData) {
+      const extracted = payload.data.extractedData;
+      analysis.push(`└─ Transaction: ${extracted.type} $${extracted.amount} ${extracted.currency || 'USD'}`);
+      if (extracted.description) analysis.push(`└─ Description: ${extracted.description.substring(0, 50)}${extracted.description.length > 50 ? '...' : ''}`);
+    }
+  }
+  return analysis.join('\n│ ');
+}
+
 // POST /api/gmail/webhook - Receive webhooks from Penny
 router.post('/webhook',
   validateBody(webhookSchema),
   async (req, res, next) => {
     const timestamp = new Date().toISOString();
     const rawBody = JSON.stringify(req.body);
+    const payloadSize = Buffer.byteLength(rawBody, 'utf8');
 
     console.log(`\n🔔 WEBHOOK REQUEST RECEIVED [${timestamp}]`);
     console.log(`┌─────────────────────────────────────────────────────────┐`);
     console.log(`│ Method: POST /api/gmail/webhook                         │`);
+    console.log(`│ Content-Length: ${payloadSize} bytes                            │`);
     console.log(`│ Headers:                                                │`);
-    console.log(`│   Content-Type: ${req.headers['content-type'] || 'none'.padEnd(36)} │`);
+    console.log(`│   Content-Type: ${(req.headers['content-type'] || 'none').padEnd(36)} │`);
+    console.log(`│   User-Agent: ${(req.headers['user-agent'] || 'none').toString().substring(0, 41)} │`);
     console.log(`│   x-webhook-signature: ${(req.headers['x-webhook-signature'] || 'none').toString().substring(0, 20)}... │`);
-    console.log(`│ Body:                                                   │`);
-    console.log(`│   Event: ${(req.body.event || 'unknown').padEnd(43)} │`);
-    console.log(`│   Account ID: ${(req.body.accountId || 'unknown').padEnd(39)} │`);
+    console.log(`│                                                         │`);
+    console.log(`│ Payload Analysis:                                       │`);
+    console.log(`│ ${analyzePayload(req.body).split('\n').join('\n│ ').padEnd(55)} │`);
     console.log(`└─────────────────────────────────────────────────────────┘`);
+
+    console.log(`\n📋 COMPLETE PAYLOAD RECEIVED:`);
+    console.log('┌──────────────────────────────────────────────────────────────────────┐');
+    const formattedPayload = formatPayloadForLogging(req.body);
+    formattedPayload.split('\n').forEach((line, index) => {
+      const paddedLine = line.padEnd(68);
+      console.log(`│ ${paddedLine} │`);
+    });
+    console.log('└──────────────────────────────────────────────────────────────────────┘');
 
     try {
       // Verify webhook signature using HMAC-SHA256
@@ -298,18 +341,48 @@ router.post('/webhook',
       }
 
       console.log(`✅ WEBHOOK AUTHENTICATED - Processing...`);
-      await gmailService.processWebhook(req.body);
 
-      console.log(`✅ WEBHOOK PROCESSED SUCCESSFULLY\n`);
+      const processingResult = await gmailService.processWebhook(req.body);
+
+      console.log(`\n✅ WEBHOOK PROCESSED SUCCESSFULLY`);
+      console.log(`┌─────────────────────────────────────────────────────────┐`);
+      console.log(`│ Event Type: ${req.body.event.padEnd(43)} │`);
+      console.log(`│ Processing Status: Success                              │`);
+      if (req.body.data?.extractedData) {
+        const extracted = req.body.data.extractedData;
+        console.log(`│ Transaction Created: ${extracted.type} $${extracted.amount} ${extracted.currency || 'USD'}      │`);
+      }
+      console.log(`│ Response Time: ${new Date().toISOString()}              │`);
+      console.log(`└─────────────────────────────────────────────────────────┘\n`);
+
       res.status(200).json({
         success: true,
-        message: 'Webhook processed successfully'
+        message: 'Webhook processed successfully',
+        processedEvent: req.body.event,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('❌ WEBHOOK PROCESSING ERROR:', error);
+      console.error('\n❌ WEBHOOK PROCESSING ERROR');
+      console.error('┌─────────────────────────────────────────────────────────┐');
+      console.error(`│ Event Type: ${req.body?.event || 'unknown'.padEnd(43)} │`);
+      console.error(`│ Error: ${(error instanceof Error ? error.message : String(error)).substring(0, 50).padEnd(50)} │`);
+      console.error(`│ Stack Trace:                                            │`);
+      if (error instanceof Error && error.stack) {
+        const stackLines = error.stack.split('\n').slice(0, 3);
+        stackLines.forEach(line => {
+          const trimmedLine = line.trim().substring(0, 55);
+          console.error(`│   ${trimmedLine.padEnd(53)} │`);
+        });
+      }
+      console.error(`│ Payload Event: ${req.body?.event || 'unknown'.padEnd(39)} │`);
+      console.error(`│ Account ID: ${req.body?.accountId || 'unknown'.padEnd(42)} │`);
+      console.error('└─────────────────────────────────────────────────────────┘\n');
+
       res.status(500).json({
         success: false,
-        error: 'Failed to process webhook'
+        error: 'Failed to process webhook',
+        event: req.body?.event || 'unknown',
+        timestamp: new Date().toISOString()
       });
     }
   }
