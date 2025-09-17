@@ -26,7 +26,7 @@ export class TransactionService {
     const [transactions, total] = await Promise.all([
       prisma.transaction.findMany({
         where,
-        orderBy: { date: 'desc' },
+        orderBy: { createdAt: 'desc' },
         skip: (params.page - 1) * params.limit,
         take: params.limit
       }),
@@ -192,7 +192,7 @@ export class TransactionService {
         userId,
         category: null
       },
-      orderBy: { date: 'desc' }
+      orderBy: { createdAt: 'desc' }
     });
 
     return transactions.map(t => ({
