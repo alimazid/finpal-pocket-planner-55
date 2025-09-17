@@ -8,6 +8,7 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
 import { BudgetSummary } from "@/components/budget/BudgetSummary";
 import { BudgetPeriodNavigator } from "@/components/budget/BudgetPeriodNavigator";
+import { BudgetWizard } from "@/components/budget/BudgetWizard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
@@ -27,6 +28,7 @@ import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
 import { addCalculatedPeriods, getCurrentTargetMonth, calculatePeriodDates, getNextPeriod, getPreviousPeriod } from "@/lib/periodCalculations";
 import type { CalculatedBudget } from "@/lib/periodCalculations";
 import { exportAllFinancialData, downloadJSON } from "@/lib/exportFinancialData";
+import type { UserProfile } from "@/lib/budgetTemplates";
 
 interface Transaction {
   id: string;
@@ -83,6 +85,7 @@ const Index = () => {
   const [tempSelectedLanguage, setTempSelectedLanguage] = useState<string>("spanish");
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
+  const [isBudgetWizardOpen, setIsBudgetWizardOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   
   const { t, formatDate, formatDateRange } = useTranslation(selectedLanguage as 'english' | 'spanish');
@@ -724,6 +727,39 @@ const Index = () => {
     },
   });
 
+  // Handle budget creation from wizard
+  const handleCreateBudgetsFromWizard = async (budgets: { category: string; amount: number; currency: string }[], profile: UserProfile) => {
+    try {
+      // First, save period preferences
+      if (user?.id) {
+        await apiClient.updatePreferences({
+          periodType: profile.periodType,
+          specificDay: profile.specificDay,
+          language: userPreferences?.language || 'spanish',
+        });
+      }
+
+      // Then create budgets
+      for (const budget of budgets) {
+        await addBudgetMutation.mutateAsync(budget);
+      }
+
+      setIsBudgetWizardOpen(false);
+
+      toast({
+        title: t('budgetCreatedSuccessfully'),
+        description: t('budgetCreatedSuccessDescription'),
+      });
+    } catch (error) {
+      console.error('Error creating budgets or saving preferences:', error);
+      toast({
+        title: t('error'),
+        description: t('failedToCreateBudgets'),
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     // Check if user is authenticated on page load
     const checkAuth = async () => {
@@ -1091,6 +1127,30 @@ const Index = () => {
           </div>
         )}
 
+        {/* Budget Wizard CTA - Show only when user has no budgets */}
+        {budgets.length === 0 && !budgetsLoading && (
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-8 border border-primary/20">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                <Target className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground mb-2">{t('letsCreateYourBudget')}</h2>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  {t('budgetWizardDescription')}
+                </p>
+              </div>
+              <Button
+                onClick={() => setIsBudgetWizardOpen(true)}
+                size="lg"
+                className="text-lg px-8 py-3"
+              >
+                {t('createYourFirstBudget')}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Budget Summary */}
         <BudgetSummary 
           budgets={budgets} 
@@ -1144,6 +1204,15 @@ const Index = () => {
             userPreferences={userPreferences}
           />
         )}
+
+        {/* Budget Wizard */}
+        <BudgetWizard
+          open={isBudgetWizardOpen}
+          onOpenChange={setIsBudgetWizardOpen}
+          onCreateBudgets={handleCreateBudgetsFromWizard}
+          language={selectedLanguage as 'english' | 'spanish'}
+          defaultCurrency={userPreferences?.defaultCurrency}
+        />
 
       </div>
     </div>

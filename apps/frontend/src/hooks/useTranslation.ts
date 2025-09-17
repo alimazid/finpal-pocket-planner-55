@@ -301,10 +301,6 @@ const translations: Translations = {
     english: 'Previous',
     spanish: 'Anterior'
   },
-  next: {
-    english: 'Next',
-    spanish: 'Siguiente'
-  },
   current: {
     english: 'Current',
     spanish: 'Actual'
@@ -816,6 +812,350 @@ const translations: Translations = {
   dec: {
     english: 'Dec',
     spanish: 'Dic'
+  },
+
+  // Budget Wizard
+  createYourFirstBudget: {
+    english: 'Create Your First Budget',
+    spanish: 'Crea Tu Primer Presupuesto'
+  },
+  welcomeToBudgetWizard: {
+    english: 'Welcome to Budget Wizard',
+    spanish: 'Bienvenido al Asistente de Presupuesto'
+  },
+  budgetWizardDescription: {
+    english: 'Let\'s create a personalized budget based on your income and lifestyle. This will only take a few minutes!',
+    spanish: '¡Vamos a crear un presupuesto personalizado basado en tus ingresos y estilo de vida! ¡Solo tomará unos minutos!'
+  },
+  getStarted: {
+    english: 'Get Started',
+    spanish: 'Comenzar'
+  },
+  letsCreateYourBudget: {
+    english: 'Let\'s Create Your Budget! 🎯',
+    spanish: '¡Vamos a Crear Tu Presupuesto! 🎯'
+  },
+  wizardStep: {
+    english: 'Step',
+    spanish: 'Paso'
+  },
+  wizardOf: {
+    english: 'of',
+    spanish: 'de'
+  },
+
+  // Step 1: Income
+  monthlyIncome: {
+    english: 'Monthly Income',
+    spanish: 'Ingresos Mensuales'
+  },
+  monthlyIncomeDescription: {
+    english: 'What is your total monthly income after taxes?',
+    spanish: '¿Cuáles son tus ingresos mensuales totales después de impuestos?'
+  },
+  enterMonthlyIncome: {
+    english: 'Enter your monthly income',
+    spanish: 'Ingresa tus ingresos mensuales'
+  },
+  preferredCurrency: {
+    english: 'Preferred Currency',
+    spanish: 'Moneda Preferida'
+  },
+
+  // Step 2: Period Settings
+  periodSettings: {
+    english: 'Budget Period Settings',
+    spanish: 'Configuración de Período del Presupuesto'
+  },
+  periodSettingsDescription: {
+    english: 'Choose how you want to organize your budget periods.',
+    spanish: 'Elige cómo quieres organizar tus períodos de presupuesto.'
+  },
+  budgetPeriodType: {
+    english: 'Budget Period Type',
+    spanish: 'Tipo de Período de Presupuesto'
+  },
+  whenDoYouGetPaid: {
+    english: 'When do you typically get paid or prefer to budget?',
+    spanish: '¿Cuándo sueles recibir tu pago o prefieres presupuestar?'
+  },
+  dayOfMonth: {
+    english: 'Day',
+    spanish: 'Día'
+  },
+
+  // Step 3: Living Situation & Savings
+  livingSituation: {
+    english: 'Living Situation & Savings Goal',
+    spanish: 'Situación de Vivienda y Meta de Ahorro'
+  },
+  livingSituationDescription: {
+    english: 'Tell us about your living situation to customize your budget.',
+    spanish: 'Cuéntanos sobre tu situación de vivienda para personalizar tu presupuesto.'
+  },
+  relationshipStatus: {
+    english: 'Relationship Status',
+    spanish: 'Estado Civil'
+  },
+  single: {
+    english: 'Single',
+    spanish: 'Soltero/a'
+  },
+  couple: {
+    english: 'Couple',
+    spanish: 'Pareja'
+  },
+  family: {
+    english: 'Family with children',
+    spanish: 'Familia con hijos'
+  },
+  housingType: {
+    english: 'Housing Type',
+    spanish: 'Tipo de Vivienda'
+  },
+  rent: {
+    english: 'Rent',
+    spanish: 'Alquiler'
+  },
+  own: {
+    english: 'Own',
+    spanish: 'Propia'
+  },
+  familyHome: {
+    english: 'Living with family',
+    spanish: 'Viviendo con familia'
+  },
+  locationType: {
+    english: 'Location Type',
+    spanish: 'Tipo de Ubicación'
+  },
+  city: {
+    english: 'City',
+    spanish: 'Ciudad'
+  },
+  suburban: {
+    english: 'Suburban',
+    spanish: 'Suburbano'
+  },
+  rural: {
+    english: 'Rural',
+    spanish: 'Rural'
+  },
+
+  // Savings Goal
+  setSavingsGoal: {
+    english: 'Set Your Savings Goal',
+    spanish: 'Establece Tu Meta de Ahorro'
+  },
+  savingsGoal: {
+    english: 'Savings Goal',
+    spanish: 'Meta de Ahorro'
+  },
+  savingsGoalDescription: {
+    english: 'How much do you want to save each month? This will be set aside before creating your spending budgets.',
+    spanish: '¿Cuánto quieres ahorrar cada mes? Esta cantidad se apartará antes de crear tus presupuestos de gastos.'
+  },
+  savingsAmount: {
+    english: 'Savings Amount',
+    spanish: 'Cantidad de Ahorro'
+  },
+  savingsPercentage: {
+    english: 'Percentage of Income',
+    spanish: 'Porcentaje de Ingresos'
+  },
+  availableForBudgeting: {
+    english: 'Available for Budgeting',
+    spanish: 'Disponible para Presupuestar'
+  },
+  youWillSave: {
+    english: 'You\'ll save',
+    spanish: 'Ahorrarás'
+  },
+  leavingForExpenses: {
+    english: 'leaving {amount} for expenses',
+    spanish: 'dejando {amount} para gastos'
+  },
+  enterSavingsGoal: {
+    english: 'Enter your monthly savings goal',
+    spanish: 'Ingresa tu meta de ahorro mensual'
+  },
+  recommendedSavings: {
+    english: 'Recommended: 10-20% of income',
+    spanish: 'Recomendado: 10-20% de ingresos'
+  },
+
+  // Step 4: Lifestyle
+  lifestylePriorities: {
+    english: 'Lifestyle Priorities',
+    spanish: 'Prioridades de Estilo de Vida'
+  },
+  lifestylePrioritiesDescription: {
+    english: 'What describes your lifestyle? (Select all that apply)',
+    spanish: '¿Qué describe tu estilo de vida? (Selecciona todas las que apliquen)'
+  },
+  foodLover: {
+    english: 'Food Lover',
+    spanish: 'Amante de la Comida'
+  },
+  foodLoverDesc: {
+    english: 'Love dining out and trying new cuisines',
+    spanish: 'Me encanta cenar fuera y probar nuevas cocinas'
+  },
+  travelEnthusiast: {
+    english: 'Travel Enthusiast',
+    spanish: 'Entusiasta de Viajes'
+  },
+  travelEnthusiastDesc: {
+    english: 'Enjoy exploring new places and experiences',
+    spanish: 'Disfruto explorar nuevos lugares y experiencias'
+  },
+  techEnthusiast: {
+    english: 'Tech Enthusiast',
+    spanish: 'Entusiasta de la Tecnología'
+  },
+  techEnthusiastDesc: {
+    english: 'Love gadgets and latest technology',
+    spanish: 'Me encantan los gadgets y la última tecnología'
+  },
+  healthFitness: {
+    english: 'Health & Fitness',
+    spanish: 'Salud y Fitness'
+  },
+  healthFitnessDesc: {
+    english: 'Prioritize gym, sports, and wellness',
+    spanish: 'Priorizo el gimnasio, deportes y bienestar'
+  },
+  minimalist: {
+    english: 'Minimalist',
+    spanish: 'Minimalista'
+  },
+  minimalistDesc: {
+    english: 'Prefer simplicity and essential purchases',
+    spanish: 'Prefiero la simplicidad y compras esenciales'
+  },
+  socialButterfly: {
+    english: 'Social Butterfly',
+    spanish: 'Mariposa Social'
+  },
+  socialButterflyDesc: {
+    english: 'Enjoy entertainment and social activities',
+    spanish: 'Disfruto el entretenimiento y actividades sociales'
+  },
+  homebody: {
+    english: 'Homebody',
+    spanish: 'Hogareño/a'
+  },
+  homebodyDesc: {
+    english: 'Prefer staying in and home comforts',
+    spanish: 'Prefiero quedarme en casa y las comodidades del hogar'
+  },
+  lifelongLearner: {
+    english: 'Lifelong Learner',
+    spanish: 'Aprendiz de por Vida'
+  },
+  lifelongLearnerDesc: {
+    english: 'Invest in courses, books, and education',
+    spanish: 'Invierto en cursos, libros y educación'
+  },
+
+  // Step 5: Budget Suggestions
+  budgetSuggestions: {
+    english: 'Budget Suggestions',
+    spanish: 'Sugerencias de Presupuesto'
+  },
+  budgetSuggestionsDescription: {
+    english: 'Based on your profile, here are our suggested budget categories. You can adjust any amounts before saving.',
+    spanish: 'Basado en tu perfil, aquí están nuestras categorías de presupuesto sugeridas. Puedes ajustar cualquier cantidad antes de guardar.'
+  },
+  suggestedBudgets: {
+    english: 'Suggested Budgets',
+    spanish: 'Presupuestos Sugeridos'
+  },
+  totalBudgeted: {
+    english: 'Total Budgeted',
+    spanish: 'Total Presupuestado'
+  },
+  ofIncome: {
+    english: 'of income',
+    spanish: 'de ingresos'
+  },
+  adjustAmounts: {
+    english: 'Adjust amounts as needed',
+    spanish: 'Ajusta las cantidades según sea necesario'
+  },
+  availableForBudgets: {
+    english: 'Available for Budgets',
+    spanish: 'Disponible para Presupuestos'
+  },
+  ofAvailable: {
+    english: 'of available',
+    spanish: 'de disponible'
+  },
+  adjustBudgetAmounts: {
+    english: 'Adjust budget amounts as needed',
+    spanish: 'Ajusta las cantidades del presupuesto según sea necesario'
+  },
+
+  // Step 6: Review & Save
+  reviewAndSave: {
+    english: 'Review & Save',
+    spanish: 'Revisar y Guardar'
+  },
+  reviewDescription: {
+    english: 'Review your budget breakdown and save to get started with your financial planning.',
+    spanish: 'Revisa tu desglose de presupuesto y guarda para comenzar con tu planificación financiera.'
+  },
+  budgetBreakdown: {
+    english: 'Budget Breakdown',
+    spanish: 'Desglose del Presupuesto'
+  },
+  createAllBudgets: {
+    english: 'Create All Budgets',
+    spanish: 'Crear Todos los Presupuestos'
+  },
+  budgetCreatedSuccessfully: {
+    english: 'Budget Created Successfully!',
+    spanish: '¡Presupuesto Creado Exitosamente!'
+  },
+  budgetCreatedSuccessDescription: {
+    english: 'Your personalized budget has been created. You can now start tracking your expenses and managing your finances.',
+    spanish: 'Tu presupuesto personalizado ha sido creado. Ahora puedes comenzar a rastrear tus gastos y administrar tus finanzas.'
+  },
+  failedToCreateBudgets: {
+    english: 'Failed to create budgets. Please try again.',
+    spanish: 'Error al crear presupuestos. Por favor, inténtalo de nuevo.'
+  },
+
+  // Navigation
+  back: {
+    english: 'Back',
+    spanish: 'Atrás'
+  },
+  next: {
+    english: 'Next',
+    spanish: 'Siguiente'
+  },
+  finish: {
+    english: 'Finish',
+    spanish: 'Finalizar'
+  },
+  skip: {
+    english: 'Skip',
+    spanish: 'Omitir'
+  },
+
+  // Validation
+  pleaseEnterValidIncome: {
+    english: 'Please enter a valid monthly income',
+    spanish: 'Por favor ingresa un ingreso mensual válido'
+  },
+  pleaseSelectLivingSituation: {
+    english: 'Please select your living situation',
+    spanish: 'Por favor selecciona tu situación de vivienda'
+  },
+  incomeRequired: {
+    english: 'Monthly income is required',
+    spanish: 'Los ingresos mensuales son requeridos'
   }
 };
 
