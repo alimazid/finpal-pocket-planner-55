@@ -44,17 +44,13 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const { t } = useTranslation(language);
-  
+  const { t, formatDate: formatTranslatedDate } = useTranslation(language);
+
   const formatDate = (dateString: string) => {
     // Parse date as local date to avoid timezone issues
     const [year, month, day] = dateString.split('-').map(Number);
     const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return formatTranslatedDate(date, { useAbbreviation: true });
   };
 
   const getCategoryColor = (category: string) => {

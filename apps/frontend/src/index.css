@@ -38,7 +38,7 @@ All colors MUST be HSL.
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 98%;
-    
+
     --warning: 32 95% 44%;
     --warning-foreground: 0 0% 98%;
 
@@ -91,13 +91,13 @@ All colors MUST be HSL.
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 98%;
-    
+
     --warning: 32 95% 44%;
     --warning-foreground: 0 0% 98%;
 
     --gradient-primary: linear-gradient(135deg, hsl(180 45% 30%), hsl(180 45% 40%));
     --gradient-card: linear-gradient(145deg, hsl(180 45% 12%), hsl(180 30% 15%));
-    
+
     --shadow-soft: 0 4px 6px -1px hsl(180 45% 45% / 0.2), 0 2px 4px -1px hsl(180 45% 45% / 0.1);
     --shadow-medium: 0 10px 15px -3px hsl(180 45% 45% / 0.25), 0 4px 6px -2px hsl(180 45% 45% / 0.15);
 

@@ -694,6 +694,128 @@ const translations: Translations = {
   createMissingBudgets: {
     english: 'Create Missing Budgets',
     spanish: 'Crear Presupuestos Faltantes'
+  },
+
+  // Additional UI elements
+  exportAllData: {
+    english: 'Export All Data',
+    spanish: 'Exportar Todos los Datos'
+  },
+  gmailIntegration: {
+    english: 'Gmail Integration',
+    spanish: 'Integración de Gmail'
+  },
+  lightTheme: {
+    english: 'Light Theme',
+    spanish: 'Tema Claro'
+  },
+  darkTheme: {
+    english: 'Dark Theme',
+    spanish: 'Tema Oscuro'
+  },
+  theme: {
+    english: 'Theme',
+    spanish: 'Tema'
+  },
+
+  // Month names (full)
+  january: {
+    english: 'January',
+    spanish: 'Enero'
+  },
+  february: {
+    english: 'February',
+    spanish: 'Febrero'
+  },
+  march: {
+    english: 'March',
+    spanish: 'Marzo'
+  },
+  april: {
+    english: 'April',
+    spanish: 'Abril'
+  },
+  may: {
+    english: 'May',
+    spanish: 'Mayo'
+  },
+  june: {
+    english: 'June',
+    spanish: 'Junio'
+  },
+  july: {
+    english: 'July',
+    spanish: 'Julio'
+  },
+  august: {
+    english: 'August',
+    spanish: 'Agosto'
+  },
+  september: {
+    english: 'September',
+    spanish: 'Septiembre'
+  },
+  october: {
+    english: 'October',
+    spanish: 'Octubre'
+  },
+  november: {
+    english: 'November',
+    spanish: 'Noviembre'
+  },
+  december: {
+    english: 'December',
+    spanish: 'Diciembre'
+  },
+
+  // Month abbreviations
+  jan: {
+    english: 'Jan',
+    spanish: 'Ene'
+  },
+  feb: {
+    english: 'Feb',
+    spanish: 'Feb'
+  },
+  mar: {
+    english: 'Mar',
+    spanish: 'Mar'
+  },
+  apr: {
+    english: 'Apr',
+    spanish: 'Abr'
+  },
+  mayShort: {
+    english: 'May',
+    spanish: 'May'
+  },
+  jun: {
+    english: 'Jun',
+    spanish: 'Jun'
+  },
+  jul: {
+    english: 'Jul',
+    spanish: 'Jul'
+  },
+  aug: {
+    english: 'Aug',
+    spanish: 'Ago'
+  },
+  sep: {
+    english: 'Sep',
+    spanish: 'Sep'
+  },
+  oct: {
+    english: 'Oct',
+    spanish: 'Oct'
+  },
+  nov: {
+    english: 'Nov',
+    spanish: 'Nov'
+  },
+  dec: {
+    english: 'Dec',
+    spanish: 'Dic'
   }
 };
 
@@ -707,5 +829,50 @@ export const useTranslation = (currentLanguage: Language) => {
     return translation[currentLanguage];
   };
 
-  return { t };
+  const getMonthName = (monthIndex: number): string => {
+    const monthKeys = ['january', 'february', 'march', 'april', 'may', 'june',
+                     'july', 'august', 'september', 'october', 'november', 'december'];
+    return t(monthKeys[monthIndex]);
+  };
+
+  const getMonthAbbreviation = (monthIndex: number): string => {
+    const monthKeys = ['jan', 'feb', 'mar', 'apr', 'mayShort', 'jun',
+                      'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    return t(monthKeys[monthIndex]);
+  };
+
+  const formatDate = (date: Date, options: {
+    includeDay?: boolean;
+    includeYear?: boolean;
+    useAbbreviation?: boolean;
+  } = {}): string => {
+    const { includeDay = true, includeYear = true, useAbbreviation = false } = options;
+
+    const day = date.getDate();
+    const monthIndex = date.getMonth();
+    const year = date.getFullYear();
+
+    const monthName = useAbbreviation ? getMonthAbbreviation(monthIndex) : getMonthName(monthIndex);
+
+    if (!includeDay && !includeYear) {
+      return monthName;
+    } else if (!includeDay) {
+      return `${monthName} ${year}`;
+    } else if (!includeYear) {
+      return `${monthName} ${day}`;
+    } else {
+      return currentLanguage === 'spanish'
+        ? `${day} de ${monthName} de ${year}`
+        : `${monthName} ${day}, ${year}`;
+    }
+  };
+
+  const formatDateRange = (startDate: Date, endDate: Date): string => {
+    const locale = currentLanguage === 'spanish' ? 'es-ES' : 'en-US';
+    const start = startDate.toLocaleDateString(locale);
+    const end = endDate.toLocaleDateString(locale);
+    return `${start} - ${end}`;
+  };
+
+  return { t, getMonthName, getMonthAbbreviation, formatDate, formatDateRange };
 };

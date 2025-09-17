@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar, Home } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
+import { addMonths, subMonths, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
 
 interface BudgetPeriod {
   startDate: Date;
@@ -27,7 +27,7 @@ export function BudgetPeriodNavigator({
   periodType = 'calendar_month',
   cutoffDay = 1 
 }: BudgetPeriodNavigatorProps) {
-  const { t } = useTranslation(language);
+  const { t, getMonthAbbreviation } = useTranslation(language);
 
   const calculatePeriodDates = (baseDate: Date) => {
     if (periodType === 'calendar_month') {
@@ -114,10 +114,10 @@ export function BudgetPeriodNavigator({
   };
 
   const formatPeriodDisplay = (period: BudgetPeriod) => {
-    const startMonth = format(period.startDate, language === 'spanish' ? 'MMM' : 'MMM');
-    const endMonth = format(period.endDate, language === 'spanish' ? 'MMM' : 'MMM');
-    const year = format(period.startDate, 'yyyy');
-    
+    const startMonth = getMonthAbbreviation(period.startDate.getMonth());
+    const endMonth = getMonthAbbreviation(period.endDate.getMonth());
+    const year = period.startDate.getFullYear();
+
     if (isSameMonth(period.startDate, period.endDate)) {
       return `${startMonth} ${year}`;
     } else {

@@ -8,6 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getCurrencyOptions, DEFAULT_CURRENCY } from "@/config/currencies";
@@ -124,7 +125,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, "PPP") : <span>{t('pickADate')}</span>}
+              {date ? format(date, "PPP", { locale: language === 'spanish' ? es : undefined }) : <span>{t('pickADate')}</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -139,6 +140,7 @@ export function ExpenseForm({ onAddExpense, availableCategories, showCard = true
               }}
               disabled={(date) => date > new Date()}
               initialFocus
+              language={language}
               className={cn("p-3 pointer-events-auto")}
             />
           </PopoverContent>

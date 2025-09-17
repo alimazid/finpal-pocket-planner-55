@@ -12,8 +12,9 @@ import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
 
-import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download, Mail } from "lucide-react";
+import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download, Mail, Sun, Moon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -79,12 +80,14 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("spanish");
+  const [tempSelectedLanguage, setTempSelectedLanguage] = useState<string>("spanish");
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
-  
+  const { t, formatDate, formatDateRange } = useTranslation(selectedLanguage as 'english' | 'spanish');
+  const { theme, setTheme } = useTheme();
+
   // Budget period template management
   const { 
     template: periodTemplate, 
@@ -923,13 +926,13 @@ const Index = () => {
 
                   <DropdownMenuSeparator />
                   
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={handleExportData}
                     className="cursor-pointer"
                     disabled={!allBudgets.length && !transactions.length}
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Export All Data
+                    {t('exportAllData')}
                   </DropdownMenuItem>
                   
                   <DropdownMenuSeparator />
@@ -947,14 +950,32 @@ const Index = () => {
                      className="cursor-pointer"
                    >
                      <Mail className="w-4 h-4 mr-2" />
-                     Gmail Integration
+                     {t('gmailIntegration')}
+                   </DropdownMenuItem>
+
+                   <DropdownMenuSeparator />
+
+                   <DropdownMenuItem
+                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                     className="cursor-pointer"
+                   >
+                     {theme === "dark" ? (
+                       <Sun className="w-4 h-4 mr-2" />
+                     ) : (
+                       <Moon className="w-4 h-4 mr-2" />
+                     )}
+                     {theme === "dark" ? t('lightTheme') : t('darkTheme')}
                    </DropdownMenuItem>
 
                    <Dialog open={isTranslationOpen} onOpenChange={setIsTranslationOpen}>
                      <DialogTrigger asChild>
-                       <DropdownMenuItem 
+                       <DropdownMenuItem
                          onSelect={(e) => e.preventDefault()}
                          className="cursor-pointer"
+                         onClick={() => {
+                           setTempSelectedLanguage(selectedLanguage);
+                           setIsTranslationOpen(true);
+                         }}
                        >
                          <Languages className="w-4 h-4 mr-2" />
                          {t('selectLanguage')}
@@ -968,7 +989,7 @@ const Index = () => {
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
-                        <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                        <Select value={tempSelectedLanguage} onValueChange={setTempSelectedLanguage}>
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder={t('selectALanguage')} />
                           </SelectTrigger>
@@ -979,11 +1000,15 @@ const Index = () => {
                         </Select>
                       </div>
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsTranslationOpen(false)}>
+                        <Button variant="outline" onClick={() => {
+                          setTempSelectedLanguage(selectedLanguage);
+                          setIsTranslationOpen(false);
+                        }}>
                           {t('cancel')}
                         </Button>
                         <Button onClick={() => {
-                          updateLanguagePreferenceMutation.mutate(selectedLanguage);
+                          setSelectedLanguage(tempSelectedLanguage);
+                          updateLanguagePreferenceMutation.mutate(tempSelectedLanguage);
                           setIsTranslationOpen(false);
                         }}>
                           {t('apply')}
@@ -1031,13 +1056,13 @@ const Index = () => {
 
               <div className="flex-1 text-center">
                 <div className="font-semibold text-foreground">
-                  {currentTargetYear && currentTargetMonth ? new Date(currentTargetYear, currentTargetMonth - 1).toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    year: 'numeric' 
-                  }) : 'Loading...'}
+                  {currentTargetYear && currentTargetMonth ? formatDate(new Date(currentTargetYear, currentTargetMonth - 1), {
+                    includeDay: false,
+                    includeYear: true
+                  }) : t('loading')}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {currentPeriodDisplay ? `${currentPeriodDisplay.startDate.toLocaleDateString()} - ${currentPeriodDisplay.endDate.toLocaleDateString()}` : 'Loading...'}
+                  {currentPeriodDisplay ? formatDateRange(currentPeriodDisplay.startDate, currentPeriodDisplay.endDate) : t('loading')}
                 </div>
               </div>
 
