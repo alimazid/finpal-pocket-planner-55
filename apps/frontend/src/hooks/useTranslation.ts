@@ -697,10 +697,6 @@ const translations: Translations = {
     english: 'Export All Data',
     spanish: 'Exportar Todos los Datos'
   },
-  gmailIntegration: {
-    english: 'Gmail Integration',
-    spanish: 'Integración de Gmail'
-  },
   lightTheme: {
     english: 'Light Theme',
     spanish: 'Tema Claro'
@@ -1156,6 +1152,238 @@ const translations: Translations = {
   incomeRequired: {
     english: 'Monthly income is required',
     spanish: 'Los ingresos mensuales son requeridos'
+  },
+
+  // Gmail Integration
+  gmail: {
+    english: 'Gmail',
+    spanish: 'Gmail'
+  },
+  gmailIntegration: {
+    english: 'Gmail Integration',
+    spanish: 'Integración Gmail'
+  },
+  'gmail.connect': {
+    english: 'Connect Gmail',
+    spanish: 'Conectar Gmail'
+  },
+  'gmail.connectTooltip': {
+    english: 'Connect your Gmail account to automatically create transactions from your emails',
+    spanish: 'Conecta tu cuenta de Gmail para crear automáticamente transacciones desde tus correos'
+  },
+  'gmail.status.connected': {
+    english: 'Connected',
+    spanish: 'Conectado'
+  },
+  'gmail.status.error': {
+    english: 'Error',
+    spanish: 'Error'
+  },
+  'gmail.status.syncing': {
+    english: 'Syncing',
+    spanish: 'Sincronizando'
+  },
+  'gmail.lastSync.label': {
+    english: 'Last sync',
+    spanish: 'Última sincronización'
+  },
+  'gmail.lastSync.justNow': {
+    english: 'Just now',
+    spanish: 'Justo ahora'
+  },
+  'gmail.lastSync.minutesAgo': {
+    english: '{minutes} minutes ago',
+    spanish: 'Hace {minutes} minutos'
+  },
+  'gmail.lastSync.hoursAgo': {
+    english: '{hours} hours ago',
+    spanish: 'Hace {hours} horas'
+  },
+  'gmail.lastSync.daysAgo': {
+    english: '{days} days ago',
+    spanish: 'Hace {days} días'
+  },
+  'gmail.unprocessed': {
+    english: '{count} unprocessed emails',
+    spanish: '{count} correos sin procesar'
+  },
+  gmailConnected: {
+    english: 'Gmail Connected',
+    spanish: 'Gmail Conectado'
+  },
+  gmailConnectedDescription: {
+    english: 'Your Gmail account has been successfully connected and will now monitor for transaction emails.',
+    spanish: 'Tu cuenta de Gmail se ha conectado exitosamente y ahora monitoreará correos de transacciones.'
+  },
+
+  // Gmail Wizard
+  gmailWizard: {
+    english: 'Gmail Setup Wizard',
+    spanish: 'Asistente de Configuración Gmail'
+  },
+  'gmailWizard.step': {
+    english: 'Step',
+    spanish: 'Paso'
+  },
+  'gmailWizard.of': {
+    english: 'of',
+    spanish: 'de'
+  },
+  'gmailWizard.getStarted': {
+    english: 'Get Started',
+    spanish: 'Comenzar'
+  },
+
+  // Gmail Wizard - Intro Step
+  'gmailWizard.intro.title': {
+    english: 'Connect Your Gmail',
+    spanish: 'Conecta tu Gmail'
+  },
+  'gmailWizard.intro.subtitle': {
+    english: 'Automate Your Financial Tracking',
+    spanish: 'Automatiza tu Seguimiento Financiero'
+  },
+  'gmailWizard.intro.description': {
+    english: 'Connect your Gmail account to automatically create transactions from bank notifications, payment receipts, and purchase confirmations.',
+    spanish: 'Conecta tu cuenta de Gmail para crear automáticamente transacciones desde notificaciones bancarias, recibos de pago y confirmaciones de compra.'
+  },
+  'gmailWizard.intro.benefits.automatic.title': {
+    english: 'Automatic Transaction Creation',
+    spanish: 'Creación Automática de Transacciones'
+  },
+  'gmailWizard.intro.benefits.automatic.description': {
+    english: 'Transactions are created automatically from your email notifications',
+    spanish: 'Las transacciones se crean automáticamente desde tus notificaciones por correo'
+  },
+  'gmailWizard.intro.benefits.accurate.title': {
+    english: 'Accurate Categorization',
+    spanish: 'Categorización Precisa'
+  },
+  'gmailWizard.intro.benefits.accurate.description': {
+    english: 'Smart algorithms categorize your transactions based on merchant information',
+    spanish: 'Algoritmos inteligentes categorizan tus transacciones basándose en información del comercio'
+  },
+  'gmailWizard.intro.benefits.secure.title': {
+    english: 'Secure & Private',
+    spanish: 'Seguro y Privado'
+  },
+  'gmailWizard.intro.benefits.secure.description': {
+    english: 'We only read transaction-related emails and never store your email content',
+    spanish: 'Solo leemos correos relacionados con transacciones y nunca almacenamos el contenido de tus correos'
+  },
+
+  // Gmail Wizard - Privacy Step
+  'gmailWizard.privacy.title': {
+    english: 'Privacy & Security',
+    spanish: 'Privacidad y Seguridad'
+  },
+  'gmailWizard.privacy.subtitle': {
+    english: 'Your Privacy is Our Priority',
+    spanish: 'Tu Privacidad es Nuestra Prioridad'
+  },
+  'gmailWizard.privacy.description': {
+    english: 'We take your privacy seriously. Here\'s exactly what we access and how we protect your data.',
+    spanish: 'Tomamos tu privacidad en serio. Aquí está exactamente lo que accedemos y cómo protegemos tus datos.'
+  },
+  'gmailWizard.privacy.points.readOnly.title': {
+    english: 'Read-Only Access',
+    spanish: 'Acceso Solo de Lectura'
+  },
+  'gmailWizard.privacy.points.readOnly.description': {
+    english: 'We can only read your emails, never send or delete them',
+    spanish: 'Solo podemos leer tus correos, nunca enviarlos o eliminarlos'
+  },
+  'gmailWizard.privacy.points.encrypted.title': {
+    english: 'Encrypted Communication',
+    spanish: 'Comunicación Encriptada'
+  },
+  'gmailWizard.privacy.points.encrypted.description': {
+    english: 'All data is transmitted using industry-standard encryption',
+    spanish: 'Todos los datos se transmiten usando encriptación de estándar industrial'
+  },
+  'gmailWizard.privacy.points.noStorage.title': {
+    english: 'No Email Storage',
+    spanish: 'Sin Almacenamiento de Correos'
+  },
+  'gmailWizard.privacy.points.noStorage.description': {
+    english: 'We extract transaction data and don\'t store email content',
+    spanish: 'Extraemos datos de transacciones y no almacenamos contenido de correos'
+  },
+  'gmailWizard.privacy.points.revoke.title': {
+    english: 'Revoke Anytime',
+    spanish: 'Revocar en Cualquier Momento'
+  },
+  'gmailWizard.privacy.points.revoke.description': {
+    english: 'You can disconnect Gmail access at any time from your settings',
+    spanish: 'Puedes desconectar el acceso a Gmail en cualquier momento desde tu configuración'
+  },
+
+  // Gmail Wizard - Connect Step
+  'gmailWizard.connect.title': {
+    english: 'Connect Account',
+    spanish: 'Conectar Cuenta'
+  },
+  'gmailWizard.connect.subtitle': {
+    english: 'Connect Your Gmail Account',
+    spanish: 'Conecta tu Cuenta de Gmail'
+  },
+  'gmailWizard.connect.description': {
+    english: 'Click the button below to open Gmail\'s secure authorization page where you can grant permission to access your transaction emails.',
+    spanish: 'Haz clic en el botón de abajo para abrir la página de autorización segura de Gmail donde puedes otorgar permiso para acceder a tus correos de transacciones.'
+  },
+  'gmailWizard.connect.button': {
+    english: 'Connect Gmail Account',
+    spanish: 'Conectar Cuenta de Gmail'
+  },
+  'gmailWizard.connect.connecting': {
+    english: 'Connecting...',
+    spanish: 'Conectando...'
+  },
+  'gmailWizard.connect.steps.redirect': {
+    english: 'You\'ll be redirected to Gmail\'s secure authorization page',
+    spanish: 'Serás redirigido a la página de autorización segura de Gmail'
+  },
+  'gmailWizard.connect.steps.signIn': {
+    english: 'Sign in to your Gmail account if prompted',
+    spanish: 'Inicia sesión en tu cuenta de Gmail si se te solicita'
+  },
+  'gmailWizard.connect.steps.permissions': {
+    english: 'Review and accept the requested permissions',
+    spanish: 'Revisa y acepta los permisos solicitados'
+  },
+  'gmailWizard.connect.steps.done': {
+    english: 'You\'ll be redirected back to continue setup',
+    spanish: 'Serás redirigido de vuelta para continuar la configuración'
+  },
+
+  // Gmail Wizard - Success Step
+  'gmailWizard.success.title': {
+    english: 'Success!',
+    spanish: '¡Éxito!'
+  },
+  'gmailWizard.success.subtitle': {
+    english: 'Gmail Successfully Connected',
+    spanish: 'Gmail Conectado Exitosamente'
+  },
+  'gmailWizard.success.description': {
+    english: 'Your Gmail account is now connected and we\'ll start monitoring for transaction emails. It may take a few minutes for the first transactions to appear.',
+    spanish: 'Tu cuenta de Gmail ahora está conectada y comenzaremos a monitorear correos de transacciones. Puede tomar unos minutos para que aparezcan las primeras transacciones.'
+  },
+  'gmailWizard.success.features.monitoring': {
+    english: 'Email monitoring is now active',
+    spanish: 'El monitoreo de correo ahora está activo'
+  },
+  'gmailWizard.success.features.automatic': {
+    english: 'Automatic transaction creation enabled',
+    spanish: 'Creación automática de transacciones habilitada'
+  },
+  'gmailWizard.success.features.notifications': {
+    english: 'You\'ll receive notifications for new transactions',
+    spanish: 'Recibirás notificaciones para nuevas transacciones'
+  },
+  'gmailWizard.success.next': {
+    english: 'You can manage your Gmail integration anytime from the toolbar.',
+    spanish: 'Puedes gestionar tu integración de Gmail en cualquier momento desde la barra de herramientas.'
   }
 };
 

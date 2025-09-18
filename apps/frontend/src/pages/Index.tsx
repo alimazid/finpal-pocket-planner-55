@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { apiClient, type User } from "@/lib/api-client";
+import { apiClient, type User, type GmailAccount } from "@/lib/api-client";
 import { DEFAULT_CURRENCY } from "@/config/currencies";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,8 @@ import { BudgetWizard } from "@/components/budget/BudgetWizard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
+import { GmailStatusIndicator } from "@/components/gmail/GmailStatusIndicator";
+import { GmailConnectionWizard } from "@/components/gmail/GmailConnectionWizard";
 
 import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download, Mail, Sun, Moon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -86,7 +88,39 @@ const Index = () => {
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
   const [isBudgetWizardOpen, setIsBudgetWizardOpen] = useState(false);
+  const [isGmailWizardOpen, setIsGmailWizardOpen] = useState(false);
+
   const [loading, setLoading] = useState(true);
+
+  // Fetch Gmail accounts
+  const { data: gmailAccounts = [], isLoading: gmailAccountsLoading } = useQuery({
+    queryKey: ['gmail-accounts', user?.id],
+    queryFn: async () => {
+      const response = await apiClient.getGmailAccounts();
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Get the first connected Gmail account for display
+  const gmailAccount = React.useMemo(() => {
+    if (!gmailAccounts.length) return undefined;
+
+    const primaryAccount = gmailAccounts.find(acc => acc.isConnected) || gmailAccounts[0];
+    if (!primaryAccount) return undefined;
+
+    return {
+      email: primaryAccount.gmailAddress,
+      status: primaryAccount.isConnected
+        ? (primaryAccount.monitoringActive ? 'connected' as const : 'error' as const)
+        : 'error' as const,
+      lastSync: primaryAccount.lastSyncAt ? new Date(primaryAccount.lastSyncAt) : undefined,
+      unprocessedCount: 0 // TODO: Add unprocessed count from API
+    };
+  }, [gmailAccounts]);
   
   const { t, formatDate, formatDateRange } = useTranslation(selectedLanguage as 'english' | 'spanish');
   const { theme, setTheme } = useTheme();
@@ -886,9 +920,18 @@ const Index = () => {
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-white" />
               </div>
-              
+
             </div>
             <div className="flex items-center gap-2">
+              <GmailStatusIndicator
+                account={gmailAccount}
+                onConnect={() => setIsGmailWizardOpen(true)}
+                onManage={() => {
+                  // TODO: Navigate to Gmail settings or show management modal
+                  console.log('Manage Gmail account');
+                }}
+                language={selectedLanguage as 'english' | 'spanish'}
+              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
@@ -1212,6 +1255,22 @@ const Index = () => {
           onCreateBudgets={handleCreateBudgetsFromWizard}
           language={selectedLanguage as 'english' | 'spanish'}
           defaultCurrency={userPreferences?.defaultCurrency}
+        />
+
+        {/* Gmail Connection Wizard */}
+        <GmailConnectionWizard
+          isOpen={isGmailWizardOpen}
+          onClose={() => setIsGmailWizardOpen(false)}
+          onSuccess={() => {
+            // Refresh Gmail accounts data
+            queryClient.invalidateQueries({ queryKey: ['gmail-accounts', user?.id] });
+
+            toast({
+              title: t('gmailConnected'),
+              description: t('gmailConnectedDescription'),
+            });
+          }}
+          language={selectedLanguage as 'english' | 'spanish'}
         />
 
       </div>
