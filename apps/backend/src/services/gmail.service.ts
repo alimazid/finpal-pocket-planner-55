@@ -1,4 +1,5 @@
 import { OAuth2Client } from 'google-auth-library';
+import { google } from 'googleapis';
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import { randomBytes } from 'crypto';
@@ -75,10 +76,7 @@ export class GmailService {
     const state = randomBytes(32).toString('hex');
 
     const scopes = [
-      'https://www.googleapis.com/auth/gmail.readonly',
-      'https://www.googleapis.com/auth/gmail.labels',
-      'https://www.googleapis.com/auth/gmail.modify',
-      'email'
+      'https://www.googleapis.com/auth/gmail.readonly'
     ];
 
     const authUrl = this.oauth2Client.generateAuthUrl({
@@ -111,12 +109,11 @@ export class GmailService {
       const oauth2 = new OAuth2Client();
       oauth2.setCredentials(tokens);
 
-      // Use the Google OAuth2 API to get user info
-      const userInfo = await axios.get(
-        `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokens.access_token}`
-      );
+      // Use Gmail API to get user profile (email address)
+      const gmail = google.gmail({ version: 'v1', auth: oauth2 });
+      const profile = await gmail.users.getProfile({ userId: 'me' });
 
-      const gmailAddress = userInfo.data.email;
+      const gmailAddress = profile.data.emailAddress;
       if (!gmailAddress) {
         throw new Error('Failed to retrieve Gmail address');
       }
@@ -145,7 +142,7 @@ export class GmailService {
         startMonitoring: true,
         metadata: {
           webhookUrl,
-          userName: userInfo.data.name || gmailAddress
+          userName: gmailAddress
         }
       });
 
