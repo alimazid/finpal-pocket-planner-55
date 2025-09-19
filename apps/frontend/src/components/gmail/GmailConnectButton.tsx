@@ -29,8 +29,11 @@ export const GmailConnectButton: React.FC<GmailConnectButtonProps> = ({
 
     setIsLoading(true);
     try {
-      // Generate webhook URL (you may want to make this configurable)
-      const webhookUrl = `${window.location.origin}/api/gmail/webhook`;
+      // Get webhook URL from environment variable
+      const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+      if (!webhookUrl) {
+        throw new Error('VITE_WEBHOOK_URL environment variable is not set');
+      }
 
       // Get OAuth URL from backend
       const response = await apiClient.generateGmailAuthUrl(webhookUrl);

@@ -41,10 +41,15 @@ export const GmailOAuthCallback: React.FC = () => {
         sessionStorage.removeItem('gmail_oauth_state');
 
         // Exchange code for account registration
+        const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+        if (!webhookUrl) {
+          throw new Error('VITE_WEBHOOK_URL environment variable is not set');
+        }
+
         const response = await apiClient.handleGmailCallback({
           code,
           state,
-          webhookUrl: 'http://localhost:3001/api/gmail/webhook'
+          webhookUrl
         });
 
         if (response.success && response.data) {
