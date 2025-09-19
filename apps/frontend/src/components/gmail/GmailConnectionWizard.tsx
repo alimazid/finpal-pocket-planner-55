@@ -62,7 +62,11 @@ export function GmailConnectionWizard({ isOpen, onClose, onSuccess, language }: 
     setIsConnecting(true);
     try {
       // Get the auth URL from our backend
-      const response = await apiClient.generateGmailAuthUrl(window.location.href);
+      const webhookUrl = import.meta.env.VITE_WEBHOOK_URL;
+      if (!webhookUrl) {
+        throw new Error('VITE_WEBHOOK_URL environment variable is not set');
+      }
+      const response = await apiClient.generateGmailAuthUrl(webhookUrl);
 
       if (response.success && response.data) {
         // Store state in sessionStorage for OAuth validation (expected by GmailOAuthCallback)

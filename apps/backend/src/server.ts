@@ -5,6 +5,26 @@ import { prisma } from './config/database.js';
 // Load environment variables
 dotenv.config();
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'DATABASE_URL',
+  'JWT_SECRET',
+  'FRONTEND_URL',
+  'PENNY_API_URL',
+  'PENNY_API_KEY',
+  'PENNY_CLIENT_ID',
+  'PENNY_CLIENT_SECRET',
+  'GOOGLE_OAUTH_REDIRECT_URI',
+  'WEBHOOK_SECRET'
+];
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+  process.exit(1);
+}
+
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
 // Test database connection and setup database before starting server

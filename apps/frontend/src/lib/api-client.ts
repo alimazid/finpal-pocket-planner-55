@@ -174,7 +174,10 @@ class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
 
-  constructor(baseURL: string = import.meta.env.VITE_API_URL || 'http://localhost:3001/api') {
+  constructor(baseURL: string = import.meta.env.VITE_API_URL!) {
+    if (!baseURL) {
+      throw new Error('VITE_API_URL environment variable is required');
+    }
     this.client = axios.create({
       baseURL,
       headers: {
