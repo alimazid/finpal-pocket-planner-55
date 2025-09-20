@@ -2,10 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, Trash2, Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { NewBudgetModal } from "@/components/budget/NewBudgetModal";
 
 interface Transaction {
   id: string;
@@ -22,17 +23,27 @@ interface UncategorizedTransactionsProps {
   availableCategories: string[];
   onUpdateTransactionCategory: (id: string, category: string) => void;
   onDeleteTransaction?: (id: string) => void;
+  onCreateBudgetAndAssign?: (transactionId: string, budgetData: {
+    category: string;
+    amount: number;
+    currency: string;
+  }) => void;
   language: 'english' | 'spanish';
+  defaultCurrency?: string;
 }
 
-export function UncategorizedTransactions({ 
-  transactions, 
-  availableCategories, 
+export function UncategorizedTransactions({
+  transactions,
+  availableCategories,
   onUpdateTransactionCategory,
   onDeleteTransaction,
-  language 
+  onCreateBudgetAndAssign,
+  language,
+  defaultCurrency
 }: UncategorizedTransactionsProps) {
   const [openSelects, setOpenSelects] = useState<Record<string, boolean>>({});
+  const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const { t } = useTranslation(language);
 
   // Filter to only show uncategorized transactions
@@ -55,19 +66,52 @@ export function UncategorizedTransactions({
 
 
   const handleBadgeClick = (transactionId: string) => {
-    setOpenSelects(prev => ({
-      ...prev,
-      [transactionId]: !prev[transactionId]
-    }));
+    if (availableCategories.length === 0) {
+      // If no categories exist, open the modal directly
+      if (onCreateBudgetAndAssign) {
+        setSelectedTransactionId(transactionId);
+        setIsNewBudgetModalOpen(true);
+      }
+    } else {
+      // If categories exist, show the dropdown
+      setOpenSelects(prev => ({
+        ...prev,
+        [transactionId]: !prev[transactionId]
+      }));
+    }
   };
 
   const handleCategorySelect = (transactionId: string, category: string) => {
-    console.log('Category selected:', { transactionId, category });
-    onUpdateTransactionCategory(transactionId, category);
-    setOpenSelects(prev => ({
-      ...prev,
-      [transactionId]: false
-    }));
+    if (category === '__new_category__') {
+      // Special value for "New Category" option
+      if (onCreateBudgetAndAssign) {
+        setSelectedTransactionId(transactionId);
+        setIsNewBudgetModalOpen(true);
+      }
+      setOpenSelects(prev => ({
+        ...prev,
+        [transactionId]: false
+      }));
+    } else {
+      console.log('Category selected:', { transactionId, category });
+      onUpdateTransactionCategory(transactionId, category);
+      setOpenSelects(prev => ({
+        ...prev,
+        [transactionId]: false
+      }));
+    }
+  };
+
+  const handleCreateBudget = (budgetData: {
+    category: string;
+    amount: number;
+    currency: string;
+  }) => {
+    if (selectedTransactionId && onCreateBudgetAndAssign) {
+      onCreateBudgetAndAssign(selectedTransactionId, budgetData);
+      setIsNewBudgetModalOpen(false);
+      setSelectedTransactionId(null);
+    }
   };
 
   return (
@@ -100,6 +144,14 @@ export function UncategorizedTransactions({
                         {category}
                       </SelectItem>
                     ))}
+                    {availableCategories.length > 0 && (
+                      <SelectItem value="__new_category__" className="hover:bg-muted border-t mt-1 pt-2">
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-3 w-3" />
+                          {t('newCategory')}
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               ) : (
@@ -151,6 +203,16 @@ export function UncategorizedTransactions({
           </div>
         </div>
       ))}
+
+      {/* New Budget Modal */}
+      <NewBudgetModal
+        isOpen={isNewBudgetModalOpen}
+        onOpenChange={setIsNewBudgetModalOpen}
+        onCreateBudget={handleCreateBudget}
+        existingCategories={availableCategories || []}
+        language={language}
+        defaultCurrency={defaultCurrency}
+      />
     </div>
   );
 }

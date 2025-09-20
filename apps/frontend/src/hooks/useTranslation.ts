@@ -295,7 +295,91 @@ const translations: Translations = {
     english: 'No budgets available - will be uncategorized',
     spanish: 'No hay presupuestos disponibles - será sin categorizar'
   },
-  
+
+  // New Budget Modal
+  newBudget: {
+    english: 'New Budget',
+    spanish: 'Nuevo Presupuesto'
+  },
+  suggestedCategories: {
+    english: 'Suggested Categories',
+    spanish: 'Categorías Sugeridas'
+  },
+  orCreateCustomCategory: {
+    english: 'Or create a custom category',
+    spanish: 'O crea una categoría personalizada'
+  },
+  enterCustomCategory: {
+    english: 'Enter custom category',
+    spanish: 'Ingresa una categoría personalizada'
+  },
+  monthlyBudgetAmount: {
+    english: 'Monthly Budget Amount',
+    spanish: 'Monto del Presupuesto Mensual'
+  },
+  createBudget: {
+    english: 'Create Budget',
+    spanish: 'Crear Presupuesto'
+  },
+  defaultCurrency: {
+    english: 'Default Currency',
+    spanish: 'Moneda Predeterminada'
+  },
+  defaultCurrencyDescription: {
+    english: 'Select your default currency',
+    spanish: 'Selecciona tu moneda predeterminada'
+  },
+  newCategory: {
+    english: 'New Category',
+    spanish: 'Nueva Categoría'
+  },
+
+  // Budget Setup Options
+  guidedSetup: {
+    english: 'Guided Setup',
+    spanish: 'Configuración Guiada'
+  },
+  guidedSetupDescription: {
+    english: 'Let us help you create personalized budgets step by step',
+    spanish: 'Te ayudamos a crear presupuestos personalizados paso a paso'
+  },
+  quickSetup: {
+    english: 'Quick Setup',
+    spanish: 'Configuración Rápida'
+  },
+  quickSetupDescription: {
+    english: 'I know my budget amounts - let me enter them manually',
+    spanish: 'Conozco mis montos - déjame ingresarlos manualmente'
+  },
+  chooseSetupMethod: {
+    english: 'Choose how you want to set up your budgets',
+    spanish: 'Elige cómo quieres configurar tus presupuestos'
+  },
+  enterBudgetAmounts: {
+    english: 'Enter your budget amounts',
+    spanish: 'Ingresa los montos de tu presupuesto'
+  },
+  addCategory: {
+    english: 'Add Category',
+    spanish: 'Agregar Categoría'
+  },
+  totalBudget: {
+    english: 'Total Budget',
+    spanish: 'Presupuesto Total'
+  },
+  reviewAndCreate: {
+    english: 'Review & Create',
+    spanish: 'Revisar y Crear'
+  },
+  creating: {
+    english: 'Creating...',
+    spanish: 'Creando...'
+  },
+  createBudgets: {
+    english: 'Create Budgets',
+    spanish: 'Crear Presupuestos'
+  },
+
   // Budget Period Navigation
   previous: {
     english: 'Previous',
@@ -812,24 +896,24 @@ const translations: Translations = {
 
   // Budget Wizard
   createYourFirstBudget: {
-    english: 'Create Your First Budget',
-    spanish: 'Crea Tu Primer Presupuesto'
+    english: 'Get Started',
+    spanish: 'Comenzar'
   },
   welcomeToBudgetWizard: {
     english: 'Welcome to Budget Wizard',
     spanish: 'Bienvenido al Asistente de Presupuesto'
   },
   budgetWizardDescription: {
-    english: 'Let\'s create a personalized budget based on your income and lifestyle. This will only take a few minutes!',
-    spanish: '¡Vamos a crear un presupuesto personalizado basado en tus ingresos y estilo de vida! ¡Solo tomará unos minutos!'
+    english: 'Set up your monthly budgets in just a few clicks',
+    spanish: 'Configura tus presupuestos mensuales en solo unos clics'
   },
   getStarted: {
     english: 'Get Started',
     spanish: 'Comenzar'
   },
   letsCreateYourBudget: {
-    english: 'Let\'s Create Your Budget! 🎯',
-    spanish: '¡Vamos a Crear Tu Presupuesto! 🎯'
+    english: 'Let\'s create your budgets',
+    spanish: 'Creemos tus presupuestos'
   },
   wizardStep: {
     english: 'Step',

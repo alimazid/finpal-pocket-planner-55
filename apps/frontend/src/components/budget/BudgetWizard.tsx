@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle, Circle, Target, DollarSign, Home, Heart, Sparkles, TrendingUp, ArrowLeft, ArrowRight, Calendar } from "lucide-react";
+import { CheckCircle, Circle, Target, DollarSign, Home, Heart, Sparkles, TrendingUp, ArrowLeft, ArrowRight, Calendar, Zap, User } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { formatCurrency } from "@/lib/utils";
 import { getCurrencyOptions, DEFAULT_CURRENCY } from "@/config/currencies";
@@ -22,6 +22,7 @@ import {
   calculateSuggestedBudgets,
   validateProfile
 } from "@/lib/budgetTemplates";
+import { QuickBudgetEntry } from "./QuickBudgetEntry";
 
 interface BudgetWizardProps {
   open: boolean;
@@ -31,7 +32,8 @@ interface BudgetWizardProps {
   defaultCurrency?: string;
 }
 
-type WizardStep = 'welcome' | 'income' | 'savings' | 'living' | 'lifestyle' | 'suggestions' | 'period' | 'review' | 'success';
+type WizardStep = 'welcome' | 'income' | 'savings' | 'living' | 'lifestyle' | 'suggestions' | 'period' | 'review' | 'quick-entry' | 'success';
+type WizardMode = 'guided' | 'quick';
 
 export function BudgetWizard({
   open,
@@ -42,6 +44,7 @@ export function BudgetWizard({
 }: BudgetWizardProps) {
   const { t } = useTranslation(language);
   const [currentStep, setCurrentStep] = useState<WizardStep>('welcome');
+  const [wizardMode, setWizardMode] = useState<WizardMode | null>(null);
   const [profile, setProfile] = useState<UserProfile>(() => ({
     ...createDefaultProfile(),
     currency: defaultCurrency || DEFAULT_CURRENCY
@@ -50,6 +53,8 @@ export function BudgetWizard({
   const [editedBudgets, setEditedBudgets] = useState<Record<string, number>>({});
   const [isCreating, setIsCreating] = useState(false);
   const [savingsInputType, setSavingsInputType] = useState<'percentage' | 'amount'>('percentage');
+  const [quickEntryValid, setQuickEntryValid] = useState(false);
+  const [quickEntryBudgets, setQuickEntryBudgets] = useState<{ category: string; amount: number; currency: string }[]>([]);
 
   const steps: WizardStep[] = ['welcome', 'income', 'savings', 'living', 'lifestyle', 'suggestions', 'period', 'review'];
   const currentStepIndex = steps.indexOf(currentStep);
@@ -107,6 +112,7 @@ export function BudgetWizard({
 
   const handleClose = () => {
     setCurrentStep('welcome');
+    setWizardMode(null);
     setProfile({
       ...createDefaultProfile(),
       currency: defaultCurrency || DEFAULT_CURRENCY
@@ -114,6 +120,33 @@ export function BudgetWizard({
     setSuggestedBudgets([]);
     setEditedBudgets({});
     onOpenChange(false);
+  };
+
+  const handleQuickBudgetCreate = async () => {
+    if (!quickEntryValid || quickEntryBudgets.length === 0) return;
+
+    setIsCreating(true);
+    try {
+      // Create a minimal profile for quick setup
+      const quickProfile: UserProfile = {
+        ...createDefaultProfile(),
+        currency: defaultCurrency || DEFAULT_CURRENCY,
+        monthlyIncome: 0, // Not collected in quick setup
+        savingsGoal: 0
+      };
+
+      await onCreateBudgets(quickEntryBudgets, quickProfile);
+      setCurrentStep('success');
+    } catch (error) {
+      console.error('Error creating budgets:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleQuickEntryValidation = (hasValidBudgets: boolean, validBudgets: { category: string; amount: number; currency: string }[]) => {
+    setQuickEntryValid(hasValidBudgets);
+    setQuickEntryBudgets(validBudgets);
   };
 
   const canProceed = () => {
@@ -173,11 +206,42 @@ export function BudgetWizard({
       </div>
       <div>
         <h2 className="text-2xl font-bold text-foreground mb-2">{t('welcomeToBudgetWizard')}</h2>
-        <p className="text-muted-foreground max-w-md mx-auto">{t('budgetWizardDescription')}</p>
+        <p className="text-muted-foreground max-w-md mx-auto">{t('chooseSetupMethod')}</p>
       </div>
-      <Button onClick={handleNext} className="w-full max-w-xs">
-        {t('getStarted')}
-      </Button>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        {/* Guided Setup Option */}
+        <Card className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/50" onClick={() => {
+          setWizardMode('guided');
+          handleNext();
+        }}>
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">{t('guidedSetup')}</h3>
+              <p className="text-sm text-muted-foreground mt-2">{t('guidedSetupDescription')}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Setup Option */}
+        <Card className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/50" onClick={() => {
+          setWizardMode('quick');
+          setCurrentStep('quick-entry');
+        }}>
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="w-12 h-12 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+              <Zap className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">{t('quickSetup')}</h3>
+              <p className="text-sm text-muted-foreground mt-2">{t('quickSetupDescription')}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 
@@ -723,6 +787,15 @@ export function BudgetWizard({
         return renderPeriodStep();
       case 'review':
         return renderReviewStep();
+      case 'quick-entry':
+        return (
+          <QuickBudgetEntry
+            onCreateBudgets={() => {}} // Not used anymore, handled by footer
+            onValidationChange={handleQuickEntryValidation}
+            language={language}
+            defaultCurrency={defaultCurrency}
+          />
+        );
       case 'success':
         return renderSuccessStep();
       default:
@@ -737,10 +810,12 @@ export function BudgetWizard({
           <DialogTitle className="text-center">
             {currentStep === 'welcome' || currentStep === 'success'
               ? t('createYourFirstBudget')
+              : currentStep === 'quick-entry'
+              ? t('quickSetup')
               : `${t('wizardStep')} ${currentStepIndex + 1} ${t('wizardOf')} ${steps.length}`
             }
           </DialogTitle>
-          {currentStep !== 'welcome' && currentStep !== 'success' && (
+          {currentStep !== 'welcome' && currentStep !== 'success' && currentStep !== 'quick-entry' && (
             <div className="w-full mt-4">
               <Progress value={progress} className="w-full" />
             </div>
@@ -751,7 +826,7 @@ export function BudgetWizard({
           {renderStepContent()}
         </div>
 
-        {currentStep !== 'welcome' && currentStep !== 'success' && (
+        {currentStep !== 'welcome' && currentStep !== 'success' && currentStep !== 'quick-entry' && (
           <div className="flex justify-between pt-4 border-t">
             <Button
               variant="outline"
@@ -781,6 +856,27 @@ export function BudgetWizard({
                 <ArrowRight className="w-4 h-4" />
               </Button>
             )}
+          </div>
+        )}
+
+        {/* Quick Entry Footer */}
+        {currentStep === 'quick-entry' && (
+          <div className="flex justify-between pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentStep('welcome')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t('back')}
+            </Button>
+            <Button
+              onClick={handleQuickBudgetCreate}
+              disabled={!quickEntryValid || isCreating}
+              className="flex items-center gap-2"
+            >
+              {isCreating ? t('creating') : t('createBudgets')}
+            </Button>
           </div>
         )}
       </DialogContent>

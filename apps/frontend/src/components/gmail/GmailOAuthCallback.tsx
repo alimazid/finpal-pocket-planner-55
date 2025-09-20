@@ -59,9 +59,9 @@ export const GmailOAuthCallback: React.FC = () => {
             description: `Your Gmail account ${response.data.gmailAddress} has been connected and monitoring has been started.`
           });
 
-          // Redirect to Gmail settings after a short delay
+          // Redirect to home page after a short delay
           setTimeout(() => {
-            navigate('/gmail-settings', { replace: true });
+            navigate('/', { replace: true });
           }, 2000);
         } else {
           throw new Error(response.error || 'Failed to connect Gmail account');
@@ -84,11 +84,11 @@ export const GmailOAuthCallback: React.FC = () => {
   }, [searchParams, navigate, toast]);
 
   const handleRetry = () => {
-    navigate('/gmail-settings', { replace: true });
+    navigate('/', { replace: true });
   };
 
   const handleGoToSettings = () => {
-    navigate('/gmail-settings', { replace: true });
+    navigate('/', { replace: true });
   };
 
   return (
@@ -136,7 +136,7 @@ export const GmailOAuthCallback: React.FC = () => {
                 <p>✅ Email monitoring started</p>
               </div>
               <p className="text-sm">
-                Redirecting you to Gmail settings...
+                Redirecting to dashboard...
               </p>
             </div>
           )}
@@ -162,18 +162,11 @@ export const GmailOAuthCallback: React.FC = () => {
                 Try Again
               </Button>
               <Button onClick={handleGoToSettings} variant="outline" className="flex-1">
-                Go to Settings
+                Go to Dashboard
               </Button>
             </div>
           )}
 
-          {status === 'success' && (
-            <div className="text-center">
-              <Button onClick={handleGoToSettings} variant="outline">
-                Go to Gmail Settings
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

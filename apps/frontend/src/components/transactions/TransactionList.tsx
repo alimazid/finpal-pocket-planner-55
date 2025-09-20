@@ -11,6 +11,7 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { NewBudgetModal } from "@/components/budget/NewBudgetModal";
 
 interface Transaction {
   id: string;
@@ -27,15 +28,22 @@ interface TransactionListProps {
   onDeleteTransaction?: (id: string) => void;
   onUpdateTransaction?: (id: string, newAmount: number) => void;
   onUpdateTransactionCategory?: (id: string, newCategory: string) => void;
+  onCreateBudgetAndAssign?: (transactionId: string, budgetData: {
+    category: string;
+    amount: number;
+    currency: string;
+  }) => void;
   availableCategories?: string[];
   language: 'english' | 'spanish';
   defaultCurrency?: string;
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, availableCategories, language, defaultCurrency }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onCreateBudgetAndAssign, availableCategories, language, defaultCurrency }: TransactionListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
+  const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const { t, formatDate: formatTranslatedDate } = useTranslation(language);
 
   const formatDate = (dateString: string) => {
@@ -88,14 +96,48 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
   };
 
   const handleCategoryChange = (transactionId: string, newCategory: string) => {
-    if (onUpdateTransactionCategory) {
-      onUpdateTransactionCategory(transactionId, newCategory);
+    if (newCategory === '__new_category__') {
+      // Special value for "New Category" option
+      if (onCreateBudgetAndAssign) {
+        setSelectedTransactionId(transactionId);
+        setIsNewBudgetModalOpen(true);
+      }
+      setEditingCategoryId(null);
+    } else {
+      if (onUpdateTransactionCategory) {
+        onUpdateTransactionCategory(transactionId, newCategory);
+      }
+      setEditingCategoryId(null);
     }
-    setEditingCategoryId(null);
   };
 
   const handleCategoryCancel = () => {
     setEditingCategoryId(null);
+  };
+
+  const handleNoCategory = (transactionId: string) => {
+    if (availableCategories && availableCategories.length === 0) {
+      // If no categories exist, open the modal directly
+      if (onCreateBudgetAndAssign) {
+        setSelectedTransactionId(transactionId);
+        setIsNewBudgetModalOpen(true);
+      }
+    } else {
+      // If categories exist, show the dropdown with category edit
+      handleCategoryEdit(transactionId);
+    }
+  };
+
+  const handleCreateBudget = (budgetData: {
+    category: string;
+    amount: number;
+    currency: string;
+  }) => {
+    if (selectedTransactionId && onCreateBudgetAndAssign) {
+      onCreateBudgetAndAssign(selectedTransactionId, budgetData);
+      setIsNewBudgetModalOpen(false);
+      setSelectedTransactionId(null);
+    }
   };
 
   return (
@@ -140,6 +182,14 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                             {category}
                           </SelectItem>
                         ))}
+                        {availableCategories && availableCategories.length > 0 && (
+                          <SelectItem value="__new_category__" className="hover:bg-muted border-t mt-1 pt-2">
+                            <div className="flex items-center gap-2">
+                              <Plus className="h-3 w-3" />
+                              {t('newCategory')}
+                            </div>
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <Button size="sm" variant="ghost" onClick={handleCategoryCancel} className="h-8 w-8 p-0">
@@ -157,10 +207,10 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     {transaction.category}
                   </Badge>
                 ) : (
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="border-red-300 text-red-600 bg-red-50 cursor-pointer hover:bg-red-100 transition-colors dark:border-red-700 dark:text-red-400 dark:bg-red-950/20 dark:hover:bg-red-900/30 flex-shrink-0"
-                    onClick={() => onUpdateTransactionCategory && handleCategoryEdit(transaction.id)}
+                    onClick={() => handleNoCategory(transaction.id)}
                   >
                     {t('noCategory')}
                   </Badge>
@@ -236,6 +286,16 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
           </div>
         ))
       )}
+
+      {/* New Budget Modal */}
+      <NewBudgetModal
+        isOpen={isNewBudgetModalOpen}
+        onOpenChange={setIsNewBudgetModalOpen}
+        onCreateBudget={handleCreateBudget}
+        existingCategories={availableCategories || []}
+        language={language}
+        defaultCurrency={defaultCurrency}
+      />
     </div>
   );
 }
