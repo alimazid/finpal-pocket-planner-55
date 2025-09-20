@@ -1,0 +1,149 @@
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Calendar } from "lucide-react";
+import { useState } from "react";
+import { format } from "date-fns";
+import { useTranslation } from "@/hooks/useTranslation";
+import { getCurrencyOptions, DEFAULT_CURRENCY } from "@/config/currencies";
+
+interface BudgetPeriod {
+  startDate: Date;
+  endDate: Date;
+  isCurrentPeriod: boolean;
+}
+
+interface AddBudgetButtonProps {
+  onAddBudget: (category: string, amount: number, currency: string) => void;
+  currentPeriod?: BudgetPeriod;
+  language: 'english' | 'spanish';
+  defaultCurrency?: string;
+  variant?: "default" | "outline" | "ghost";
+  size?: "default" | "sm" | "lg";
+  showText?: boolean;
+}
+
+export function AddBudgetButton({
+  onAddBudget,
+  currentPeriod,
+  language,
+  defaultCurrency,
+  variant = "outline",
+  size = "sm",
+  showText = true
+}: AddBudgetButtonProps) {
+  const { t } = useTranslation(language);
+  const [isOpen, setIsOpen] = useState(false);
+  const [category, setCategory] = useState("");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState(defaultCurrency || DEFAULT_CURRENCY);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (category.trim() && amount && parseFloat(amount) > 0) {
+      onAddBudget(category.trim(), parseFloat(amount), currency);
+      setCategory("");
+      setAmount("");
+      setCurrency(defaultCurrency || DEFAULT_CURRENCY);
+      setIsOpen(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setCategory("");
+    setAmount("");
+    setCurrency(defaultCurrency || DEFAULT_CURRENCY);
+    setIsOpen(false);
+  };
+
+  const getCurrentPeriodDisplay = () => {
+    if (!currentPeriod) return "";
+    return `${format(currentPeriod.startDate, 'MMM dd')} - ${format(currentPeriod.endDate, 'MMM dd, yyyy')}`;
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant={variant} size={size} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          {showText && <span className="hidden sm:inline">{t('addBudget')}</span>}
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{t('addNewBudget')}</DialogTitle>
+          <DialogDescription>
+            {t('createBudgetCategory')}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="category">{t('budgetName')}</Label>
+            <Input
+              id="category"
+              placeholder={t('budgetNamePlaceholder')}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="amount">{t('budgetAmount')}</Label>
+            <Input
+              id="amount"
+              type="number"
+              placeholder={t('budgetAmountPlaceholder')}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">{t('currency')}</Label>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectCurrency')} />
+              </SelectTrigger>
+              <SelectContent>
+                {getCurrencyOptions().map((curr) => (
+                  <SelectItem key={curr.value} value={curr.value}>
+                    {curr.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Show selected period */}
+          {currentPeriod && (
+            <div className="space-y-2">
+              <Label>{t('budgetPeriod')}</Label>
+              <div className="flex items-center space-x-2 p-3 bg-muted rounded-md">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {t('thisBudgetWillBeCreatedFor')} <strong>{getCurrentPeriodDisplay()}</strong>
+                </span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleCancel}>
+              {t('cancel')}
+            </Button>
+            <Button type="submit">{t('addBudget')}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

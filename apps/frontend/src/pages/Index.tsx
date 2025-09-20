@@ -11,9 +11,10 @@ import { BudgetPeriodNavigator } from "@/components/budget/BudgetPeriodNavigator
 import { BudgetWizard } from "@/components/budget/BudgetWizard";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { UncategorizedTransactions } from "@/components/transactions/UncategorizedTransactions";
+import { AddTransactionButton } from "@/components/transactions/AddTransactionButton";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
 import { GmailStatusIndicator } from "@/components/gmail/GmailStatusIndicator";
-import { GmailConnectionWizard } from "@/components/gmail/GmailConnectionWizard";
+import { initiateGmailOAuth } from "@/lib/gmailOAuth";
 
 import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download, Mail, Sun, Moon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +89,6 @@ const Index = () => {
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
   const [isBudgetWizardOpen, setIsBudgetWizardOpen] = useState(false);
-  const [isGmailWizardOpen, setIsGmailWizardOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -113,9 +113,10 @@ const Index = () => {
     if (!primaryAccount) return undefined;
 
     return {
+      ...primaryAccount,
       email: primaryAccount.gmailAddress,
       status: primaryAccount.isConnected
-        ? (primaryAccount.monitoringActive ? 'connected' as const : 'error' as const)
+        ? (primaryAccount.monitoringActive ? 'connected' as const : 'syncing' as const)
         : 'error' as const,
       lastSync: primaryAccount.lastSyncAt ? new Date(primaryAccount.lastSyncAt) : undefined,
       unprocessedCount: 0 // TODO: Add unprocessed count from API
@@ -761,6 +762,67 @@ const Index = () => {
     },
   });
 
+  // Gmail monitoring mutations
+  const pauseGmailMonitoringMutation = useMutation({
+    mutationFn: async (accountId: string) => {
+      const response = await apiClient.stopGmailMonitoring(accountId);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to pause Gmail monitoring');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gmail-accounts', user?.id] });
+    },
+    onError: (error) => {
+      toast({
+        title: t('error'),
+        description: t('failedToPauseGmailMonitoring'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resumeGmailMonitoringMutation = useMutation({
+    mutationFn: async (accountId: string) => {
+      const response = await apiClient.startGmailMonitoring(accountId);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to resume Gmail monitoring');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gmail-accounts', user?.id] });
+    },
+    onError: (error) => {
+      toast({
+        title: t('error'),
+        description: t('failedToResumeGmailMonitoring'),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const disconnectGmailAccountMutation = useMutation({
+    mutationFn: async (accountId: string) => {
+      const response = await apiClient.removeGmailAccount(accountId);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to disconnect Gmail account');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gmail-accounts', user?.id] });
+    },
+    onError: (error) => {
+      toast({
+        title: t('error'),
+        description: t('failedToDisconnectGmailAccount'),
+        variant: "destructive",
+      });
+    },
+  });
+
   // Handle budget creation from wizard
   const handleCreateBudgetsFromWizard = async (budgets: { category: string; amount: number; currency: string }[], profile: UserProfile) => {
     try {
@@ -925,10 +987,19 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <GmailStatusIndicator
                 account={gmailAccount}
-                onConnect={() => setIsGmailWizardOpen(true)}
+                onConnect={() => initiateGmailOAuth()}
                 onManage={() => {
                   // TODO: Navigate to Gmail settings or show management modal
                   console.log('Manage Gmail account');
+                }}
+                onPause={(accountId) => {
+                  pauseGmailMonitoringMutation.mutate(accountId);
+                }}
+                onResume={(accountId) => {
+                  resumeGmailMonitoringMutation.mutate(accountId);
+                }}
+                onDisconnect={(accountId) => {
+                  disconnectGmailAccountMutation.mutate(accountId);
                 }}
                 language={selectedLanguage as 'english' | 'spanish'}
               />
@@ -1221,16 +1292,23 @@ const Index = () => {
 
         {/* Recent Transactions */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            {t('recentTransactions')}
-          </h2>
-          <TransactionList 
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              {t('recentTransactions')}
+            </h2>
+            <AddTransactionButton
+              onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
+              availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
+              language={selectedLanguage as 'english' | 'spanish'}
+              defaultCurrency={userPreferences?.defaultCurrency}
+            />
+          </div>
+          <TransactionList
             transactions={transactions}
             onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
             onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
             onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
-            onAddExpense={(expense) => addExpenseMutation.mutate(expense)}
             availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
             language={selectedLanguage as 'english' | 'spanish'}
             defaultCurrency={userPreferences?.defaultCurrency}
@@ -1257,21 +1335,6 @@ const Index = () => {
           defaultCurrency={userPreferences?.defaultCurrency}
         />
 
-        {/* Gmail Connection Wizard */}
-        <GmailConnectionWizard
-          isOpen={isGmailWizardOpen}
-          onClose={() => setIsGmailWizardOpen(false)}
-          onSuccess={() => {
-            // Refresh Gmail accounts data
-            queryClient.invalidateQueries({ queryKey: ['gmail-accounts', user?.id] });
-
-            toast({
-              title: t('gmailConnected'),
-              description: t('gmailConnectedDescription'),
-            });
-          }}
-          language={selectedLanguage as 'english' | 'spanish'}
-        />
 
       </div>
     </div>

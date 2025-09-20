@@ -32,7 +32,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { AddBudgetCard } from './AddBudgetCard';
+import { AddBudgetButton } from './AddBudgetButton';
 import { CreateMissingBudgetsCard } from './CreateMissingBudgetsCard';
 
 interface BudgetCategory {
@@ -659,9 +659,19 @@ export function BudgetSummary({
   if (budgets.length === 0) {
     return (
       <>
-        <div className="flex items-center gap-2 mb-6">
-          <BarChart3 className="h-6 w-6 text-primary" />
-          <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-6 w-6 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
+          </div>
+          {onAddBudget && (
+            <AddBudgetButton
+              onAddBudget={onAddBudget}
+              currentPeriod={currentPeriod}
+              language={language}
+              defaultCurrency={defaultCurrency}
+            />
+          )}
         </div>
 
         
@@ -674,30 +684,17 @@ export function BudgetSummary({
           </CardContent>
         </Card>
         
-        {/* Budget Creation Cards */}
-        <div className={`grid gap-4 ${onCreateMissingBudgets && missingBudgets.length > 0 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-          {/* Add Budget Card */}
-          {onAddBudget && (
-            <AddBudgetCard 
-              onAddBudget={onAddBudget}
-              currentPeriod={currentPeriod}
-              language={language}
-              defaultCurrency={defaultCurrency}
-            />
-          )}
-          
-          {/* Create Missing from Last Period Card */}
-          {onCreateMissingBudgets && missingBudgets.length > 0 && (
-            <CreateMissingBudgetsCard
-              missingBudgets={missingBudgets}
-              onCreateMissingBudgets={onCreateMissingBudgets}
-              previousPeriod={previousPeriod}
-              language={language}
-              isCreating={isCreatingMissingBudgets}
-              defaultCurrency={defaultCurrency}
-            />
-          )}
-        </div>
+        {/* Create Missing from Last Period Card - only show when needed */}
+        {onCreateMissingBudgets && missingBudgets.length > 0 && (
+          <CreateMissingBudgetsCard
+            missingBudgets={missingBudgets}
+            onCreateMissingBudgets={onCreateMissingBudgets}
+            previousPeriod={previousPeriod}
+            language={language}
+            isCreating={isCreatingMissingBudgets}
+            defaultCurrency={defaultCurrency}
+          />
+        )}
       </>
     );
   }
@@ -705,9 +702,19 @@ export function BudgetSummary({
   return (
     <>
       {/* Independent Title */}
-      <div className="flex items-center gap-2 mb-6">
-        <BarChart3 className="h-6 w-6 text-primary" />
-        <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-6 w-6 text-primary" />
+          <h2 className="text-xl font-semibold text-foreground">{t('budgetSummary')}</h2>
+        </div>
+        {onAddBudget && (
+          <AddBudgetButton
+            onAddBudget={onAddBudget}
+            currentPeriod={currentPeriod}
+            language={language}
+            defaultCurrency={defaultCurrency}
+          />
+        )}
       </div>
 
 
@@ -738,20 +745,9 @@ export function BudgetSummary({
         </DndContext>
       </div>
       
-      {/* Budget Creation Cards - always available when there are budgets */}
-      <div className={`mt-4 grid gap-4 ${onCreateMissingBudgets && missingBudgets.length > 0 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-        {/* Add Budget Card */}
-        {onAddBudget && (
-          <AddBudgetCard 
-            onAddBudget={onAddBudget}
-            currentPeriod={currentPeriod}
-            language={language}
-            defaultCurrency={defaultCurrency}
-          />
-        )}
-        
-        {/* Create Missing from Last Period Card */}
-        {onCreateMissingBudgets && missingBudgets.length > 0 && (
+      {/* Create Missing Budgets Card - only show when there are missing budgets */}
+      {onCreateMissingBudgets && missingBudgets.length > 0 && (
+        <div className="mt-4">
           <CreateMissingBudgetsCard
             missingBudgets={missingBudgets}
             onCreateMissingBudgets={onCreateMissingBudgets}
@@ -760,8 +756,8 @@ export function BudgetSummary({
             isCreating={isCreatingMissingBudgets}
             defaultCurrency={defaultCurrency}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Edit Budget Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
