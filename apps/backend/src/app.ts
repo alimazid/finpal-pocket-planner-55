@@ -17,8 +17,13 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
+// Configure CORS to accept multiple origins
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [process.env.FRONTEND_URL!];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL!,
+  origin: allowedOrigins,
   credentials: true
 }));
 
