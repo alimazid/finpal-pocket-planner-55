@@ -823,6 +823,29 @@ const Index = () => {
     },
   });
 
+  // Create budget and assign to transaction handler
+  const handleCreateBudgetAndAssign = async (
+    transactionId: string,
+    budgetData: { category: string; amount: number; currency: string }
+  ) => {
+    try {
+      // First create the budget
+      await addBudgetMutation.mutateAsync({
+        category: budgetData.category,
+        amount: budgetData.amount,
+        currency: budgetData.currency
+      });
+
+      // Then assign the category to the transaction
+      await updateTransactionCategoryMutation.mutateAsync({
+        transactionId,
+        category: budgetData.category
+      });
+    } catch (error) {
+      console.error('Failed to create budget and assign to transaction:', error);
+    }
+  };
+
   // Handle budget creation from wizard
   const handleCreateBudgetsFromWizard = async (budgets: { category: string; amount: number; currency: string }[], profile: UserProfile) => {
     try {
@@ -979,8 +1002,8 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-white" />
+              <div className="w-14 h-14 flex items-center justify-center">
+                <img src="/penny.png" alt="Penny" className="w-full h-full object-contain" />
               </div>
 
             </div>
@@ -1187,7 +1210,9 @@ const Index = () => {
           availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
           onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
+          onCreateBudgetAndAssign={handleCreateBudgetAndAssign}
           language={selectedLanguage as 'english' | 'spanish'}
+          defaultCurrency={userPreferences?.defaultCurrency}
         />
 
         {/* Budget Period Navigator */}
@@ -1243,21 +1268,19 @@ const Index = () => {
 
         {/* Budget Wizard CTA - Show only when user has no budgets */}
         {budgets.length === 0 && !budgetsLoading && (
-          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-8 border border-primary/20">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                <Target className="w-8 h-8 text-primary" />
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl p-6 border border-primary/20">
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                <Target className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground mb-2">{t('letsCreateYourBudget')}</h2>
+                <h2 className="text-xl font-bold text-foreground mb-2">{t('letsCreateYourBudget')}</h2>
                 <p className="text-muted-foreground max-w-md mx-auto">
                   {t('budgetWizardDescription')}
                 </p>
               </div>
               <Button
                 onClick={() => setIsBudgetWizardOpen(true)}
-                size="lg"
-                className="text-lg px-8 py-3"
               >
                 {t('createYourFirstBudget')}
               </Button>
@@ -1309,6 +1332,7 @@ const Index = () => {
             onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
             onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
             onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
+            onCreateBudgetAndAssign={handleCreateBudgetAndAssign}
             availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
             language={selectedLanguage as 'english' | 'spanish'}
             defaultCurrency={userPreferences?.defaultCurrency}
