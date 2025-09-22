@@ -43,11 +43,11 @@ async function main() {
   // Seed exchange rates (all pairs)
   const exchangeRates = [
     // DOP to other currencies
-    { fromCurrency: 'DOP', toCurrency: 'USD', rate: 0.0176 },
+    { fromCurrency: 'DOP', toCurrency: 'USD', rate: 0.01587 },
     { fromCurrency: 'DOP', toCurrency: 'EUR', rate: 0.0162 },
     
     // USD to other currencies
-    { fromCurrency: 'USD', toCurrency: 'DOP', rate: 56.8 },
+    { fromCurrency: 'USD', toCurrency: 'DOP', rate: 63 },
     { fromCurrency: 'USD', toCurrency: 'EUR', rate: 0.92 },
     
     // EUR to other currencies
