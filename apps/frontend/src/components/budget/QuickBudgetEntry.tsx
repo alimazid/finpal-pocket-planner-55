@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, Target } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { formatCurrency } from "@/lib/utils";
-import { DEFAULT_BUDGET_CATEGORIES } from "@/lib/budgetTemplates";
+import { DEFAULT_BUDGET_CATEGORIES, getCategoryName } from "@/lib/budgetTemplates";
 import { SUPPORTED_CURRENCIES } from "@/config/currencies";
 
 interface BudgetEntry {
@@ -16,7 +16,6 @@ interface BudgetEntry {
   name: string;
   amount: number;
   currency: string;
-  icon: string;
 }
 
 interface QuickBudgetEntryProps {
@@ -40,13 +39,12 @@ export function QuickBudgetEntry({
   useEffect(() => {
     const initialBudgets: BudgetEntry[] = DEFAULT_BUDGET_CATEGORIES.map((category, index) => ({
       id: `default-${index}`,
-      name: category.name,
+      name: getCategoryName(category, language),
       amount: 0,
-      currency: defaultCurrency,
-      icon: category.icon
+      currency: defaultCurrency
     }));
     setBudgets(initialBudgets);
-  }, [defaultCurrency]);
+  }, [defaultCurrency, language]);
 
   const updateBudgetAmount = (id: string, amount: number) => {
     setBudgets(prev => prev.map(budget =>
@@ -70,8 +68,7 @@ export function QuickBudgetEntry({
         id: `custom-${Date.now()}`,
         name: newCategoryName.trim(),
         amount: 0,
-        currency: defaultCurrency,
-        icon: '📋'
+        currency: defaultCurrency
       };
       setBudgets(prev => [...prev, newBudget]);
       setNewCategoryName('');
@@ -104,28 +101,27 @@ export function QuickBudgetEntry({
   const totals = getTotalAmount();
 
   return (
-    <div className="space-y-6">
+    <div className="text-center space-y-6 py-4">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="w-12 h-12 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-          <Target className="w-6 h-6 text-primary" />
+      <div className="space-y-2">
+        <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+          <Target className="w-8 h-8 text-primary" />
         </div>
-        <h3 className="text-xl font-semibold">{t('enterBudgetAmounts')}</h3>
-        <p className="text-muted-foreground text-sm">
+        <h2 className="text-2xl font-bold text-foreground mb-2">{t('enterBudgetAmounts')}</h2>
+        <p className="text-muted-foreground max-w-md mx-auto">
           {t('quickSetupDescription')}
         </p>
       </div>
 
       {/* Budget Entries */}
       <Card>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3 space-y-2">
           {budgets.map((budget) => (
-            <div key={budget.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/30 transition-colors">
-              <span className="text-lg flex-shrink-0">{budget.icon}</span>
+            <div key={budget.id} className="flex items-center gap-2 p-1 rounded-lg hover:bg-muted/30 transition-colors">
               <div className="flex-1 min-w-0">
                 <Label className="text-sm font-medium">{budget.name}</Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -165,8 +161,7 @@ export function QuickBudgetEntry({
           <Separator />
 
           {/* Add Custom Category */}
-          <div className="flex items-center gap-2">
-            <span className="text-lg flex-shrink-0">📋</span>
+          <div className="flex items-center gap-1">
             <Input
               placeholder={t('enterCustomCategory')}
               value={newCategoryName}
@@ -193,7 +188,7 @@ export function QuickBudgetEntry({
       {/* Total Summary */}
       {Object.keys(totals).length > 0 && (
         <Card className="bg-muted/30">
-          <CardContent className="p-4">
+          <CardContent className="p-3">
             <div className="space-y-2">
               <Label className="text-sm font-medium">{t('totalBudget')}</Label>
               {Object.entries(totals).map(([currency, amount]) => (

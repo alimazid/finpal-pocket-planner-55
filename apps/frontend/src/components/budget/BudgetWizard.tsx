@@ -20,7 +20,9 @@ import {
   LIFESTYLE_OPTIONS,
   createDefaultProfile,
   calculateSuggestedBudgets,
-  validateProfile
+  validateProfile,
+  getLifestyleLabel,
+  getLifestyleDescription
 } from "@/lib/budgetTemplates";
 import { QuickBudgetEntry } from "./QuickBudgetEntry";
 
@@ -76,7 +78,7 @@ export function BudgetWizard({
 
       // Generate suggestions when moving to suggestions step
       if (nextStep === 'suggestions') {
-        const suggestions = calculateSuggestedBudgets(profile);
+        const suggestions = calculateSuggestedBudgets(profile, language);
         setSuggestedBudgets(suggestions);
         setEditedBudgets({});
       }
@@ -574,14 +576,14 @@ export function BudgetWizard({
                   <span className="text-2xl mr-3 mt-1">{option.emoji}</span>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{option.label}</h4>
+                      <h4 className="font-medium">{getLifestyleLabel(option, language)}</h4>
                       {isSelected ? (
                         <CheckCircle className="w-5 h-5 text-primary" />
                       ) : (
                         <Circle className="w-5 h-5 text-muted-foreground" />
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{getLifestyleDescription(option, language)}</p>
                   </div>
                 </div>
               </CardContent>

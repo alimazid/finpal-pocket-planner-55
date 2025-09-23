@@ -1,14 +1,14 @@
 import { DEFAULT_CURRENCY } from "@/config/currencies";
 
 export interface BudgetCategoryTemplate {
-  name: string;
+  nameEn: string;
+  nameEs: string;
   percentage: {
-    min: number;
-    max: number;
     default: number;
   };
   icon: string;
-  description: string;
+  descriptionEn: string;
+  descriptionEs: string;
 }
 
 export interface UserProfile {
@@ -32,64 +32,102 @@ export interface SuggestedBudget {
   description: string;
 }
 
+// Helper function to get category name based on language
+export function getCategoryName(category: BudgetCategoryTemplate, language: 'english' | 'spanish'): string {
+  return language === 'spanish' ? category.nameEs : category.nameEn;
+}
+
+// Helper function to get category description based on language
+export function getCategoryDescription(category: BudgetCategoryTemplate, language: 'english' | 'spanish'): string {
+  return language === 'spanish' ? category.descriptionEs : category.descriptionEn;
+}
+
+// Helper function to get lifestyle option label based on language
+export function getLifestyleLabel(option: typeof LIFESTYLE_OPTIONS[0], language: 'english' | 'spanish'): string {
+  return language === 'spanish' ? option.labelEs : option.labelEn;
+}
+
+// Helper function to get lifestyle option description based on language
+export function getLifestyleDescription(option: typeof LIFESTYLE_OPTIONS[0], language: 'english' | 'spanish'): string {
+  return language === 'spanish' ? option.descriptionEs : option.descriptionEn;
+}
+
 export const DEFAULT_BUDGET_CATEGORIES: BudgetCategoryTemplate[] = [
   {
-    name: 'Housing',
-    percentage: { min: 25, max: 35, default: 30 },
-    icon: '🏠',
-    description: 'Rent, mortgage, property taxes, home insurance'
+    nameEn: 'Supermarket',
+    nameEs: 'Supermercado',
+    percentage: { default: 20 },
+    icon: '🛒',
+    descriptionEn: 'Groceries, food, household items',
+    descriptionEs: 'Comestibles, comida, artículos para el hogar'
   },
   {
-    name: 'Food & Dining',
-    percentage: { min: 10, max: 18, default: 12 },
-    icon: '🍽️',
-    description: 'Groceries, restaurants, meal delivery'
-  },
-  {
-    name: 'Transportation',
-    percentage: { min: 10, max: 20, default: 15 },
+    nameEn: 'Transportation',
+    nameEs: 'Transporte',
+    percentage: { default: 10 },
     icon: '🚗',
-    description: 'Car payments, gas, public transit, maintenance'
+    descriptionEn: 'Car payments, gas, public transit, maintenance',
+    descriptionEs: 'Pagos de auto, gasolina, transporte público, mantenimiento'
   },
   {
-    name: 'Utilities',
-    percentage: { min: 5, max: 10, default: 7 },
+    nameEn: 'Education',
+    nameEs: 'Estudios',
+    percentage: { default: 15 },
+    icon: '📚',
+    descriptionEn: 'Courses, books, school fees, learning materials',
+    descriptionEs: 'Cursos, libros, cuotas escolares, materiales de estudio'
+  },
+  {
+    nameEn: 'Home Purchases',
+    nameEs: 'Casa',
+    percentage: { default: 10 },
+    icon: '🏠',
+    descriptionEn: 'Home improvements, furniture, appliances',
+    descriptionEs: 'Mejoras del hogar, muebles, electrodomésticos'
+  },
+  {
+    nameEn: 'Fun',
+    nameEs: 'Diversión',
+    percentage: { default: 10 },
+    icon: '🎉',
+    descriptionEn: 'Entertainment, hobbies, leisure activities',
+    descriptionEs: 'Entretenimiento, pasatiempos, actividades de ocio'
+  },
+  {
+    nameEn: 'Restaurants',
+    nameEs: 'Restaurantes',
+    percentage: { default: 10 },
+    icon: '🍽️',
+    descriptionEn: 'Dining out, food delivery, cafes',
+    descriptionEs: 'Comer fuera, entrega de comida, cafeterías'
+  },
+  {
+    nameEn: 'Utilities',
+    nameEs: 'Servicios',
+    percentage: { default: 10 },
     icon: '⚡',
-    description: 'Electricity, water, gas, internet, phone'
+    descriptionEn: 'Electricity, water, gas, internet, phone',
+    descriptionEs: 'Electricidad, agua, gas, internet, teléfono'
   },
   {
-    name: 'Entertainment',
-    percentage: { min: 5, max: 12, default: 7 },
-    icon: '🎬',
-    description: 'Movies, games, subscriptions, hobbies'
-  },
-  {
-    name: 'Shopping',
-    percentage: { min: 5, max: 12, default: 7 },
-    icon: '🛍️',
-    description: 'Clothing, personal items, household goods'
-  },
-  {
-    name: 'Healthcare',
-    percentage: { min: 3, max: 8, default: 5 },
+    nameEn: 'Health',
+    nameEs: 'Salud y Bienestar',
+    percentage: { default: 10 },
     icon: '🏥',
-    description: 'Insurance, doctor visits, medications'
+    descriptionEn: 'Healthcare, insurance, medications, wellness',
+    descriptionEs: 'Atención médica, seguros, medicamentos, bienestar'
   },
   {
-    name: 'Personal Care',
-    percentage: { min: 2, max: 5, default: 3 },
-    icon: '💅',
-    description: 'Haircuts, spa, beauty products, gym'
-  },
-  {
-    name: 'Miscellaneous',
-    percentage: { min: 3, max: 8, default: 5 },
-    icon: '📋',
-    description: 'Gifts, donations, unexpected expenses'
+    nameEn: 'Subscriptions',
+    nameEs: 'Subscripciones',
+    percentage: { default: 5 },
+    icon: '📱',
+    descriptionEn: 'Streaming services, apps, memberships',
+    descriptionEs: 'Servicios de streaming, aplicaciones, membresías'
   }
 ];
 
-export function calculateSuggestedBudgets(profile: UserProfile): SuggestedBudget[] {
+export function calculateSuggestedBudgets(profile: UserProfile, language: 'english' | 'spanish' = 'english'): SuggestedBudget[] {
   const adjustedCategories = adjustCategoriesForProfile(profile);
 
   // Calculate available income after savings goal
@@ -104,11 +142,11 @@ export function calculateSuggestedBudgets(profile: UserProfile): SuggestedBudget
     const amount = Math.round((availableIncome * scaledPercentage) / 100);
 
     return {
-      categoryName: category.name,
+      categoryName: getCategoryName(category, language),
       amount,
       percentage: Math.round(scaledPercentage),
       icon: category.icon,
-      description: category.description
+      description: getCategoryDescription(category, language)
     };
   });
 }
@@ -119,64 +157,64 @@ function adjustCategoriesForProfile(profile: UserProfile): BudgetCategoryTemplat
   // Adjust based on housing situation
   if (profile.housingType === 'family') {
     // Living with family - reduce housing costs
-    adjustCategory(categories, 'Housing', { default: 15 });
-    // Redistribute to savings and entertainment
-    adjustCategory(categories, 'Savings', { default: 20 });
-    adjustCategory(categories, 'Entertainment', { default: 10 });
+    adjustCategory(categories, 'Home Purchases', { default: 5 });
+    // Redistribute to education and entertainment
+    adjustCategory(categories, 'Education', { default: 20 });
+    adjustCategory(categories, 'Fun', { default: 15 });
   } else if (profile.housingType === 'own') {
     // Homeowners typically have higher housing costs
-    adjustCategory(categories, 'Housing', { default: 33 });
-    adjustCategory(categories, 'Savings', { default: 12 });
+    adjustCategory(categories, 'Home Purchases', { default: 15 });
+    adjustCategory(categories, 'Utilities', { default: 15 });
   }
 
   // Adjust based on living situation
   if (profile.livingSituation === 'family') {
     // Families typically spend more on food and healthcare
-    adjustCategory(categories, 'Food & Dining', { default: 15 });
-    adjustCategory(categories, 'Healthcare', { default: 7 });
-    adjustCategory(categories, 'Entertainment', { default: 5 });
+    adjustCategory(categories, 'Supermarket', { default: 25 });
+    adjustCategory(categories, 'Health', { default: 15 });
+    adjustCategory(categories, 'Fun', { default: 5 });
   } else if (profile.livingSituation === 'couple') {
     // Couples often share costs
-    adjustCategory(categories, 'Food & Dining', { default: 13 });
-    adjustCategory(categories, 'Entertainment', { default: 8 });
+    adjustCategory(categories, 'Restaurants', { default: 15 });
+    adjustCategory(categories, 'Fun', { default: 12 });
   }
 
   // Adjust based on location
   if (profile.location === 'city') {
-    // City living - higher transportation, lower personal transport
-    adjustCategory(categories, 'Transportation', { default: 18 });
-    adjustCategory(categories, 'Entertainment', { default: 9 });
+    // City living - higher transportation and dining
+    adjustCategory(categories, 'Transportation', { default: 15 });
+    adjustCategory(categories, 'Restaurants', { default: 15 });
   } else if (profile.location === 'rural') {
-    // Rural living - higher transportation costs for personal vehicles
-    adjustCategory(categories, 'Transportation', { default: 17 });
-    adjustCategory(categories, 'Utilities', { default: 8 });
+    // Rural living - higher transportation and utilities
+    adjustCategory(categories, 'Transportation', { default: 15 });
+    adjustCategory(categories, 'Utilities', { default: 15 });
   }
 
   // Adjust based on lifestyle preferences
   if (profile.lifestyle.includes('foodie')) {
-    adjustCategory(categories, 'Food & Dining', { default: 16 });
-    adjustCategory(categories, 'Savings', { default: 12 });
+    adjustCategory(categories, 'Restaurants', { default: 20 });
+    adjustCategory(categories, 'Supermarket', { default: 25 });
   }
 
   if (profile.lifestyle.includes('traveler')) {
-    adjustCategory(categories, 'Entertainment', { default: 12 });
-    adjustCategory(categories, 'Savings', { default: 12 });
+    adjustCategory(categories, 'Fun', { default: 20 });
+    adjustCategory(categories, 'Transportation', { default: 15 });
   }
 
   if (profile.lifestyle.includes('tech')) {
-    adjustCategory(categories, 'Shopping', { default: 10 });
-    adjustCategory(categories, 'Entertainment', { default: 9 });
+    adjustCategory(categories, 'Subscriptions', { default: 10 });
+    adjustCategory(categories, 'Education', { default: 20 });
   }
 
   if (profile.lifestyle.includes('minimalist')) {
-    adjustCategory(categories, 'Shopping', { default: 4 });
-    adjustCategory(categories, 'Entertainment', { default: 5 });
-    adjustCategory(categories, 'Savings', { default: 20 });
+    adjustCategory(categories, 'Supermarket', { default: 15 });
+    adjustCategory(categories, 'Fun', { default: 5 });
+    adjustCategory(categories, 'Education', { default: 25 });
   }
 
   if (profile.lifestyle.includes('fitness')) {
-    adjustCategory(categories, 'Personal Care', { default: 5 });
-    adjustCategory(categories, 'Healthcare', { default: 6 });
+    adjustCategory(categories, 'Health', { default: 20 });
+    adjustCategory(categories, 'Subscriptions', { default: 8 });
   }
 
   // Ensure total doesn't exceed 100%
@@ -197,24 +235,77 @@ function adjustCategory(
   categoryName: string,
   adjustment: { default: number }
 ): void {
-  const category = categories.find(cat => cat.name === categoryName);
+  const category = categories.find(cat => cat.nameEn === categoryName);
   if (category) {
-    category.percentage.default = Math.max(
-      category.percentage.min,
-      Math.min(category.percentage.max, adjustment.default)
-    );
+    category.percentage.default = adjustment.default;
   }
 }
 
 export const LIFESTYLE_OPTIONS = [
-  { value: 'foodie', label: 'Food Lover', emoji: '🍕', description: 'Love dining out and trying new cuisines' },
-  { value: 'traveler', label: 'Travel Enthusiast', emoji: '✈️', description: 'Enjoy exploring new places and experiences' },
-  { value: 'tech', label: 'Tech Enthusiast', emoji: '📱', description: 'Love gadgets and latest technology' },
-  { value: 'fitness', label: 'Health & Fitness', emoji: '💪', description: 'Prioritize gym, sports, and wellness' },
-  { value: 'minimalist', label: 'Minimalist', emoji: '🧘', description: 'Prefer simplicity and essential purchases' },
-  { value: 'social', label: 'Social Butterfly', emoji: '🎉', description: 'Enjoy entertainment and social activities' },
-  { value: 'homebody', label: 'Homebody', emoji: '🏡', description: 'Prefer staying in and home comforts' },
-  { value: 'learner', label: 'Lifelong Learner', emoji: '📚', description: 'Invest in courses, books, and education' }
+  {
+    value: 'foodie',
+    labelEn: 'Food Lover',
+    labelEs: 'Amante de la Comida',
+    emoji: '🍕',
+    descriptionEn: 'Love dining out and trying new cuisines',
+    descriptionEs: 'Ama salir a cenar y probar nuevas cocinas'
+  },
+  {
+    value: 'traveler',
+    labelEn: 'Travel Enthusiast',
+    labelEs: 'Entusiasta de Viajes',
+    emoji: '✈️',
+    descriptionEn: 'Enjoy exploring new places and experiences',
+    descriptionEs: 'Disfruta explorando nuevos lugares y experiencias'
+  },
+  {
+    value: 'tech',
+    labelEn: 'Tech Enthusiast',
+    labelEs: 'Entusiasta de Tecnología',
+    emoji: '📱',
+    descriptionEn: 'Love gadgets and latest technology',
+    descriptionEs: 'Ama los gadgets y la última tecnología'
+  },
+  {
+    value: 'fitness',
+    labelEn: 'Health & Fitness',
+    labelEs: 'Salud y Ejercicio',
+    emoji: '💪',
+    descriptionEn: 'Prioritize gym, sports, and wellness',
+    descriptionEs: 'Prioriza gimnasio, deportes y bienestar'
+  },
+  {
+    value: 'minimalist',
+    labelEn: 'Minimalist',
+    labelEs: 'Minimalista',
+    emoji: '🧘',
+    descriptionEn: 'Prefer simplicity and essential purchases',
+    descriptionEs: 'Prefiere simplicidad y compras esenciales'
+  },
+  {
+    value: 'social',
+    labelEn: 'Social Butterfly',
+    labelEs: 'Mariposa Social',
+    emoji: '🎉',
+    descriptionEn: 'Enjoy entertainment and social activities',
+    descriptionEs: 'Disfruta entretenimiento y actividades sociales'
+  },
+  {
+    value: 'homebody',
+    labelEn: 'Homebody',
+    labelEs: 'Casero',
+    emoji: '🏡',
+    descriptionEn: 'Prefer staying in and home comforts',
+    descriptionEs: 'Prefiere quedarse en casa y comodidades hogareñas'
+  },
+  {
+    value: 'learner',
+    labelEn: 'Lifelong Learner',
+    labelEs: 'Aprendiz de por Vida',
+    emoji: '📚',
+    descriptionEn: 'Invest in courses, books, and education',
+    descriptionEs: 'Invierte en cursos, libros y educación'
+  }
 ];
 
 export function createDefaultProfile(): UserProfile {

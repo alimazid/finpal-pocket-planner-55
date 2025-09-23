@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTranslation } from '@/hooks/useTranslation';
-import { DEFAULT_BUDGET_CATEGORIES } from '@/lib/budgetTemplates';
+import { DEFAULT_BUDGET_CATEGORIES, getCategoryName } from '@/lib/budgetTemplates';
 import { SUPPORTED_CURRENCIES } from '@/config/currencies';
 
 interface NewBudgetModalProps {
@@ -38,7 +38,7 @@ export function NewBudgetModal({
   const [currency, setCurrency] = useState(defaultCurrency || 'USD');
 
   // Get all available categories (predefined + existing user categories)
-  const predefinedCategories = DEFAULT_BUDGET_CATEGORIES.map(cat => cat.name);
+  const predefinedCategories = DEFAULT_BUDGET_CATEGORIES.map(cat => getCategoryName(cat, language));
   const allCategories = [...new Set([...predefinedCategories, ...existingCategories])];
 
   // Filter out categories that already exist in user's budgets
@@ -102,7 +102,7 @@ export function NewBudgetModal({
                 <ScrollArea className="h-24">
                   <div className="flex flex-wrap gap-2">
                     {availableCategories.map((category) => {
-                      const categoryData = DEFAULT_BUDGET_CATEGORIES.find(c => c.name === category);
+                      const categoryData = DEFAULT_BUDGET_CATEGORIES.find(c => getCategoryName(c, language) === category);
                       return (
                         <Badge
                           key={category}
