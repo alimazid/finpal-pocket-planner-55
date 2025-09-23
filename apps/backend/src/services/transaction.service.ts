@@ -1,14 +1,16 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
-import { 
-  Transaction, 
-  CreateTransactionDto, 
-  UpdateTransactionDto, 
-  TransactionQueryParams 
+import {
+  Transaction,
+  CreateTransactionDto,
+  UpdateTransactionDto,
+  TransactionQueryParams
 } from '../types/index.js';
 import { NotFoundError, ValidationError } from '../middleware/error.middleware.js';
+import { BudgetService } from './budget.service.js';
 
 export class TransactionService {
+  private budgetService = new BudgetService();
 
   async getTransactions(userId: string, params: TransactionQueryParams) {
     const where: any = {
@@ -75,6 +77,25 @@ export class TransactionService {
       }
     });
 
+    // If transaction has a category and is an expense, recalculate budget spent amount
+    if (data.category && data.type === 'expense') {
+      try {
+        const transactionDate = new Date(data.date);
+        const targetYear = transactionDate.getFullYear();
+        const targetMonth = transactionDate.getMonth() + 1;
+
+        await this.budgetService.recalculateBudgetForCategory(
+          userId,
+          data.category,
+          targetYear,
+          targetMonth
+        );
+      } catch (error) {
+        console.error('Failed to recalculate budget after creating transaction:', error);
+        // Don't fail the transaction creation if budget recalculation fails
+      }
+    }
+
     return {
       ...transaction,
       amount: Number(transaction.amount)
@@ -102,6 +123,73 @@ export class TransactionService {
       }
     });
 
+    // Recalculate budget spent amounts if category, amount, date, or type changed
+    const shouldRecalculate = existingTransaction.type === 'expense' && (
+      data.category !== undefined ||
+      data.amount !== undefined ||
+      data.date !== undefined ||
+      data.type !== undefined
+    );
+
+    if (shouldRecalculate) {
+      try {
+        // Use the updated transaction date or existing date
+        const transactionDate = new Date(data.date || existingTransaction.date);
+        const targetYear = transactionDate.getFullYear();
+        const targetMonth = transactionDate.getMonth() + 1;
+
+        // If category changed, recalculate both old and new categories
+        if (data.category !== undefined) {
+          // Recalculate old category budget if it existed
+          if (existingTransaction.category) {
+            await this.budgetService.recalculateBudgetForCategory(
+              userId,
+              existingTransaction.category,
+              targetYear,
+              targetMonth
+            );
+          }
+
+          // Recalculate new category budget if it exists
+          if (data.category) {
+            await this.budgetService.recalculateBudgetForCategory(
+              userId,
+              data.category,
+              targetYear,
+              targetMonth
+            );
+          }
+        } else if (existingTransaction.category) {
+          // If other fields changed but category stayed the same, recalculate current category
+          await this.budgetService.recalculateBudgetForCategory(
+            userId,
+            existingTransaction.category,
+            targetYear,
+            targetMonth
+          );
+        }
+
+        // If date changed, also recalculate for the old date period
+        if (data.date && existingTransaction.category) {
+          const oldDate = new Date(existingTransaction.date);
+          const oldTargetYear = oldDate.getFullYear();
+          const oldTargetMonth = oldDate.getMonth() + 1;
+
+          if (oldTargetYear !== targetYear || oldTargetMonth !== targetMonth) {
+            await this.budgetService.recalculateBudgetForCategory(
+              userId,
+              existingTransaction.category,
+              oldTargetYear,
+              oldTargetMonth
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Failed to recalculate budget after updating transaction:', error);
+        // Don't fail the transaction update if budget recalculation fails
+      }
+    }
+
     return {
       ...transaction,
       amount: Number(transaction.amount)
@@ -120,6 +208,25 @@ export class TransactionService {
     await prisma.transaction.delete({
       where: { id: transactionId }
     });
+
+    // If the deleted transaction had a category and was an expense, recalculate budget
+    if (existingTransaction.category && existingTransaction.type === 'expense') {
+      try {
+        const transactionDate = new Date(existingTransaction.date);
+        const targetYear = transactionDate.getFullYear();
+        const targetMonth = transactionDate.getMonth() + 1;
+
+        await this.budgetService.recalculateBudgetForCategory(
+          userId,
+          existingTransaction.category,
+          targetYear,
+          targetMonth
+        );
+      } catch (error) {
+        console.error('Failed to recalculate budget after deleting transaction:', error);
+        // Don't fail the transaction deletion if budget recalculation fails
+      }
+    }
 
     return { success: true };
   }

@@ -366,4 +366,54 @@ export class BudgetService {
 
     return { success: true, recalculated: budgets.length };
   }
+
+  async recalculateBudgetForCategory(userId: string, categoryName: string, targetYear: number, targetMonth: number) {
+    // Find the category by name
+    const category = await prisma.budgetCategory.findFirst({
+      where: { userId, name: categoryName }
+    });
+
+    if (!category) {
+      // Category doesn't exist, nothing to recalculate
+      return null;
+    }
+
+    // Find the budget for this category and period
+    const budget = await prisma.budget.findUnique({
+      where: {
+        userId_categoryId_targetYear_targetMonth: {
+          userId,
+          categoryId: category.id,
+          targetYear,
+          targetMonth
+        }
+      }
+    });
+
+    if (!budget) {
+      // No budget exists for this category and period
+      return null;
+    }
+
+    // Recalculate spent amount
+    const spent = await this.calculateSpent(
+      userId,
+      category.id,
+      targetYear,
+      targetMonth
+    );
+
+    // Update the budget with the new spent amount
+    const updatedBudget = await prisma.budget.update({
+      where: { id: budget.id },
+      data: { spent },
+      include: { category: true }
+    });
+
+    return {
+      ...updatedBudget,
+      amount: Number(updatedBudget.amount),
+      spent: Number(spent)
+    };
+  }
 }
