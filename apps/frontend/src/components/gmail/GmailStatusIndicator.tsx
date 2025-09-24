@@ -48,7 +48,7 @@ export function GmailStatusIndicator({ account, onConnect, onManage, onPause, on
               variant="outline"
               size="sm"
               onClick={onConnect}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-2 text-foreground border-border hover:bg-accent"
             >
               <Mail className="w-4 h-4" />
               <span className="hidden sm:inline">{t('gmail.connect')}</span>
@@ -92,7 +92,7 @@ export function GmailStatusIndicator({ account, onConnect, onManage, onPause, on
               }
               handleToggle();
             }}
-            className={`absolute text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0 flex items-center justify-center ${
+            className={`absolute text-foreground border-border hover:bg-accent w-9 h-9 p-0 flex items-center justify-center ${
               isCollapsing ? 'animate-slide-in-1' : 'animate-slide-out-1'
             }`}
           >
@@ -111,7 +111,7 @@ export function GmailStatusIndicator({ account, onConnect, onManage, onPause, on
               onDisconnect?.(account?.id || '');
               handleToggle();
             }}
-            className={`absolute text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0 flex items-center justify-center ${
+            className={`absolute text-foreground border-border hover:bg-accent w-9 h-9 p-0 flex items-center justify-center ${
               isCollapsing ? 'animate-slide-in-2' : 'animate-slide-out-2'
             }`}
           >
@@ -125,7 +125,7 @@ export function GmailStatusIndicator({ account, onConnect, onManage, onPause, on
         variant="outline"
         size="sm"
         onClick={handleToggle}
-        className="relative z-10 text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0 flex items-center justify-center"
+        className="relative z-10 text-foreground border-border hover:bg-accent w-9 h-9 p-0 flex items-center justify-center"
       >
         {getStatusIcon()}
       </Button>

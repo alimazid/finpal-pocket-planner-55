@@ -1028,10 +1028,10 @@ const Index = () => {
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-white border-white/20 hover:bg-white/10 w-9 h-9 p-0"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-foreground border-border hover:bg-accent w-9 h-9 p-0"
                   >
                     <Menu className="w-4 h-4" />
                   </Button>
