@@ -12,6 +12,7 @@ import categoryRoutes from './routes/category.routes.js';
 import preferencesRoutes from './routes/preferences.routes.js';
 import currencyRoutes from './routes/currency.routes.js';
 import gmailRoutes from './routes/gmail.routes.js';
+import featureFlagRoutes from './routes/featureFlag.routes.js';
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/preferences', preferencesRoutes);
 app.use('/api/currencies', currencyRoutes);
 app.use('/api/gmail', gmailRoutes);
+app.use('/api/feature-flags', featureFlagRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
