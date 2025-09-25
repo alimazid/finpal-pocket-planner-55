@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AuthService } from '../services/auth.service.js';
+import { GoogleAuthService } from '../services/googleAuth.service.js';
 import { validateBody } from '../middleware/validation.middleware.js';
 import { schemas } from '../middleware/validation.middleware.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
@@ -7,6 +8,7 @@ import { AuthenticatedRequest } from '../types/index.js';
 
 const router = Router();
 const authService = new AuthService();
+const googleAuthService = new GoogleAuthService();
 
 // POST /auth/register
 router.post('/register', 
@@ -66,6 +68,75 @@ router.put('/profile',
       res.json({
         success: true,
         data: user
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /auth/google - Handle Google OAuth login
+router.post('/google',
+  async (req, res, next) => {
+    try {
+      const { idToken } = req.body;
+
+      if (!idToken) {
+        return res.status(400).json({
+          success: false,
+          error: 'Google ID token is required'
+        });
+      }
+
+      const result = await googleAuthService.loginWithGoogle(idToken);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// GET /auth/google/url - Generate Google OAuth URL
+router.get('/google/url',
+  async (req, res, next) => {
+    try {
+      const { state } = req.query;
+      const authUrl = googleAuthService.generateAuthUrl(state as string);
+
+      res.json({
+        success: true,
+        data: { authUrl }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// GET /auth/google/callback - Handle OAuth callback (optional)
+router.get('/google/callback',
+  async (req, res, next) => {
+    try {
+      const { code, state } = req.query;
+
+      if (!code) {
+        return res.status(400).json({
+          success: false,
+          error: 'Authorization code is required'
+        });
+      }
+
+      const googleUser = await googleAuthService.exchangeCodeForTokens(code as string);
+
+      // In a real app, you might redirect to frontend with a token
+      res.json({
+        success: true,
+        message: 'OAuth callback received',
+        data: { user: googleUser }
       });
     } catch (error) {
       next(error);

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Loader2, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -89,6 +90,44 @@ const Auth = () => {
     }
   };
 
+  const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      toast({
+        title: t('error'),
+        description: t('unexpectedError'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiClient.loginWithGoogle(credentialResponse.credential);
+
+      if (response.success) {
+        toast({
+          title: t('welcomeBack'),
+          description: response.data?.isNewUser ? t('accountCreatedSuccessfully') : t('signedInSuccessfully'),
+        });
+        navigate("/");
+      } else {
+        toast({
+          title: t('signInError'),
+          description: response.error || t('unexpectedError'),
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: t('error'),
+        description: t('unexpectedError'),
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -145,6 +184,36 @@ const Auth = () => {
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t('signIn')}
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleLogin}
+                    onError={() => {
+                      toast({
+                        title: t('error'),
+                        description: t('unexpectedError'),
+                        variant: "destructive",
+                      });
+                    }}
+                    useOneTap={false}
+                    width="100%"
+                    theme="outline"
+                    size="large"
+                    text="signin_with"
+                    shape="rectangular"
+                  />
+                </div>
               </form>
             </TabsContent>
             
@@ -177,6 +246,36 @@ const Auth = () => {
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t('createAccount')}
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleLogin}
+                    onError={() => {
+                      toast({
+                        title: t('error'),
+                        description: t('unexpectedError'),
+                        variant: "destructive",
+                      });
+                    }}
+                    useOneTap={false}
+                    width="100%"
+                    theme="outline"
+                    size="large"
+                    text="signin_with"
+                    shape="rectangular"
+                  />
+                </div>
               </form>
             </TabsContent>
           </Tabs>

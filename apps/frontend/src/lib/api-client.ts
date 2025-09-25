@@ -256,6 +256,19 @@ class ApiClient {
     return response.data;
   }
 
+  async loginWithGoogle(idToken: string) {
+    const response = await this.client.post<ApiResponse<{ user: User; token: string; isNewUser: boolean }>>('/auth/google', { idToken });
+    if (response.data.success && response.data.data) {
+      this.setToken(response.data.data.token);
+    }
+    return response.data;
+  }
+
+  async getGoogleAuthUrl(state?: string) {
+    const response = await this.client.get<ApiResponse<{ authUrl: string }>>('/auth/google/url', { params: { state } });
+    return response.data;
+  }
+
   // Budget endpoints
   async getBudgets(params: BudgetQueryParams) {
     const response = await this.client.get<ApiResponse<Budget[]>>('/budgets', { params });

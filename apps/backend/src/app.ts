@@ -15,8 +15,12 @@ import gmailRoutes from './routes/gmail.routes.js';
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// Security middleware - configure helmet to allow Google OAuth
+app.use(helmet({
+  crossOriginOpenerPolicy: { policy: "unsafe-none" },
+  crossOriginEmbedderPolicy: false,
+}));
+
 // Configure CORS to accept multiple origins
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
@@ -24,7 +28,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: allowedOrigins,
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 // Rate limiting

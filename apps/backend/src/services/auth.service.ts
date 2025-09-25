@@ -142,15 +142,15 @@ export class AuthService {
     return user;
   }
 
-  private generateToken(user: { id: string; email: string }): string {
+  generateToken(user: { id: string; email: string }): string {
     return jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email 
+      {
+        userId: user.id,
+        email: user.email
       },
       process.env.JWT_SECRET!,
-      { 
-        expiresIn: '30d' 
+      {
+        expiresIn: '30d'
       }
     );
   }
