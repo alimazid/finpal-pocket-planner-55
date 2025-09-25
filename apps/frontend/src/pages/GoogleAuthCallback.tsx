@@ -1,0 +1,94 @@
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api-client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+
+const GoogleAuthCallback = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const handleCallback = async () => {
+      const code = searchParams.get('code');
+      const state = searchParams.get('state');
+      const error = searchParams.get('error');
+
+      if (error) {
+        toast({
+          title: 'Authentication Error',
+          description: error === 'access_denied' ? 'Authentication was cancelled' : 'Authentication failed',
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      if (!code) {
+        toast({
+          title: 'Authentication Error',
+          description: 'No authorization code received',
+          variant: "destructive",
+        });
+        navigate("/auth");
+        return;
+      }
+
+      try {
+        // Send code to backend for token exchange
+        const params = new URLSearchParams({ code });
+        if (state) params.append('state', state);
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google/callback?${params}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.data?.user && data.data?.token) {
+          // Store the token
+          apiClient.setToken(data.data.token);
+
+          toast({
+            title: 'Welcome!',
+            description: 'Successfully signed in with Google',
+          });
+
+          navigate("/");
+        } else {
+          throw new Error(data.error || 'Authentication failed');
+        }
+      } catch (error) {
+        toast({
+          title: 'Authentication Error',
+          description: error instanceof Error ? error.message : 'Authentication failed',
+          variant: "destructive",
+        });
+        navigate("/auth");
+      }
+    };
+
+    handleCallback();
+  }, [searchParams, navigate, toast]);
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Completing Authentication</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground">Please wait while we complete your Google sign-in...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default GoogleAuthCallback;

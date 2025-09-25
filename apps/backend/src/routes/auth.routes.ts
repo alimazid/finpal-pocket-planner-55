@@ -130,13 +130,15 @@ router.get('/google/callback',
         });
       }
 
+      // Exchange code for tokens and get user info
       const googleUser = await googleAuthService.exchangeCodeForTokens(code as string);
 
-      // In a real app, you might redirect to frontend with a token
+      // Use the same login flow as the direct Google OAuth endpoint
+      const result = await googleAuthService.loginWithGoogleUserInfo(googleUser);
+
       res.json({
         success: true,
-        message: 'OAuth callback received',
-        data: { user: googleUser }
+        data: result
       });
     } catch (error) {
       next(error);

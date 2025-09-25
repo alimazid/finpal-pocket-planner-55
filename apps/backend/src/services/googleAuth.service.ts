@@ -69,7 +69,13 @@ export class GoogleAuthService {
    */
   async loginWithGoogle(idToken: string): Promise<GoogleAuthResult> {
     const googleUser = await this.verifyIdToken(idToken);
+    return await this.loginWithGoogleUserInfo(googleUser);
+  }
 
+  /**
+   * Login or register user with Google user info (common logic)
+   */
+  async loginWithGoogleUserInfo(googleUser: GoogleUserInfo): Promise<GoogleAuthResult> {
     if (!googleUser.verified_email) {
       throw new ValidationError('Google email is not verified');
     }
