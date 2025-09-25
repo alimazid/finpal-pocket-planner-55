@@ -31,11 +31,16 @@ async function main() {
   ];
 
   for (const currency of currencies) {
-    await prisma.currency.upsert({
-      where: { code: currency.code },
-      update: currency,
-      create: currency,
+    const existing = await prisma.currency.findUnique({
+      where: { code: currency.code }
     });
+
+    if (!existing) {
+      await prisma.currency.create({ data: currency });
+      console.log(`✅ Created currency: ${currency.code}`);
+    } else {
+      console.log(`⏭️  Currency already exists: ${currency.code}`);
+    }
   }
 
   console.log('💱 Seeding exchange rates...');
@@ -56,24 +61,28 @@ async function main() {
   ];
 
   for (const rate of exchangeRates) {
-    await prisma.exchangeRate.upsert({
+    const existing = await prisma.exchangeRate.findUnique({
       where: {
         fromCurrency_toCurrency: {
           fromCurrency: rate.fromCurrency,
           toCurrency: rate.toCurrency,
-        },
-      },
-      update: {
-        rate: rate.rate,
-        isActive: true,
-      },
-      create: {
-        fromCurrency: rate.fromCurrency,
-        toCurrency: rate.toCurrency,
-        rate: rate.rate,
-        isActive: true,
-      },
+        }
+      }
     });
+
+    if (!existing) {
+      await prisma.exchangeRate.create({
+        data: {
+          fromCurrency: rate.fromCurrency,
+          toCurrency: rate.toCurrency,
+          rate: rate.rate,
+          isActive: true,
+        }
+      });
+      console.log(`✅ Created rate: ${rate.fromCurrency} → ${rate.toCurrency}`);
+    } else {
+      console.log(`⏭️  Rate already exists: ${rate.fromCurrency} → ${rate.toCurrency}`);
+    }
   }
 
   console.log('🚩 Seeding feature flags...');
@@ -131,15 +140,16 @@ async function main() {
   ];
 
   for (const flag of featureFlags) {
-    await prisma.featureFlag.upsert({
-      where: { key: flag.key },
-      update: {
-        name: flag.name,
-        description: flag.description,
-        isEnabled: flag.isEnabled,
-      },
-      create: flag,
+    const existing = await prisma.featureFlag.findUnique({
+      where: { key: flag.key }
     });
+
+    if (!existing) {
+      await prisma.featureFlag.create({ data: flag });
+      console.log(`✅ Created feature flag: ${flag.key}`);
+    } else {
+      console.log(`⏭️  Feature flag already exists: ${flag.key}`);
+    }
   }
 
   console.log('✅ Seeding completed successfully!');
