@@ -491,6 +491,18 @@ const translations: Translations = {
     english: 'Sign in to your account or create a new one',
     spanish: 'Inicia sesión en tu cuenta o crea una nueva'
   },
+  continueWithGoogle: {
+    english: 'Continue with Google',
+    spanish: 'Continuar con Google'
+  },
+  orContinueWith: {
+    english: 'Or continue with',
+    spanish: 'O continuar con'
+  },
+  orUseEmail: {
+    english: 'Or use email',
+    spanish: 'O usar correo electrónico'
+  },
 
   // Loading and status
   loading: {
