@@ -1,7 +1,7 @@
 {
-  "name": "@finpal/backend",
+  "name": "@pocket-penny/backend",
   "version": "1.0.0",
-  "description": "FinPal Pocket Planner Backend API",
+  "description": "Pocket Penny Backend API",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
@@ -56,6 +56,6 @@
     "express",
     "prisma"
   ],
-  "author": "FinPal Team",
+  "author": "Pocket Penny",
   "license": "MIT"
 }
