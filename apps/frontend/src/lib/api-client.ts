@@ -483,6 +483,41 @@ class ApiClient {
     const response = await this.client.delete<ApiResponse<{ success: boolean }>>(`/gmail/accounts/${accountId}`);
     return response.data;
   }
+
+  // Feature flag endpoints
+  async getFeatureFlags() {
+    const response = await this.client.get<ApiResponse<Record<string, boolean>>>('/feature-flags');
+    return response.data;
+  }
+
+  async getAllFeatureFlags() {
+    const response = await this.client.get<ApiResponse<Array<{
+      key: string;
+      name: string;
+      description?: string;
+      isEnabled: boolean;
+    }>>>('/feature-flags/admin');
+    return response.data;
+  }
+
+  async updateFeatureFlag(key: string, isEnabled: boolean) {
+    const response = await this.client.put<ApiResponse<{
+      key: string;
+      name: string;
+      description?: string;
+      isEnabled: boolean;
+    }>>(`/feature-flags/${key}`, { isEnabled });
+    return response.data;
+  }
+
+  async bulkUpdateFeatureFlags(updates: Array<{ key: string; isEnabled: boolean }>) {
+    const response = await this.client.post<ApiResponse<Array<{
+      key: string;
+      name: string;
+      isEnabled: boolean;
+    }>>>('/feature-flags/bulk', { updates });
+    return response.data;
+  }
 }
 
 // Create and export a singleton instance

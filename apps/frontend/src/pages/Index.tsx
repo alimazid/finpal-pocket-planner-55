@@ -28,6 +28,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { formatCurrency } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useBudgetPeriodTemplate } from "@/hooks/useBudgetPeriodTemplate";
+import { useMenuFeatureFlags } from "@/hooks/useFeatureFlags";
 import { addCalculatedPeriods, getCurrentTargetMonth, calculatePeriodDates, getNextPeriod, getPreviousPeriod } from "@/lib/periodCalculations";
 import type { CalculatedBudget } from "@/lib/periodCalculations";
 import { exportAllFinancialData, downloadJSON } from "@/lib/exportFinancialData";
@@ -91,6 +92,18 @@ const Index = () => {
   const [isBudgetWizardOpen, setIsBudgetWizardOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
+
+  // Feature flags hook
+  const {
+    canShowClearTransactions,
+    canShowClearBudgets,
+    canShowExportData,
+    canShowPeriodSelection,
+    canShowGmailIntegration,
+    canShowThemeToggle,
+    canShowLanguageSelection,
+    canShowSignOut
+  } = useMenuFeatureFlags();
 
   // Fetch Gmail accounts
   const { data: gmailAccounts = [], isLoading: gmailAccountsLoading } = useQuery({
@@ -1037,17 +1050,18 @@ const Index = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem 
-                        onSelect={(e) => e.preventDefault()}
-                        className="cursor-pointer"
-                        disabled={transactions.length === 0}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {t('clearAllTransactions')}
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
+                  {canShowClearTransactions() && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
+                          className="cursor-pointer"
+                          disabled={transactions.length === 0}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          {t('clearAllTransactions')}
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t('clearAllTransactions')}</AlertDialogTitle>
@@ -1065,9 +1079,11 @@ const Index = () => {
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
-                  </AlertDialog>
+                    </AlertDialog>
+                  )}
 
-                  <AlertDialog>
+                  {canShowClearBudgets() && (
+                    <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <DropdownMenuItem 
                         onSelect={(e) => e.preventDefault()}
@@ -1095,65 +1111,75 @@ const Index = () => {
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
-                  </AlertDialog>
+                    </AlertDialog>
+                  )}
 
-                  <DropdownMenuSeparator />
-                  
-                  <DropdownMenuItem
-                    onClick={handleExportData}
-                    className="cursor-pointer"
-                    disabled={!allBudgets.length && !transactions.length}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    {t('exportAllData')}
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
+                  {(canShowClearTransactions() || canShowClearBudgets()) && canShowExportData() && <DropdownMenuSeparator />}
 
-                   <DropdownMenuItem
-                     onClick={() => setIsPeriodSelectionOpen(true)}
-                     className="cursor-pointer"
-                   >
-                     <Settings className="w-4 h-4 mr-2" />
-                     {t('periodSelection')}
-                   </DropdownMenuItem>
+                  {canShowExportData() && (
+                    <DropdownMenuItem
+                      onClick={handleExportData}
+                      className="cursor-pointer"
+                      disabled={!allBudgets.length && !transactions.length}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {t('exportAllData')}
+                    </DropdownMenuItem>
+                  )}
 
-                   <DropdownMenuItem
-                     onClick={() => navigate('/gmail-settings')}
-                     className="cursor-pointer"
-                   >
-                     <Mail className="w-4 h-4 mr-2" />
-                     {t('gmailIntegration')}
-                   </DropdownMenuItem>
+                  {canShowExportData() && (canShowPeriodSelection() || canShowGmailIntegration()) && <DropdownMenuSeparator />}
 
-                   <DropdownMenuSeparator />
+                  {canShowPeriodSelection() && (
+                    <DropdownMenuItem
+                      onClick={() => setIsPeriodSelectionOpen(true)}
+                      className="cursor-pointer"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      {t('periodSelection')}
+                    </DropdownMenuItem>
+                  )}
 
-                   <DropdownMenuItem
-                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                     className="cursor-pointer"
-                   >
-                     {theme === "dark" ? (
-                       <Sun className="w-4 h-4 mr-2" />
-                     ) : (
-                       <Moon className="w-4 h-4 mr-2" />
-                     )}
-                     {theme === "dark" ? t('lightTheme') : t('darkTheme')}
-                   </DropdownMenuItem>
+                  {canShowGmailIntegration() && (
+                    <DropdownMenuItem
+                      onClick={() => navigate('/gmail-settings')}
+                      className="cursor-pointer"
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      {t('gmailIntegration')}
+                    </DropdownMenuItem>
+                  )}
 
-                   <Dialog open={isTranslationOpen} onOpenChange={setIsTranslationOpen}>
-                     <DialogTrigger asChild>
-                       <DropdownMenuItem
-                         onSelect={(e) => e.preventDefault()}
-                         className="cursor-pointer"
-                         onClick={() => {
-                           setTempSelectedLanguage(selectedLanguage);
-                           setIsTranslationOpen(true);
-                         }}
-                       >
-                         <Languages className="w-4 h-4 mr-2" />
-                         {t('selectLanguage')}
-                       </DropdownMenuItem>
-                     </DialogTrigger>
+                   {(canShowPeriodSelection() || canShowGmailIntegration()) && (canShowThemeToggle() || canShowLanguageSelection()) && <DropdownMenuSeparator />}
+
+                   {canShowThemeToggle() && (
+                     <DropdownMenuItem
+                       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                       className="cursor-pointer"
+                     >
+                       {theme === "dark" ? (
+                         <Sun className="w-4 h-4 mr-2" />
+                       ) : (
+                         <Moon className="w-4 h-4 mr-2" />
+                       )}
+                       {theme === "dark" ? t('lightTheme') : t('darkTheme')}
+                     </DropdownMenuItem>
+                   )}
+
+                   {canShowLanguageSelection() && (
+                     <Dialog open={isTranslationOpen} onOpenChange={setIsTranslationOpen}>
+                       <DialogTrigger asChild>
+                         <DropdownMenuItem
+                           onSelect={(e) => e.preventDefault()}
+                           className="cursor-pointer"
+                           onClick={() => {
+                             setTempSelectedLanguage(selectedLanguage);
+                             setIsTranslationOpen(true);
+                           }}
+                         >
+                           <Languages className="w-4 h-4 mr-2" />
+                           {t('selectLanguage')}
+                         </DropdownMenuItem>
+                       </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader>
                         <DialogTitle>{t('selectLanguage')}</DialogTitle>
@@ -1189,13 +1215,16 @@ const Index = () => {
                       </div>
                     </DialogContent>
                   </Dialog>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    {t('signOut')}
-                  </DropdownMenuItem>
+                  )}
+
+                  {(canShowThemeToggle() || canShowLanguageSelection()) && canShowSignOut() && <DropdownMenuSeparator />}
+
+                  {canShowSignOut() && (
+                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {t('signOut')}
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
