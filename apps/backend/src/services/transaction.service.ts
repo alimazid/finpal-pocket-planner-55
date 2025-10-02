@@ -71,7 +71,7 @@ export class TransactionService {
         amount: data.amount,
         description: data.description,
         category: data.category,
-        date: data.date,
+        date: new Date(data.date),
         type: data.type,
         currency: data.currency
       }
@@ -117,7 +117,7 @@ export class TransactionService {
         ...(data.amount !== undefined && { amount: data.amount }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.category !== undefined && { category: data.category }),
-        ...(data.date !== undefined && { date: data.date }),
+        ...(data.date !== undefined && { date: new Date(data.date) }),
         ...(data.type !== undefined && { type: data.type }),
         ...(data.currency !== undefined && { currency: data.currency }),
       }
