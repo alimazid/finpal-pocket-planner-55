@@ -197,7 +197,7 @@ export class BudgetService {
 
   async createMissingBudgets(userId: string, targetYear: number, targetMonth: number) {
     // Import getPreviousPeriod
-    const { getPreviousPeriod } = await import('../utils/periodCalculations');
+    const { getPreviousPeriod } = await import('../utils/periodCalculations.js');
     
     // Get previous period
     const previousPeriod = getPreviousPeriod(targetYear, targetMonth);
