@@ -37,7 +37,6 @@ interface UncategorizedTransactionsProps {
     amount: number;
     currency: string;
   }) => void;
-  availableCurrencies?: string[];
   language: 'english' | 'spanish';
   defaultCurrency?: string;
 }
@@ -49,7 +48,6 @@ export function UncategorizedTransactions({
   onEditTransaction,
   onDeleteTransaction,
   onCreateBudgetAndAssign,
-  availableCurrencies,
   language,
   defaultCurrency
 }: UncategorizedTransactionsProps) {
@@ -200,48 +198,50 @@ export function UncategorizedTransactions({
               {formatDate(transaction.date)}
             </p>
           </div>
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-            <div className="text-left sm:text-right">
+          <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+            <div className="text-left sm:text-right flex-1 sm:flex-initial">
               <p className="font-semibold text-destructive">
                 -{formatCurrency(transaction.amount, transaction.currency)}
               </p>
             </div>
-            {onEditTransaction && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground flex-shrink-0"
-                onClick={() => handleEditClick(transaction)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            {onDeleteTransaction && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive flex-shrink-0">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('deleteTransactionConfirm')} "{transaction.description}" ({formatCurrency(transaction.amount, transaction.currency)})? {t('actionCannotBeUndoneSimple')}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => onDeleteTransaction(transaction.id)}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      {t('delete')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {onEditTransaction && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => handleEditClick(transaction)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              {onDeleteTransaction && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('deleteTransactionConfirm')} "{transaction.description}" ({formatCurrency(transaction.amount, transaction.currency)})? {t('actionCannotBeUndoneSimple')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDeleteTransaction(transaction.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {t('delete')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
         </div>
       ))}
@@ -263,7 +263,6 @@ export function UncategorizedTransactions({
         transaction={transactionToEdit}
         onSave={handleEditSave}
         availableCategories={availableCategories}
-        availableCurrencies={availableCurrencies}
         language={language}
       />
     </div>

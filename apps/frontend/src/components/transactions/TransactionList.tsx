@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, DollarSign, Trash2, Check, X, Plus, Edit } from "lucide-react";
+import { Calendar, DollarSign, Trash2, Plus, Edit } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
@@ -27,7 +27,6 @@ interface Transaction {
 interface TransactionListProps {
   transactions: Transaction[];
   onDeleteTransaction?: (id: string) => void;
-  onUpdateTransaction?: (id: string, newAmount: number) => void;
   onUpdateTransactionCategory?: (id: string, newCategory: string) => void;
   onEditTransaction?: (id: string, data: {
     amount?: number;
@@ -43,15 +42,12 @@ interface TransactionListProps {
     currency: string;
   }) => void;
   availableCategories?: string[];
-  availableCurrencies?: string[];
   language: 'english' | 'spanish';
   defaultCurrency?: string;
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onEditTransaction, onCreateBudgetAndAssign, availableCategories, availableCurrencies, language, defaultCurrency }: TransactionListProps) {
-  const [editingId, setEditingId] = useState<string | null>(null);
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransactionCategory, onEditTransaction, onCreateBudgetAndAssign, availableCategories, language, defaultCurrency }: TransactionListProps) {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [editAmount, setEditAmount] = useState("");
   const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
@@ -80,28 +76,6 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
-  const handleAmountEdit = (transaction: Transaction) => {
-    setEditingId(transaction.id);
-    setEditAmount(transaction.amount.toString());
-  };
-
-  const handleAmountSave = (transactionId: string) => {
-    const newAmount = parseFloat(editAmount);
-    if (!isNaN(newAmount) && newAmount > 0 && onUpdateTransaction) {
-      onUpdateTransaction(transactionId, newAmount);
-    } else {
-      const transaction = transactions.find(t => t.id === transactionId);
-      if (transaction) {
-        setEditAmount(transaction.amount.toString());
-      }
-    }
-    setEditingId(null);
-  };
-
-  const handleAmountCancel = () => {
-    setEditingId(null);
-    setEditAmount("");
-  };
 
   const handleCategoryEdit = (transactionId: string) => {
     setEditingCategoryId(transactionId);
@@ -250,78 +224,55 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                 {formatDate(transaction.date)}
               </p>
             </div>
-            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-              <div className="text-left sm:text-right">
-                {editingId === transaction.id ? (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={editAmount}
-                      onChange={(e) => setEditAmount(e.target.value)}
-                      className="w-24 h-8 text-right"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAmountSave(transaction.id);
-                        if (e.key === 'Escape') handleAmountCancel();
-                      }}
-                      autoFocus
-                    />
-                    <Button size="sm" variant="ghost" onClick={() => handleAmountSave(transaction.id)} className="h-8 w-8 p-0">
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={handleAmountCancel} className="h-8 w-8 p-0">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <p
-                    className={`font-semibold cursor-pointer hover:text-primary transition-colors ${
-                      transaction.type === 'expense' ? 'text-destructive' : 'text-success'
-                    }`}
-                    onClick={() => onUpdateTransaction && handleAmountEdit(transaction)}
+            <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
+              <div className="text-left sm:text-right flex-1 sm:flex-initial">
+                <p
+                  className={`font-semibold ${
+                    transaction.type === 'expense' ? 'text-destructive' : 'text-success'
+                  }`}
+                >
+                  {transaction.type === 'expense' ? '-' : '+'}
+                  {formatCurrency(transaction.amount, transaction.currency)}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {onEditTransaction && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => handleEditClick(transaction)}
                   >
-                    {transaction.type === 'expense' ? '-' : '+'}
-                    {formatCurrency(transaction.amount, transaction.currency)}
-                  </p>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                )}
+                {onDeleteTransaction && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('deleteTransactionConfirm')} "{transaction.description}" ({formatCurrency(transaction.amount, transaction.currency)})? {t('actionCannotBeUndoneSimple')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onDeleteTransaction(transaction.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {t('delete')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
-              {onEditTransaction && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground flex-shrink-0"
-                  onClick={() => handleEditClick(transaction)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              )}
-              {onDeleteTransaction && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive flex-shrink-0">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{t('deleteTransaction')}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {t('deleteTransactionConfirm')} "{transaction.description}" ({formatCurrency(transaction.amount, transaction.currency)})? {t('actionCannotBeUndoneSimple')}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => onDeleteTransaction(transaction.id)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        {t('delete')}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
             </div>
           </div>
         ))
@@ -344,7 +295,6 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
         transaction={transactionToEdit}
         onSave={handleEditSave}
         availableCategories={availableCategories}
-        availableCurrencies={availableCurrencies}
         language={language}
       />
     </div>

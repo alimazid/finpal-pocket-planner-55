@@ -1273,7 +1273,6 @@ const Index = () => {
           onEditTransaction={(id, data) => editTransactionMutation.mutate({ transactionId: id, data })}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
           onCreateBudgetAndAssign={handleCreateBudgetAndAssign}
-          availableCurrencies={availableCurrencies.map(c => c.code)}
           language={selectedLanguage as 'english' | 'spanish'}
           defaultCurrency={userPreferences?.defaultCurrency}
         />
@@ -1360,7 +1359,6 @@ const Index = () => {
           onAddBudget={(category, amount, currency) => addBudgetMutation.mutate({ category, amount, currency })}
           onDeleteBudget={(id) => deleteBudgetMutation.mutate(id)}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
-          onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
           onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
           onUpdateBudgetCategory={(id, category) => updateCategoryMutation.mutate({ budgetId: id, newCategory: category })}
           onUpdateBudgetAmount={(id, amount) => updateBudgetMutation.mutate({ budgetId: id, amount })}
@@ -1393,12 +1391,10 @@ const Index = () => {
           <TransactionList
             transactions={transactions}
             onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
-            onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
             onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
             onEditTransaction={(id, data) => editTransactionMutation.mutate({ transactionId: id, data })}
             onCreateBudgetAndAssign={handleCreateBudgetAndAssign}
             availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
-            availableCurrencies={availableCurrencies.map(c => c.code)}
             language={selectedLanguage as 'english' | 'spanish'}
             defaultCurrency={userPreferences?.defaultCurrency}
           />

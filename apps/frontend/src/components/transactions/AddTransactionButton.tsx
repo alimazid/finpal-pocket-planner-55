@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
-import { ExpenseForm } from "@/components/expenses/ExpenseForm";
+import { TransactionForm } from "@/components/transactions/TransactionForm";
 
 interface AddTransactionButtonProps {
   onAddExpense: (expense: {
@@ -61,10 +61,10 @@ export function AddTransactionButton({
           </DialogDescription>
         </DialogHeader>
 
-        <ExpenseForm
-          onAddExpense={handleAddExpense}
+        <TransactionForm
+          mode="create"
+          onSubmit={handleAddExpense}
           availableCategories={availableCategories}
-          showCard={false}
           language={language}
           defaultCurrency={defaultCurrency}
         />
