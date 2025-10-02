@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, DollarSign, Trash2, Check, X, Plus } from "lucide-react";
+import { Calendar, DollarSign, Trash2, Check, X, Plus, Edit } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { NewBudgetModal } from "@/components/budget/NewBudgetModal";
+import { EditTransactionDialog } from "@/components/transactions/EditTransactionDialog";
 
 interface Transaction {
   id: string;
@@ -28,22 +29,33 @@ interface TransactionListProps {
   onDeleteTransaction?: (id: string) => void;
   onUpdateTransaction?: (id: string, newAmount: number) => void;
   onUpdateTransactionCategory?: (id: string, newCategory: string) => void;
+  onEditTransaction?: (id: string, data: {
+    amount?: number;
+    description?: string;
+    category?: string;
+    date?: string;
+    type?: 'expense' | 'income';
+    currency?: string;
+  }) => void;
   onCreateBudgetAndAssign?: (transactionId: string, budgetData: {
     category: string;
     amount: number;
     currency: string;
   }) => void;
   availableCategories?: string[];
+  availableCurrencies?: string[];
   language: 'english' | 'spanish';
   defaultCurrency?: string;
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onCreateBudgetAndAssign, availableCategories, language, defaultCurrency }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransaction, onUpdateTransactionCategory, onEditTransaction, onCreateBudgetAndAssign, availableCategories, availableCurrencies, language, defaultCurrency }: TransactionListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
   const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
   const { t, formatDate: formatTranslatedDate } = useTranslation(language);
 
   const formatDate = (dateString: string) => {
@@ -137,6 +149,24 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
       onCreateBudgetAndAssign(selectedTransactionId, budgetData);
       setIsNewBudgetModalOpen(false);
       setSelectedTransactionId(null);
+    }
+  };
+
+  const handleEditClick = (transaction: Transaction) => {
+    setTransactionToEdit(transaction);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSave = (id: string, data: {
+    amount?: number;
+    description?: string;
+    category?: string;
+    date?: string;
+    type?: 'expense' | 'income';
+    currency?: string;
+  }) => {
+    if (onEditTransaction) {
+      onEditTransaction(id, data);
     }
   };
 
@@ -245,7 +275,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     </Button>
                   </div>
                 ) : (
-                  <p 
+                  <p
                     className={`font-semibold cursor-pointer hover:text-primary transition-colors ${
                       transaction.type === 'expense' ? 'text-destructive' : 'text-success'
                     }`}
@@ -256,6 +286,16 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                   </p>
                 )}
               </div>
+              {onEditTransaction && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                  onClick={() => handleEditClick(transaction)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
               {onDeleteTransaction && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -272,8 +312,8 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={() => onDeleteTransaction(transaction.id)} 
+                      <AlertDialogAction
+                        onClick={() => onDeleteTransaction(transaction.id)}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         {t('delete')}
@@ -295,6 +335,17 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
         existingCategories={availableCategories || []}
         language={language}
         defaultCurrency={defaultCurrency}
+      />
+
+      {/* Edit Transaction Dialog */}
+      <EditTransactionDialog
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        transaction={transactionToEdit}
+        onSave={handleEditSave}
+        availableCategories={availableCategories}
+        availableCurrencies={availableCurrencies}
+        language={language}
       />
     </div>
   );

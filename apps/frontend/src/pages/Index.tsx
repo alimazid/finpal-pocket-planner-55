@@ -616,11 +616,11 @@ const Index = () => {
   const updateTransactionCategoryMutation = useMutation({
     mutationFn: async ({ transactionId, category }: { transactionId: string; category: string | null }) => {
       const response = await apiClient.updateTransaction(transactionId, { category });
-      
+
       if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to update transaction category');
       }
-      
+
       return response.data;
     },
     onSuccess: (updatedTransaction) => {
@@ -630,6 +630,38 @@ const Index = () => {
       toast({
         title: t('categoryUpdated'),
         description: `${t('categoryUpdatedTo')} ${updatedTransaction.category}`,
+      });
+    },
+  });
+
+  // Edit transaction mutation (full update)
+  const editTransactionMutation = useMutation({
+    mutationFn: async ({ transactionId, data }: {
+      transactionId: string;
+      data: {
+        amount?: number;
+        description?: string;
+        category?: string;
+        date?: string;
+        type?: 'expense' | 'income';
+        currency?: string;
+      }
+    }) => {
+      const response = await apiClient.updateTransaction(transactionId, data);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to update transaction');
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      toast({
+        title: t('transactionUpdated'),
+        description: t('transactionUpdatedSuccess'),
       });
     },
   });
@@ -1238,8 +1270,10 @@ const Index = () => {
           transactions={transactions}
           availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
           onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category })}
+          onEditTransaction={(id, data) => editTransactionMutation.mutate({ transactionId: id, data })}
           onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
           onCreateBudgetAndAssign={handleCreateBudgetAndAssign}
+          availableCurrencies={availableCurrencies.map(c => c.code)}
           language={selectedLanguage as 'english' | 'spanish'}
           defaultCurrency={userPreferences?.defaultCurrency}
         />
@@ -1361,8 +1395,10 @@ const Index = () => {
             onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
             onUpdateTransaction={(id, amount) => updateTransactionMutation.mutate({ transactionId: id, amount })}
             onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
+            onEditTransaction={(id, data) => editTransactionMutation.mutate({ transactionId: id, data })}
             onCreateBudgetAndAssign={handleCreateBudgetAndAssign}
             availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
+            availableCurrencies={availableCurrencies.map(c => c.code)}
             language={selectedLanguage as 'english' | 'spanish'}
             defaultCurrency={userPreferences?.defaultCurrency}
           />

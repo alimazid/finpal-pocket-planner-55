@@ -2,11 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Trash2, Plus } from "lucide-react";
+import { AlertTriangle, Trash2, Plus, Edit } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { NewBudgetModal } from "@/components/budget/NewBudgetModal";
+import { EditTransactionDialog } from "@/components/transactions/EditTransactionDialog";
 
 interface Transaction {
   id: string;
@@ -22,12 +23,21 @@ interface UncategorizedTransactionsProps {
   transactions: Transaction[];
   availableCategories: string[];
   onUpdateTransactionCategory: (id: string, category: string) => void;
+  onEditTransaction?: (id: string, data: {
+    amount?: number;
+    description?: string;
+    category?: string;
+    date?: string;
+    type?: 'expense' | 'income';
+    currency?: string;
+  }) => void;
   onDeleteTransaction?: (id: string) => void;
   onCreateBudgetAndAssign?: (transactionId: string, budgetData: {
     category: string;
     amount: number;
     currency: string;
   }) => void;
+  availableCurrencies?: string[];
   language: 'english' | 'spanish';
   defaultCurrency?: string;
 }
@@ -36,14 +46,18 @@ export function UncategorizedTransactions({
   transactions,
   availableCategories,
   onUpdateTransactionCategory,
+  onEditTransaction,
   onDeleteTransaction,
   onCreateBudgetAndAssign,
+  availableCurrencies,
   language,
   defaultCurrency
 }: UncategorizedTransactionsProps) {
   const [openSelects, setOpenSelects] = useState<Record<string, boolean>>({});
   const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
   const { t } = useTranslation(language);
 
   // Filter to only show uncategorized transactions
@@ -114,6 +128,24 @@ export function UncategorizedTransactions({
     }
   };
 
+  const handleEditClick = (transaction: Transaction) => {
+    setTransactionToEdit(transaction);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSave = (id: string, data: {
+    amount?: number;
+    description?: string;
+    category?: string;
+    date?: string;
+    type?: 'expense' | 'income';
+    currency?: string;
+  }) => {
+    if (onEditTransaction) {
+      onEditTransaction(id, data);
+    }
+  };
+
   return (
     <div className="space-y-2">
       {uncategorizedTransactions.map((transaction) => (
@@ -174,6 +206,16 @@ export function UncategorizedTransactions({
                 -{formatCurrency(transaction.amount, transaction.currency)}
               </p>
             </div>
+            {onEditTransaction && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                onClick={() => handleEditClick(transaction)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
             {onDeleteTransaction && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -190,8 +232,8 @@ export function UncategorizedTransactions({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={() => onDeleteTransaction(transaction.id)} 
+                    <AlertDialogAction
+                      onClick={() => onDeleteTransaction(transaction.id)}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
                       {t('delete')}
@@ -212,6 +254,17 @@ export function UncategorizedTransactions({
         existingCategories={availableCategories || []}
         language={language}
         defaultCurrency={defaultCurrency}
+      />
+
+      {/* Edit Transaction Dialog */}
+      <EditTransactionDialog
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        transaction={transactionToEdit}
+        onSave={handleEditSave}
+        availableCategories={availableCategories}
+        availableCurrencies={availableCurrencies}
+        language={language}
       />
     </div>
   );

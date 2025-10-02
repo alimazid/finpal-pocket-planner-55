@@ -553,6 +553,26 @@ const translations: Translations = {
     english: 'Transaction Updated',
     spanish: 'Transacción Actualizada'
   },
+  transactionUpdatedSuccess: {
+    english: 'Transaction has been successfully updated',
+    spanish: 'La transacción se ha actualizado exitosamente'
+  },
+  editTransaction: {
+    english: 'Edit Transaction',
+    spanish: 'Editar Transacción'
+  },
+  editTransactionDescription: {
+    english: 'Make changes to your transaction details',
+    spanish: 'Realiza cambios en los detalles de tu transacción'
+  },
+  enterDescription: {
+    english: 'Enter description',
+    spanish: 'Ingresa una descripción'
+  },
+  save: {
+    english: 'Save',
+    spanish: 'Guardar'
+  },
   categoryUpdated: {
     english: 'Category Updated',
     spanish: 'Categoría Actualizada'
