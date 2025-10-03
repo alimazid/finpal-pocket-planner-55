@@ -9,6 +9,8 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import GmailSettings from "./pages/GmailSettings";
 import GoogleAuthCallback from "./pages/GoogleAuthCallback";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { GmailOAuthCallback } from "./components/gmail";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,8 @@ const App = () => (
             <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
             <Route path="/gmail-settings" element={<GmailSettings />} />
             <Route path="/gmail/callback" element={<GmailOAuthCallback />} />
+            <Route path="/policy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
