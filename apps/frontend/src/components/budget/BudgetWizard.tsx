@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { usePostHog } from 'posthog-js/react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +46,8 @@ export function BudgetWizard({
   defaultCurrency
 }: BudgetWizardProps) {
   const { t } = useTranslation(language);
+  const posthog = usePostHog();
+  const wizardStartTime = useRef<number | null>(null);
   const [currentStep, setCurrentStep] = useState<WizardStep>('welcome');
   const [wizardMode, setWizardMode] = useState<WizardMode | null>(null);
   const [profile, setProfile] = useState<UserProfile>(() => ({
@@ -62,10 +65,69 @@ export function BudgetWizard({
   const currentStepIndex = steps.indexOf(currentStep);
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
+  // Track wizard opened
+  useEffect(() => {
+    if (open && !wizardStartTime.current) {
+      wizardStartTime.current = Date.now();
+      posthog?.capture('wizard_opened', {
+        mode: wizardMode || 'not_selected',
+      });
+    }
+  }, [open, wizardMode, posthog]);
+
   const handleNext = () => {
     const nextStepIndex = currentStepIndex + 1;
     if (nextStepIndex < steps.length) {
       const nextStep = steps[nextStepIndex];
+
+      // Track step completion
+      posthog?.capture('wizard_step_completed', {
+        step_name: currentStep,
+        step_index: currentStepIndex,
+        mode: wizardMode || 'guided',
+      });
+
+      // Track specific step data
+      if (currentStep === 'income') {
+        const incomeRange = profile.monthlyIncome < 2000 ? 'low' :
+                           profile.monthlyIncome < 5000 ? 'medium' :
+                           profile.monthlyIncome < 10000 ? 'high' : 'very_high';
+        posthog?.capture('wizard_income_entered', {
+          currency: profile.currency,
+          has_income: profile.monthlyIncome > 0,
+          income_range: incomeRange,
+        });
+      }
+
+      if (currentStep === 'savings') {
+        posthog?.capture('wizard_savings_configured', {
+          input_type: savingsInputType,
+          savings_percentage_range: profile.savingsGoalPercentage < 10 ? 'low' :
+                                   profile.savingsGoalPercentage < 20 ? 'medium' : 'high',
+        });
+      }
+
+      if (currentStep === 'living') {
+        posthog?.capture('wizard_living_configured', {
+          living_situation: profile.livingSituation,
+          housing_type: profile.housingType,
+          location: profile.location,
+        });
+      }
+
+      if (currentStep === 'lifestyle') {
+        posthog?.capture('wizard_lifestyle_selected', {
+          lifestyle_count: profile.lifestyle.length,
+          lifestyle_options: profile.lifestyle,
+        });
+      }
+
+      if (currentStep === 'period') {
+        posthog?.capture('wizard_period_configured', {
+          period_type: profile.periodType,
+          specific_day: profile.periodType === 'specific_day' ? profile.specificDay : undefined,
+        });
+      }
 
       // Calculate initial savings goal when moving to savings step
       if (nextStep === 'savings' && profile.monthlyIncome > 0) {
@@ -81,6 +143,13 @@ export function BudgetWizard({
         const suggestions = calculateSuggestedBudgets(profile, language);
         setSuggestedBudgets(suggestions);
         setEditedBudgets({});
+
+        // Track suggestions generated
+        const totalSuggested = suggestions.reduce((sum, b) => sum + b.amount, 0);
+        posthog?.capture('wizard_suggestions_generated', {
+          suggestion_count: suggestions.length,
+          total_suggested_amount: totalSuggested,
+        });
       }
 
       setCurrentStep(nextStep);
@@ -90,7 +159,15 @@ export function BudgetWizard({
   const handleBack = () => {
     const prevStepIndex = currentStepIndex - 1;
     if (prevStepIndex >= 0) {
-      setCurrentStep(steps[prevStepIndex]);
+      const prevStep = steps[prevStepIndex];
+
+      // Track step back navigation
+      posthog?.capture('wizard_step_back', {
+        from_step: currentStep,
+        to_step: prevStep,
+      });
+
+      setCurrentStep(prevStep);
     }
   };
 
@@ -104,6 +181,17 @@ export function BudgetWizard({
       }));
 
       await onCreateBudgets(budgetsToCreate, profile);
+
+      // Track wizard completion
+      const duration = wizardStartTime.current ? Date.now() - wizardStartTime.current : 0;
+      const totalAmount = budgetsToCreate.reduce((sum, b) => sum + b.amount, 0);
+      posthog?.capture('wizard_completed', {
+        mode: 'guided',
+        budget_count: budgetsToCreate.length,
+        total_amount: totalAmount,
+        duration_seconds: Math.round(duration / 1000),
+      });
+
       setCurrentStep('success');
     } catch (error) {
       console.error('Error creating budgets:', error);
@@ -113,6 +201,14 @@ export function BudgetWizard({
   };
 
   const handleClose = () => {
+    // Track wizard abandonment if not on success step
+    if (currentStep !== 'success' && wizardStartTime.current) {
+      posthog?.capture('wizard_closed', {
+        current_step: currentStep,
+        abandoned: true,
+      });
+    }
+
     setCurrentStep('welcome');
     setWizardMode(null);
     setProfile({
@@ -121,6 +217,7 @@ export function BudgetWizard({
     });
     setSuggestedBudgets([]);
     setEditedBudgets({});
+    wizardStartTime.current = null;
     onOpenChange(false);
   };
 
@@ -138,6 +235,17 @@ export function BudgetWizard({
       };
 
       await onCreateBudgets(quickEntryBudgets, quickProfile);
+
+      // Track quick setup completion
+      const duration = wizardStartTime.current ? Date.now() - wizardStartTime.current : 0;
+      const totalAmount = quickEntryBudgets.reduce((sum, b) => sum + b.amount, 0);
+      posthog?.capture('wizard_completed', {
+        mode: 'quick',
+        budget_count: quickEntryBudgets.length,
+        total_amount: totalAmount,
+        duration_seconds: Math.round(duration / 1000),
+      });
+
       setCurrentStep('success');
     } catch (error) {
       console.error('Error creating budgets:', error);
@@ -171,6 +279,22 @@ export function BudgetWizard({
   };
 
   const updateBudgetAmount = (categoryName: string, amount: number) => {
+    const originalBudget = suggestedBudgets.find(b => b.categoryName === categoryName);
+    if (originalBudget) {
+      const originalAmount = originalBudget.amount;
+      const adjustmentPercentage = originalAmount > 0
+        ? Math.round(((amount - originalAmount) / originalAmount) * 100)
+        : 0;
+
+      // Track budget adjustment
+      posthog?.capture('wizard_budget_adjusted', {
+        category: categoryName,
+        original_amount: originalAmount,
+        new_amount: amount,
+        adjustment_percentage: adjustmentPercentage,
+      });
+    }
+
     setEditedBudgets(prev => ({
       ...prev,
       [categoryName]: amount
@@ -215,6 +339,9 @@ export function BudgetWizard({
         {/* Guided Setup Option */}
         <Card className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/50" onClick={() => {
           setWizardMode('guided');
+          posthog?.capture('wizard_mode_selected', {
+            mode: 'guided',
+          });
           handleNext();
         }}>
           <CardContent className="p-6 text-center space-y-4">
@@ -231,6 +358,10 @@ export function BudgetWizard({
         {/* Quick Setup Option */}
         <Card className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary/50" onClick={() => {
           setWizardMode('quick');
+          posthog?.capture('wizard_mode_selected', {
+            mode: 'quick',
+          });
+          posthog?.capture('wizard_quick_entry_started');
           setCurrentStep('quick-entry');
         }}>
           <CardContent className="p-6 text-center space-y-4">
