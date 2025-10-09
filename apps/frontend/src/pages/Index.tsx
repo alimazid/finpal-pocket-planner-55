@@ -307,9 +307,10 @@ const Index = () => {
     queryKey: ['transactions', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('User ID is required');
-      
-      const response = await apiClient.getTransactions();
-      
+
+      // Request up to 1000 transactions to ensure we get all of them
+      const response = await apiClient.getTransactions({ limit: 1000 });
+
       if (response.success && response.data && response.data.transactions) {
         // Convert to old format for compatibility
         return response.data.transactions.map(tx => ({
