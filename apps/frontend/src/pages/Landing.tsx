@@ -62,7 +62,7 @@ const Landing = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img src="/penny.png" alt="Penny" className="h-10 w-10 object-contain" />
-              <h1 className="text-xl font-bold text-foreground">FinPal Pocket Planner</h1>
+              <h1 className="text-xl font-bold text-foreground">Pocket Penny</h1>
             </div>
             <div className="flex items-center gap-3">
               <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
@@ -125,7 +125,7 @@ const Landing = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-purple-500/20 blur-3xl rounded-full"></div>
               <img
                 src="/penny.png"
-                alt="FinPal Pocket Planner"
+                alt="Pocket Penny"
                 className="relative w-full max-w-md mx-auto drop-shadow-2xl"
               />
             </div>
@@ -198,7 +198,7 @@ const Landing = () => {
             <div className="flex items-center gap-2">
               <img src="/penny.png" alt="Penny" className="h-8 w-8 object-contain" />
               <span className="text-sm text-muted-foreground">
-                © 2025 FinPal Pocket Planner
+                © 2025 Pocket Penny
               </span>
             </div>
             <div className="flex gap-6 text-sm">

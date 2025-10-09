@@ -1508,16 +1508,16 @@ const translations: Translations = {
     spanish: 'Planificación Financiera Inteligente'
   },
   landingHeroTitle: {
-    english: 'Take Control of Your Finances with FinPal Pocket Planner',
-    spanish: 'Toma el Control de tus Finanzas con FinPal Pocket Planner'
+    english: 'Take Control of Your Finances with Pocket Penny',
+    spanish: 'Toma el Control de tus Finanzas con Pocket Penny'
   },
   landingHeroSubtitle: {
     english: 'Track expenses, manage budgets, and achieve your financial goals with our intuitive and powerful personal finance tool.',
     spanish: 'Rastrea gastos, gestiona presupuestos y alcanza tus metas financieras con nuestra herramienta de finanzas personales intuitiva y poderosa.'
   },
   landingBenefit1: {
-    english: 'Free forever',
-    spanish: 'Gratis para siempre'
+    english: 'Free for early adopters',
+    spanish: 'Gratis para primeros usuarios'
   },
   landingBenefit2: {
     english: 'No credit card required',
@@ -1584,8 +1584,8 @@ const translations: Translations = {
     spanish: '¿Listo para Tomar el Control de tus Finanzas?'
   },
   landingCtaSubtitle: {
-    english: 'Join thousands of users who are already managing their money smarter with FinPal Pocket Planner.',
-    spanish: 'Únete a miles de usuarios que ya están gestionando su dinero de manera más inteligente con FinPal Pocket Planner.'
+    english: 'Start managing your money smarter with Pocket Penny today.',
+    spanish: 'Comienza a gestionar tu dinero de manera más inteligente con Pocket Penny hoy.'
   },
   createFreeAccount: {
     english: 'Create Free Account',
