@@ -59,7 +59,7 @@ const GoogleAuthCallback = () => {
             description: 'Successfully signed in with Google',
           });
 
-          navigate("/");
+          navigate("/dashboard");
         } else {
           throw new Error(data.error || 'Authentication failed');
         }

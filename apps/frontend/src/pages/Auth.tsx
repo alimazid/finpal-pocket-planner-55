@@ -36,7 +36,7 @@ const Auth = () => {
           title: t('welcomeBack'),
           description: t('accountCreatedSuccessfully'),
         });
-        navigate("/");
+        navigate("/dashboard");
       } else {
         toast({
           title: t('signUpError'),
@@ -70,7 +70,7 @@ const Auth = () => {
           title: t('welcomeBack'),
           description: t('signedInSuccessfully'),
         });
-        navigate("/");
+        navigate("/dashboard");
       } else {
         toast({
           title: t('signInError'),

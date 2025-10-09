@@ -1500,6 +1500,104 @@ const translations: Translations = {
   'gmailWizard.success.next': {
     english: 'You can manage your Gmail integration anytime from the toolbar.',
     spanish: 'Puedes gestionar tu integración de Gmail en cualquier momento desde la barra de herramientas.'
+  },
+
+  // Landing Page
+  landingBadge: {
+    english: 'Smart Financial Planning',
+    spanish: 'Planificación Financiera Inteligente'
+  },
+  landingHeroTitle: {
+    english: 'Take Control of Your Finances with FinPal Pocket Planner',
+    spanish: 'Toma el Control de tus Finanzas con FinPal Pocket Planner'
+  },
+  landingHeroSubtitle: {
+    english: 'Track expenses, manage budgets, and achieve your financial goals with our intuitive and powerful personal finance tool.',
+    spanish: 'Rastrea gastos, gestiona presupuestos y alcanza tus metas financieras con nuestra herramienta de finanzas personales intuitiva y poderosa.'
+  },
+  landingBenefit1: {
+    english: 'Free forever',
+    spanish: 'Gratis para siempre'
+  },
+  landingBenefit2: {
+    english: 'No credit card required',
+    spanish: 'No se requiere tarjeta de crédito'
+  },
+  landingFeaturesTitle: {
+    english: 'Everything You Need to Manage Your Money',
+    spanish: 'Todo lo que Necesitas para Gestionar tu Dinero'
+  },
+  landingFeaturesSubtitle: {
+    english: 'Powerful features designed to help you stay on top of your finances and reach your goals.',
+    spanish: 'Funciones poderosas diseñadas para ayudarte a mantenerte al tanto de tus finanzas y alcanzar tus metas.'
+  },
+  landingFeature1Title: {
+    english: 'Flexible Budget Periods',
+    spanish: 'Períodos de Presupuesto Flexibles'
+  },
+  landingFeature1Desc: {
+    english: 'Choose between calendar months or custom periods that match your pay schedule.',
+    spanish: 'Elige entre meses calendario o períodos personalizados que coincidan con tu calendario de pago.'
+  },
+  landingFeature2Title: {
+    english: 'Multi-Currency Support',
+    spanish: 'Soporte Multi-Moneda'
+  },
+  landingFeature2Desc: {
+    english: 'Track expenses in DOP, USD, and EUR with automatic exchange rate updates.',
+    spanish: 'Rastrea gastos en DOP, USD y EUR con actualizaciones automáticas de tipo de cambio.'
+  },
+  landingFeature3Title: {
+    english: 'Smart Categorization',
+    spanish: 'Categorización Inteligente'
+  },
+  landingFeature3Desc: {
+    english: 'Organize transactions into custom categories and track spending patterns effortlessly.',
+    spanish: 'Organiza transacciones en categorías personalizadas y rastrea patrones de gasto sin esfuerzo.'
+  },
+  landingFeature4Title: {
+    english: 'Gmail Integration',
+    spanish: 'Integración con Gmail'
+  },
+  landingFeature4Desc: {
+    english: 'Automatically create transactions from bank notifications and purchase receipts.',
+    spanish: 'Crea automáticamente transacciones desde notificaciones bancarias y recibos de compra.'
+  },
+  landingFeature5Title: {
+    english: 'Drag & Drop Ordering',
+    spanish: 'Ordenamiento Arrastrar y Soltar'
+  },
+  landingFeature5Desc: {
+    english: 'Easily reorganize your budget categories with intuitive drag and drop.',
+    spanish: 'Reorganiza fácilmente tus categorías de presupuesto con arrastrar y soltar intuitivo.'
+  },
+  landingFeature6Title: {
+    english: 'Real-Time Budget Tracking',
+    spanish: 'Seguimiento de Presupuesto en Tiempo Real'
+  },
+  landingFeature6Desc: {
+    english: 'Monitor your spending against budgets with live progress bars and alerts.',
+    spanish: 'Monitorea tus gastos contra presupuestos con barras de progreso y alertas en vivo.'
+  },
+  landingCtaTitle: {
+    english: 'Ready to Take Control of Your Finances?',
+    spanish: '¿Listo para Tomar el Control de tus Finanzas?'
+  },
+  landingCtaSubtitle: {
+    english: 'Join thousands of users who are already managing their money smarter with FinPal Pocket Planner.',
+    spanish: 'Únete a miles de usuarios que ya están gestionando su dinero de manera más inteligente con FinPal Pocket Planner.'
+  },
+  createFreeAccount: {
+    english: 'Create Free Account',
+    spanish: 'Crear Cuenta Gratis'
+  },
+  privacyPolicy: {
+    english: 'Privacy Policy',
+    spanish: 'Política de Privacidad'
+  },
+  termsOfService: {
+    english: 'Terms of Service',
+    spanish: 'Términos de Servicio'
   }
 };
 
