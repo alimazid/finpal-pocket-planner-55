@@ -141,6 +141,7 @@ const Landing = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => {
               const Icon = feature.icon;
+              const isGmailFeature = feature.titleKey === 'landingFeature4Title';
               return (
                 <Card key={index} className="bg-gradient-card hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
@@ -155,6 +156,14 @@ const Landing = () => {
                         <p className="text-sm text-muted-foreground">
                           {t(feature.descriptionKey)}
                         </p>
+                        {isGmailFeature && (
+                          <button
+                            onClick={() => navigate('/policy')}
+                            className="text-xs text-primary hover:underline mt-2 inline-block"
+                          >
+                            {t('privacyPolicy')}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
