@@ -157,7 +157,39 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4">13. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4">13. Analytics and Usage Tracking</h2>
+            <p className="mb-4">
+              We use PostHog, a third-party analytics service, to collect and analyze information about how you use our application. This helps us improve our services and understand user behavior.
+            </p>
+            <p className="mb-4">
+              <strong>Information Collected by PostHog:</strong>
+            </p>
+            <ul className="list-disc pl-6 space-y-2 mb-4">
+              <li>User actions and events (e.g., button clicks, page views, feature usage)</li>
+              <li>Session recordings (with sensitive input fields like passwords masked)</li>
+              <li>Device and browser information</li>
+              <li>Technical data such as page load times and errors</li>
+              <li>Anonymized user identifiers to track usage patterns</li>
+            </ul>
+            <p className="mb-4">
+              <strong>How We Use This Data:</strong>
+            </p>
+            <ul className="list-disc pl-6 space-y-2 mb-4">
+              <li>Understand which features are most valuable to users</li>
+              <li>Identify and fix bugs and technical issues</li>
+              <li>Improve user experience and application performance</li>
+              <li>Analyze usage trends to guide product development</li>
+            </ul>
+            <p className="mb-4">
+              PostHog stores data in secure cloud infrastructure with industry-standard security measures. For more information about PostHog's data practices, please visit their privacy policy at <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">https://posthog.com/privacy</a>.
+            </p>
+            <p>
+              Analytics data is used solely for improving our application and is never sold or shared with third parties for marketing purposes.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">14. Contact Us</h2>
             <p className="mb-4">
               If you have any questions about this Privacy Policy, please contact us at:
             </p>

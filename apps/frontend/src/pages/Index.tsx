@@ -3,6 +3,7 @@ import { apiClient, type User, type GmailAccount } from "@/lib/api-client";
 import { DEFAULT_CURRENCY } from "@/config/currencies";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 
@@ -83,6 +84,7 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const posthog = usePostHog();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("spanish");
@@ -392,6 +394,14 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id, currentTargetYear, currentTargetMonth] });
 
+      // Track transaction created event
+      posthog?.capture('transaction_created', {
+        type: newTransaction.type,
+        category: newTransaction.category,
+        currency: newTransaction.currency,
+        amount: newTransaction.amount,
+      });
+
       toast({
         title: t('expenseAdded'),
         description: `$${newTransaction.amount.toFixed(2)} ${t('spentOn')} ${newTransaction.category}`,
@@ -467,6 +477,14 @@ const Index = () => {
     },
     onSuccess: (newBudget) => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      // Track budget created event
+      posthog?.capture('budget_created', {
+        category: newBudget.category?.name,
+        currency: newBudget.currency,
+        amount: newBudget.amount,
+      });
+
       toast({
         title: t('budgetCreated'),
         description: `${t('budgetCreatedFor')} ${newBudget.category?.name} ($${newBudget.amount.toFixed(2)}) ${t('hasBeenAdded')}`,
@@ -556,9 +574,14 @@ const Index = () => {
     },
     onSuccess: ({ budget, categoryName }) => {
       const relatedTransactions = transactions?.filter(t => t.category === categoryName) || [];
-      
+
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+
+      // Track budget deleted event
+      posthog?.capture('budget_deleted', {
+        category: categoryName,
+      });
 
       toast({
         title: t('budgetDeleted'),
@@ -583,6 +606,12 @@ const Index = () => {
     onSuccess: (transaction) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      // Track transaction deleted event
+      posthog?.capture('transaction_deleted', {
+        type: transaction?.type,
+        category: transaction?.category,
+      });
 
       toast({
         title: t('transactionDeleted'),
@@ -628,6 +657,11 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
 
+      // Track transaction categorized event
+      posthog?.capture('transaction_categorized', {
+        category: updatedTransaction.category,
+      });
+
       toast({
         title: t('categoryUpdated'),
         description: `${t('categoryUpdatedTo')} ${updatedTransaction.category}`,
@@ -659,6 +693,9 @@ const Index = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      // Track transaction edited event
+      posthog?.capture('transaction_edited');
 
       toast({
         title: t('transactionUpdated'),
@@ -706,6 +743,9 @@ const Index = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets', user?.id] });
+
+      // Track budgets reordered event
+      posthog?.capture('budgets_reordered');
     },
   });
 
@@ -794,6 +834,12 @@ const Index = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-preferences', user?.id] });
+
+      // Track language changed event
+      posthog?.capture('language_changed', {
+        language: selectedLanguage,
+      });
+
       toast({
         title: t('languageUpdated'),
         description: `${t('languageChangedTo')} ${selectedLanguage === 'english' ? t('english') : t('spanish')}`,
@@ -934,6 +980,12 @@ const Index = () => {
           console.log('User authenticated:', response.data.email);
           setUser(response.data);
           setIsAuthenticated(true);
+
+          // Identify user in PostHog
+          posthog?.identify(response.data.id, {
+            email: response.data.email,
+            created_at: response.data.createdAt,
+          });
         } else {
           console.log('User not authenticated');
           setUser(null);
@@ -948,7 +1000,7 @@ const Index = () => {
     };
 
     checkAuth();
-  }, []);
+  }, [posthog]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -961,6 +1013,10 @@ const Index = () => {
       await apiClient.logout();
       setUser(null);
       setIsAuthenticated(false);
+
+      // Reset PostHog on logout
+      posthog?.reset();
+
       toast({
         title: t('signedOut'),
         description: t('signedOutSuccess'),

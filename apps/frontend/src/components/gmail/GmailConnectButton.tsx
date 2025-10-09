@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api-client';
 import { Mail, Loader2 } from 'lucide-react';
+import { usePostHog } from 'posthog-js/react';
 
 interface GmailConnectButtonProps {
   onSuccess?: () => void;
@@ -23,6 +24,7 @@ export const GmailConnectButton: React.FC<GmailConnectButtonProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const posthog = usePostHog();
 
   const handleConnectGmail = async () => {
     if (isLoading) return;
@@ -41,6 +43,9 @@ export const GmailConnectButton: React.FC<GmailConnectButtonProps> = ({
       if (response.success && response.data) {
         // Store state in session storage for callback validation
         sessionStorage.setItem('gmail_oauth_state', response.data.state);
+
+        // Track Gmail connection initiated event
+        posthog?.capture('gmail_connection_initiated');
 
         // Redirect to Google OAuth
         window.location.href = response.data.authUrl;

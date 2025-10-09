@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Loader2, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePostHog } from "posthog-js/react";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,7 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { t } = useTranslation(selectedLanguage as 'english' | 'spanish');
+  const posthog = usePostHog();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +34,11 @@ const Auth = () => {
       });
 
       if (response.success) {
+        // Track user signup event
+        posthog?.capture('user_signed_up', {
+          method: 'email',
+        });
+
         toast({
           title: t('welcomeBack'),
           description: t('accountCreatedSuccessfully'),
@@ -66,6 +73,11 @@ const Auth = () => {
       });
 
       if (response.success) {
+        // Track user signin event
+        posthog?.capture('user_signed_in', {
+          method: 'email',
+        });
+
         toast({
           title: t('welcomeBack'),
           description: t('signedInSuccessfully'),
@@ -91,6 +103,9 @@ const Auth = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      // Track Google auth initiated event
+      posthog?.capture('google_auth_initiated');
+
       const response = await apiClient.getGoogleAuthUrl();
       if (response.success && response.data?.authUrl) {
         window.location.href = response.data.authUrl;

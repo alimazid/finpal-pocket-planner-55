@@ -4,11 +4,13 @@ import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 const GoogleAuthCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const posthog = usePostHog();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -53,6 +55,11 @@ const GoogleAuthCallback = () => {
         if (data.success && data.data?.user && data.data?.token) {
           // Store the token
           apiClient.setToken(data.data.token);
+
+          // Track successful Google sign-in
+          posthog?.capture('user_signed_in', {
+            method: 'google',
+          });
 
           toast({
             title: 'Welcome!',
