@@ -75,10 +75,7 @@ const Landing = () => {
                   <SelectItem value="spanish">{t('spanish')}</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="ghost" onClick={() => navigate('/auth')}>
-                {t('signIn')}
-              </Button>
-              <Button onClick={() => navigate('/auth')} className="hidden sm:flex">
+              <Button onClick={() => navigate('/auth')}>
                 {t('getStarted')}
               </Button>
             </div>
@@ -105,9 +102,6 @@ const Landing = () => {
                 <Button size="lg" onClick={() => navigate('/auth')} className="text-base">
                   {t('getStarted')}
                   <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button size="lg" variant="outline" onClick={() => navigate('/auth')}>
-                  {t('signIn')}
                 </Button>
               </div>
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
