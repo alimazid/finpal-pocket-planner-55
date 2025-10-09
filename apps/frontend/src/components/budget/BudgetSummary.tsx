@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { DEFAULT_CURRENCY } from "@/config/currencies";
 import { useState, useEffect, useRef } from "react";
-import { filterTransactionsByPeriod } from "@/lib/periodCalculations";
+import { filterTransactionsByPeriod, type CalculatedBudget } from "@/lib/periodCalculations";
 import { useConvertedTotals } from "@/hooks/useConvertedTotals";
 import {
   DndContext,
@@ -35,28 +35,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { AddBudgetButton } from './AddBudgetButton';
 import { CreateMissingBudgetsCard } from './CreateMissingBudgetsCard';
 
-interface BudgetCategory {
-  id: string;
-  userId: string;
-  name: string;
-  sortOrder: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface Budget {
-  id: string;
-  userId: string;
-  categoryId: string;
-  amount: number;
-  spent: number;
-  currency: string;
-  targetYear: number;
-  targetMonth: number;
-  createdAt: Date;
-  updatedAt: Date;
-  category?: BudgetCategory;
-}
+// Using CalculatedBudget from periodCalculations which includes period_start, period_end, and budget_categories
+type Budget = CalculatedBudget;
 
 interface BudgetPeriod {
   startDate: Date;
@@ -135,12 +115,12 @@ export function BudgetSummary({
   useEffect(() => {
     if (optimisticBudgets && budgets.length > 0) {
       const optimisticOrder = optimisticBudgets
-        .sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0))
+        .sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0))
         .map(b => b.id);
       const actualOrder = budgets
-        .sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0))
+        .sort((a, b) => (a.budget_categories?.sort_order || 0) - (b.budget_categories?.sort_order || 0))
         .map(b => b.id);
-      
+
       // Only clear optimistic state if the database order matches our expectation
       if (JSON.stringify(optimisticOrder) === JSON.stringify(actualOrder)) {
         setOptimisticBudgets(null);
@@ -186,9 +166,9 @@ export function BudgetSummary({
         // Update sort_order for all budget categories
         const budgetsWithNewOrder = reorderedBudgets.map((budget, index) => ({
           ...budget,
-          category: budget.category ? {
-            ...budget.category,
-            sortOrder: index + 1
+          budget_categories: budget.budget_categories ? {
+            ...budget.budget_categories,
+            sort_order: index + 1
           } : undefined
         }));
         
@@ -271,26 +251,26 @@ export function BudgetSummary({
 
   const handleEditBudget = (budget: Budget) => {
     setEditingBudget(budget);
-    setEditCategory(budget.category?.name || '');
+    setEditCategory(budget.budget_categories?.name || '');
     setEditAmount(budget.amount.toString());
     setEditDialogOpen(true);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingBudget && editCategory.trim() && editAmount && parseFloat(editAmount) > 0) {
       // Update category if changed
-      if (editCategory.trim() !== editingBudget.category?.name && onUpdateBudgetCategory) {
+      if (editCategory.trim() !== editingBudget.budget_categories?.name && onUpdateBudgetCategory) {
         onUpdateBudgetCategory(editingBudget.id, editCategory.trim());
       }
-      
+
       // Update amount if changed
       const newAmount = parseFloat(editAmount);
       if (newAmount !== editingBudget.amount && onUpdateBudgetAmount) {
         onUpdateBudgetAmount(editingBudget.id, newAmount);
       }
-      
+
       handleEditCancel();
     }
   };
@@ -472,7 +452,7 @@ export function BudgetSummary({
     };
 
     const categoryTransactions = filterTransactionsByPeriod(
-      transactions.filter(t => t.category === budget.category?.name && t.type === 'expense'),
+      transactions.filter(t => t.category === budget.budget_categories?.name && t.type === 'expense'),
       budget.period_start,
       budget.period_end
     );
@@ -485,7 +465,7 @@ export function BudgetSummary({
         className="select-none touch-manipulation"
       >
         <BudgetDisplayCard
-          title={budget.category?.name || ''}
+          title={budget.budget_categories?.name || ''}
           spent={budget.spent}
           amount={budget.amount}
           currency={budget.currency}
@@ -815,7 +795,7 @@ export function BudgetSummary({
                     <AlertDialogHeader>
                       <AlertDialogTitle>{t('deleteBudget')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t('deleteBudgetConfirm')} "{editingBudget.category?.name}"? {t('actionCannotBeUndoneSimple')}
+                        {t('deleteBudgetConfirm')} "{editingBudget.budget_categories?.name}"? {t('actionCannotBeUndoneSimple')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
