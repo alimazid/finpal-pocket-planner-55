@@ -18,11 +18,12 @@
 7. [Technical Specifications](#technical-specifications)
 8. [UI/UX Requirements](#uiux-requirements)
 9. [Implementation Plan](#implementation-plan)
-10. [Analytics & Tracking](#analytics--tracking)
-11. [Testing Requirements](#testing-requirements)
-12. [Security & Privacy](#security--privacy)
-13. [Future Enhancements](#future-enhancements)
-14. [Appendix](#appendix)
+10. [Internationalization (i18n)](#internationalization-i18n)
+11. [Analytics & Tracking](#analytics--tracking)
+12. [Testing Requirements](#testing-requirements)
+13. [Security & Privacy](#security--privacy)
+14. [Future Enhancements](#future-enhancements)
+15. [Appendix](#appendix)
 
 ---
 
@@ -1255,6 +1256,562 @@ Guest User → Auth Gate → Signup
 1. Landing on demo dashboard: "Demo mode active. Explore features. Sign up to save."
 2. Auth gate appears: "Sign up required to save budgets"
 3. Migration modal: "Import demo data or start fresh"
+
+---
+
+## Internationalization (i18n)
+
+### Overview
+
+All new UI copy introduced by guest mode must support both **English** and **Spanish** languages, maintaining 100% translation coverage. The application uses a custom `useTranslation` hook with embedded translations.
+
+### Translation Keys
+
+All new translation keys to be added to `src/hooks/useTranslation.ts`:
+
+#### Demo Mode Banner
+
+| Key | English | Spanish |
+|-----|---------|---------|
+| `demoModeBanner.message` | "🎉 You're exploring demo mode. Sign up to save your budgets!" | "🎉 Estás explorando el modo demo. ¡Regístrate para guardar tus presupuestos!" |
+| `demoModeBanner.messageShort` | "Demo Mode • Sign up to save" | "Modo Demo • Regístrate para guardar" |
+| `demoModeBanner.cta` | "Sign Up Free" | "Regístrate Gratis" |
+
+#### Auth Gate Modal
+
+| Key | English | Spanish |
+|-----|---------|---------|
+| `authGate.budget.title` | "Sign Up to Save Your Budget" | "Regístrate para Guardar tu Presupuesto" |
+| `authGate.budget.description` | "Create a free account to access all features" | "Crea una cuenta gratis para acceder a todas las funciones" |
+| `authGate.budget.benefit1` | "Save budgets and track expenses" | "Guardar presupuestos y rastrear gastos" |
+| `authGate.budget.benefit2` | "Sync across all your devices" | "Sincronizar en todos tus dispositivos" |
+| `authGate.budget.benefit3` | "Connect Gmail for auto-tracking" | "Conectar Gmail para seguimiento automático" |
+| `authGate.transaction.title` | "Sign Up to Track This Expense" | "Regístrate para Rastrear este Gasto" |
+| `authGate.transaction.description` | "Create a free account to save your data" | "Crea una cuenta gratis para guardar tus datos" |
+| `authGate.transaction.benefit1` | "Track all your spending" | "Rastrea todos tus gastos" |
+| `authGate.transaction.benefit2` | "Categorize transactions automatically" | "Categoriza transacciones automáticamente" |
+| `authGate.transaction.benefit3` | "View spending trends over time" | "Ver tendencias de gastos a lo largo del tiempo" |
+| `authGate.export.title` | "Sign Up to Export Your Data" | "Regístrate para Exportar tus Datos" |
+| `authGate.export.benefit1` | "Export financial data as JSON" | "Exportar datos financieros como JSON" |
+| `authGate.export.benefit2` | "Backup your budgets securely" | "Respalda tus presupuestos de forma segura" |
+| `authGate.export.benefit3` | "Analyze spending patterns" | "Analizar patrones de gasto" |
+| `authGate.gmail.title` | "Sign Up to Connect Gmail" | "Regístrate para Conectar Gmail" |
+| `authGate.gmail.benefit1` | "Auto-import transactions from email" | "Importar transacciones automáticamente del correo" |
+| `authGate.gmail.benefit2` | "Never miss a purchase" | "Nunca pierdas una compra" |
+| `authGate.gmail.benefit3` | "Smart categorization from receipts" | "Categorización inteligente desde recibos" |
+| `authGate.settings.title` | "Sign Up to Save Settings" | "Regístrate para Guardar Configuración" |
+| `authGate.settings.benefit1` | "Customize your budget periods" | "Personaliza tus períodos de presupuesto" |
+| `authGate.settings.benefit2` | "Set your preferred currency" | "Establece tu moneda preferida" |
+| `authGate.settings.benefit3` | "Save language preferences" | "Guardar preferencias de idioma" |
+| `authGate.cta` | "Sign Up Free" | "Regístrate Gratis" |
+| `authGate.cancel` | "Cancel" | "Cancelar" |
+
+#### Migration Modal
+
+| Key | English | Spanish |
+|-----|---------|---------|
+| `migration.title` | "Import Your Demo Budgets?" | "¿Importar tus Presupuestos Demo?" |
+| `migration.description` | "You have {budgetCount} budgets and {transactionCount} transactions from demo mode." | "Tienes {budgetCount} presupuestos y {transactionCount} transacciones del modo demo." |
+| `migration.summaryTitle` | "Demo Data Summary:" | "Resumen de Datos Demo:" |
+| `migration.budgetCategories` | "{count} Budget Categories" | "{count} Categorías de Presupuesto" |
+| `migration.transactions` | "{count} Transactions" | "{count} Transacciones" |
+| `migration.totalBudget` | "${amount} Total Budget" | "${amount} Presupuesto Total" |
+| `migration.importCta` | "Import Demo Data" | "Importar Datos Demo" |
+| `migration.startFreshCta` | "Start Fresh" | "Empezar de Cero" |
+| `migration.importingMessage` | "Importing..." | "Importando..." |
+| `migration.importingProgress` | "Importing {current} of {total}" | "Importando {current} de {total}" |
+| `migration.successMessage` | "Imported!" | "¡Importado!" |
+| `migration.errorMessage` | "Import failed. Please try again." | "La importación falló. Por favor intenta de nuevo." |
+| `migration.retryButton` | "Retry" | "Reintentar" |
+| `migration.startFreshDescription` | "Want to start fresh? No problem! Your demo data will be discarded." | "¿Quieres empezar de cero? ¡No hay problema! Tus datos demo se descartarán." |
+
+#### Tooltips & Button States
+
+| Key | English | Spanish |
+|-----|---------|---------|
+| `guestMode.tooltip.signUpRequired` | "Sign up to use this feature" | "Regístrate para usar esta función" |
+| `guestMode.tooltip.proFeature` | "Pro feature - Sign up to unlock" | "Función Pro - Regístrate para desbloquear" |
+| `guestMode.button.disabled` | "Available after signup" | "Disponible después de registrarse" |
+| `guestMode.feature.locked` | "Locked" | "Bloqueado" |
+
+#### Error Messages
+
+| Key | English | Spanish |
+|-----|---------|---------|
+| `guestMode.error.storageQuota` | "Demo data storage is full. Please sign up to continue." | "El almacenamiento de datos demo está lleno. Por favor regístrate para continuar." |
+| `guestMode.error.corruptedData` | "Demo data corrupted. Generating fresh data..." | "Datos demo corruptos. Generando datos frescos..." |
+| `guestMode.error.migrationFailed` | "Failed to import demo data. You can add budgets manually." | "Error al importar datos demo. Puedes agregar presupuestos manualmente." |
+
+#### Success Messages
+
+| Key | English | Spanish |
+|-----|---------|---------|
+| `guestMode.success.migrationComplete` | "Demo data imported successfully!" | "¡Datos demo importados exitosamente!" |
+| `guestMode.success.accountCreated` | "Account created! Welcome to Pocket Penny." | "¡Cuenta creada! Bienvenido a Pocket Penny." |
+
+#### Aria Labels (Accessibility)
+
+| Key | English | Spanish |
+|-----|---------|---------|
+| `aria.demoModeBanner` | "Demo mode notification" | "Notificación de modo demo" |
+| `aria.demoModeActive` | "Demo mode active. Explore features. Sign up to save." | "Modo demo activo. Explora las funciones. Regístrate para guardar." |
+| `aria.authGateRequired` | "Sign up required to save budgets" | "Registro requerido para guardar presupuestos" |
+| `aria.migrationPrompt` | "Import demo data or start fresh" | "Importar datos demo o empezar de cero" |
+| `aria.featureLocked` | "Feature locked. Sign up to unlock." | "Función bloqueada. Regístrate para desbloquear." |
+| `aria.guestModeButton` | "Sign up to unlock this action" | "Regístrate para desbloquear esta acción" |
+
+---
+
+### useTranslation Hook Updates
+
+Update `src/hooks/useTranslation.ts` to include all new keys:
+
+```typescript
+// Example structure (add to existing translations object)
+const translations = {
+  english: {
+    // ... existing translations
+
+    // Demo Mode Banner
+    demoModeBanner: {
+      message: "🎉 You're exploring demo mode. Sign up to save your budgets!",
+      messageShort: "Demo Mode • Sign up to save",
+      cta: "Sign Up Free"
+    },
+
+    // Auth Gate Modal
+    authGate: {
+      budget: {
+        title: "Sign Up to Save Your Budget",
+        description: "Create a free account to access all features",
+        benefit1: "Save budgets and track expenses",
+        benefit2: "Sync across all your devices",
+        benefit3: "Connect Gmail for auto-tracking"
+      },
+      transaction: {
+        title: "Sign Up to Track This Expense",
+        description: "Create a free account to save your data",
+        benefit1: "Track all your spending",
+        benefit2: "Categorize transactions automatically",
+        benefit3: "View spending trends over time"
+      },
+      export: {
+        title: "Sign Up to Export Your Data",
+        benefit1: "Export financial data as JSON",
+        benefit2: "Backup your budgets securely",
+        benefit3: "Analyze spending patterns"
+      },
+      gmail: {
+        title: "Sign Up to Connect Gmail",
+        benefit1: "Auto-import transactions from email",
+        benefit2: "Never miss a purchase",
+        benefit3: "Smart categorization from receipts"
+      },
+      settings: {
+        title: "Sign Up to Save Settings",
+        benefit1: "Customize your budget periods",
+        benefit2: "Set your preferred currency",
+        benefit3: "Save language preferences"
+      },
+      cta: "Sign Up Free",
+      cancel: "Cancel"
+    },
+
+    // Migration Modal
+    migration: {
+      title: "Import Your Demo Budgets?",
+      description: (budgetCount: number, transactionCount: number) =>
+        `You have ${budgetCount} budgets and ${transactionCount} transactions from demo mode.`,
+      summaryTitle: "Demo Data Summary:",
+      budgetCategories: (count: number) => `${count} Budget Categories`,
+      transactions: (count: number) => `${count} Transactions`,
+      totalBudget: (amount: number) => `$${amount} Total Budget`,
+      importCta: "Import Demo Data",
+      startFreshCta: "Start Fresh",
+      importingMessage: "Importing...",
+      importingProgress: (current: number, total: number) =>
+        `Importing ${current} of ${total}`,
+      successMessage: "Imported!",
+      errorMessage: "Import failed. Please try again.",
+      retryButton: "Retry",
+      startFreshDescription: "Want to start fresh? No problem! Your demo data will be discarded."
+    },
+
+    // Tooltips & Button States
+    guestMode: {
+      tooltip: {
+        signUpRequired: "Sign up to use this feature",
+        proFeature: "Pro feature - Sign up to unlock"
+      },
+      button: {
+        disabled: "Available after signup"
+      },
+      feature: {
+        locked: "Locked"
+      },
+      error: {
+        storageQuota: "Demo data storage is full. Please sign up to continue.",
+        corruptedData: "Demo data corrupted. Generating fresh data...",
+        migrationFailed: "Failed to import demo data. You can add budgets manually."
+      },
+      success: {
+        migrationComplete: "Demo data imported successfully!",
+        accountCreated: "Account created! Welcome to Pocket Penny."
+      }
+    },
+
+    // Aria Labels
+    aria: {
+      demoModeBanner: "Demo mode notification",
+      demoModeActive: "Demo mode active. Explore features. Sign up to save.",
+      authGateRequired: "Sign up required to save budgets",
+      migrationPrompt: "Import demo data or start fresh",
+      featureLocked: "Feature locked. Sign up to unlock.",
+      guestModeButton: "Sign up to unlock this action"
+    }
+  },
+
+  spanish: {
+    // ... existing translations
+
+    // Demo Mode Banner
+    demoModeBanner: {
+      message: "🎉 Estás explorando el modo demo. ¡Regístrate para guardar tus presupuestos!",
+      messageShort: "Modo Demo • Regístrate para guardar",
+      cta: "Regístrate Gratis"
+    },
+
+    // Auth Gate Modal
+    authGate: {
+      budget: {
+        title: "Regístrate para Guardar tu Presupuesto",
+        description: "Crea una cuenta gratis para acceder a todas las funciones",
+        benefit1: "Guardar presupuestos y rastrear gastos",
+        benefit2: "Sincronizar en todos tus dispositivos",
+        benefit3: "Conectar Gmail para seguimiento automático"
+      },
+      transaction: {
+        title: "Regístrate para Rastrear este Gasto",
+        description: "Crea una cuenta gratis para guardar tus datos",
+        benefit1: "Rastrea todos tus gastos",
+        benefit2: "Categoriza transacciones automáticamente",
+        benefit3: "Ver tendencias de gastos a lo largo del tiempo"
+      },
+      export: {
+        title: "Regístrate para Exportar tus Datos",
+        benefit1: "Exportar datos financieros como JSON",
+        benefit2: "Respalda tus presupuestos de forma segura",
+        benefit3: "Analizar patrones de gasto"
+      },
+      gmail: {
+        title: "Regístrate para Conectar Gmail",
+        benefit1: "Importar transacciones automáticamente del correo",
+        benefit2: "Nunca pierdas una compra",
+        benefit3: "Categorización inteligente desde recibos"
+      },
+      settings: {
+        title: "Regístrate para Guardar Configuración",
+        benefit1: "Personaliza tus períodos de presupuesto",
+        benefit2: "Establece tu moneda preferida",
+        benefit3: "Guardar preferencias de idioma"
+      },
+      cta: "Regístrate Gratis",
+      cancel: "Cancelar"
+    },
+
+    // Migration Modal
+    migration: {
+      title: "¿Importar tus Presupuestos Demo?",
+      description: (budgetCount: number, transactionCount: number) =>
+        `Tienes ${budgetCount} presupuestos y ${transactionCount} transacciones del modo demo.`,
+      summaryTitle: "Resumen de Datos Demo:",
+      budgetCategories: (count: number) => `${count} Categorías de Presupuesto`,
+      transactions: (count: number) => `${count} Transacciones`,
+      totalBudget: (amount: number) => `$${amount} Presupuesto Total`,
+      importCta: "Importar Datos Demo",
+      startFreshCta: "Empezar de Cero",
+      importingMessage: "Importando...",
+      importingProgress: (current: number, total: number) =>
+        `Importando ${current} de ${total}`,
+      successMessage: "¡Importado!",
+      errorMessage: "La importación falló. Por favor intenta de nuevo.",
+      retryButton: "Reintentar",
+      startFreshDescription: "¿Quieres empezar de cero? ¡No hay problema! Tus datos demo se descartarán."
+    },
+
+    // Tooltips & Button States
+    guestMode: {
+      tooltip: {
+        signUpRequired: "Regístrate para usar esta función",
+        proFeature: "Función Pro - Regístrate para desbloquear"
+      },
+      button: {
+        disabled: "Disponible después de registrarse"
+      },
+      feature: {
+        locked: "Bloqueado"
+      },
+      error: {
+        storageQuota: "El almacenamiento de datos demo está lleno. Por favor regístrate para continuar.",
+        corruptedData: "Datos demo corruptos. Generando datos frescos...",
+        migrationFailed: "Error al importar datos demo. Puedes agregar presupuestos manualmente."
+      },
+      success: {
+        migrationComplete: "¡Datos demo importados exitosamente!",
+        accountCreated: "¡Cuenta creada! Bienvenido a Pocket Penny."
+      }
+    },
+
+    // Aria Labels
+    aria: {
+      demoModeBanner: "Notificación de modo demo",
+      demoModeActive: "Modo demo activo. Explora las funciones. Regístrate para guardar.",
+      authGateRequired: "Registro requerido para guardar presupuestos",
+      migrationPrompt: "Importar datos demo o empezar de cero",
+      featureLocked: "Función bloqueada. Regístrate para desbloquear.",
+      guestModeButton: "Regístrate para desbloquear esta acción"
+    }
+  }
+};
+```
+
+---
+
+### Component Usage Examples
+
+#### DemoModeBanner Component
+
+```tsx
+import { useTranslation } from '@/hooks/useTranslation';
+
+export const DemoModeBanner = () => {
+  const { t, language } = useTranslation();
+
+  return (
+    <div
+      role="banner"
+      aria-label={t('aria.demoModeBanner')}
+      className="bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 px-6 py-3"
+    >
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <p
+          className="text-sm font-medium text-foreground"
+          aria-live="polite"
+        >
+          {t('demoModeBanner.message')}
+        </p>
+        <Button size="sm" onClick={() => navigate('/auth')}>
+          {t('demoModeBanner.cta')}
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+```
+
+#### AuthGate Component
+
+```tsx
+import { useTranslation } from '@/hooks/useTranslation';
+
+interface AuthGateProps {
+  action: 'budget' | 'transaction' | 'export' | 'gmail' | 'settings';
+  onClose: () => void;
+}
+
+export const AuthGate = ({ action, onClose }: AuthGateProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <Dialog
+      aria-labelledby="auth-gate-title"
+      aria-describedby="auth-gate-description"
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle id="auth-gate-title">
+            {t(`authGate.${action}.title`)}
+          </DialogTitle>
+          <DialogDescription id="auth-gate-description">
+            {t(`authGate.${action}.description`)}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-4">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-primary" />
+            <span className="text-sm">{t(`authGate.${action}.benefit1`)}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-primary" />
+            <span className="text-sm">{t(`authGate.${action}.benefit2`)}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-primary" />
+            <span className="text-sm">{t(`authGate.${action}.benefit3`)}</span>
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={onClose}>
+            {t('authGate.cancel')}
+          </Button>
+          <Button className="flex-1" onClick={() => navigate('/auth')}>
+            {t('authGate.cta')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+```
+
+#### MigrationModal Component
+
+```tsx
+import { useTranslation } from '@/hooks/useTranslation';
+
+export const MigrationModal = ({ budgetCount, transactionCount, totalAmount }) => {
+  const { t } = useTranslation();
+  const [isImporting, setIsImporting] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+
+  return (
+    <Dialog>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('migration.title')}</DialogTitle>
+          <DialogDescription>
+            {t('migration.description', budgetCount, transactionCount)}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="bg-muted p-4 rounded-md space-y-2">
+          <p className="font-medium">{t('migration.summaryTitle')}</p>
+          <ul className="space-y-1 text-sm">
+            <li>• {t('migration.budgetCategories', budgetCount)}</li>
+            <li>• {t('migration.transactions', transactionCount)}</li>
+            <li>• {t('migration.totalBudget', totalAmount)}</li>
+          </ul>
+        </div>
+
+        {isImporting && (
+          <div className="text-center">
+            <p>{t('migration.importingMessage')}</p>
+            <p className="text-sm text-muted-foreground">
+              {t('migration.importingProgress', progress.current, progress.total)}
+            </p>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleStartFresh}>
+            {t('migration.startFreshCta')}
+          </Button>
+          <Button className="flex-1" onClick={handleImport} disabled={isImporting}>
+            {t('migration.importCta')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+```
+
+---
+
+### Implementation Checklist
+
+**Phase 1: Translation Keys (Day 1)**
+- [ ] Add all translation keys to `useTranslation.ts`
+- [ ] Test translation switching (English ↔ Spanish)
+- [ ] Verify all keys accessible via `t()` function
+- [ ] Check for TypeScript type safety
+
+**Phase 2: Component Integration (Days 2-4)**
+- [ ] Update DemoModeBanner with translations
+- [ ] Update AuthGate with dynamic translations
+- [ ] Update MigrationModal with translations
+- [ ] Add tooltips with translated text
+- [ ] Update ARIA labels with translations
+
+**Phase 3: Testing (Day 5)**
+- [ ] Test all UI copy in English
+- [ ] Test all UI copy in Spanish
+- [ ] Verify language switching works in guest mode
+- [ ] Check responsive text wrapping for both languages
+- [ ] Validate character limits don't break layouts
+
+**Phase 4: QA (Day 6)**
+- [ ] Native Spanish speaker review
+- [ ] Accessibility audit (screen readers in both languages)
+- [ ] Character encoding verification
+- [ ] RTL compatibility check (future-proofing)
+
+---
+
+### Translation Quality Guidelines
+
+**Spanish Translation Notes:**
+
+1. **Formality:** Use "tú" (informal) form, matching existing app tone
+2. **Gender:** Use inclusive language where possible
+3. **Technical Terms:**
+   - "Budget" → "Presupuesto"
+   - "Transaction" → "Transacción"
+   - "Demo" → "Demo" (keep as loanword)
+   - "Sign up" → "Registrarse/Regístrate"
+4. **Button CTAs:** Use imperative form ("Regístrate" not "Registrarse")
+5. **Cultural Context:** Maintain enthusiasm (emojis work in Spanish too!)
+
+**Character Count Considerations:**
+
+Spanish text is typically **20-30% longer** than English. Component layouts must accommodate:
+
+- Demo banner: Test with full Spanish text on mobile
+- Modal titles: Allow for longer text without truncation
+- Button labels: Ensure buttons don't overflow
+- Tooltips: Verify tooltip positioning with longer text
+
+---
+
+### Accessibility Compliance
+
+**WCAG 2.1 AA Requirements:**
+
+1. **Language Declaration:**
+   ```html
+   <html lang="en"> <!-- or "es" -->
+   ```
+
+2. **ARIA Labels:**
+   - All interactive elements must have aria-labels in current language
+   - Dynamically update aria-labels on language change
+
+3. **Screen Reader Announcements:**
+   - Test with VoiceOver (macOS/iOS) in both languages
+   - Test with NVDA (Windows) in both languages
+
+4. **Text Alternatives:**
+   - Emoji meanings conveyed in text
+   - Icon buttons have text labels
+
+---
+
+### Future Internationalization
+
+**Planned Languages (Phase 2):**
+- 🇫🇷 French
+- 🇩🇪 German
+- 🇵🇹 Portuguese
+
+**Infrastructure Improvements:**
+- Move from embedded translations to JSON files
+- Implement translation management system
+- Add professional translation review process
+- Implement pluralization rules per language
+- Add number/currency formatting per locale
 
 ---
 
