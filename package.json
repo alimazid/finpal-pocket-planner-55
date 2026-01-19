@@ -6,6 +6,9 @@
     "apps/backend",
     "packages/*"
   ],
+  "overrides": {
+    "next": "^14.2.35"
+  },
   "scripts": {
     "dev": "concurrently \"npm:dev:*\"",
     "dev:frontend": "npm run dev --workspace=apps/frontend",

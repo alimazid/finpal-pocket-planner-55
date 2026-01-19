@@ -30,3 +30,6 @@ apps/**/.env.*
 *.njsproj
 *.sln
 *.sw?
+
+# AutoMaker
+.automaker
