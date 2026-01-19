@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, DollarSign, Trash2, Plus, Edit, X } from "lucide-react";
+import { Calendar, DollarSign, Trash2, Plus, Edit, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
@@ -22,6 +22,13 @@ interface Transaction {
   date: string;
   type: 'expense' | 'income';
   currency: string;
+}
+
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
 }
 
 interface TransactionListProps {
@@ -44,9 +51,11 @@ interface TransactionListProps {
   availableCategories?: string[];
   language: 'english' | 'spanish';
   defaultCurrency?: string;
+  pagination?: PaginationInfo;
+  onPageChange?: (page: number) => void;
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransactionCategory, onEditTransaction, onCreateBudgetAndAssign, availableCategories, language, defaultCurrency }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransactionCategory, onEditTransaction, onCreateBudgetAndAssign, availableCategories, language, defaultCurrency, pagination, onPageChange }: TransactionListProps) {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -297,6 +306,40 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
         availableCategories={availableCategories}
         language={language}
       />
+
+      {/* Pagination Controls */}
+      {pagination && pagination.pages > 1 && onPageChange && (
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {t('showing')} {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} {t('of')} {pagination.total}
+          </p>
+          <div className="flex items-center gap-2">
+            {pagination.page > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(pagination.page - 1)}
+                className="gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('newer')}</span>
+              </Button>
+            )}
+
+            {pagination.page < pagination.pages && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(pagination.page + 1)}
+                className="gap-1"
+              >
+                <span className="hidden sm:inline">{t('older')}</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -92,6 +92,8 @@ const Index = () => {
   const [isTranslationOpen, setIsTranslationOpen] = useState(false);
   const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
   const [isBudgetWizardOpen, setIsBudgetWizardOpen] = useState(false);
+  const [transactionsPage, setTransactionsPage] = useState(1);
+  const TRANSACTIONS_PER_PAGE = 10;
 
   const [loading, setLoading] = useState(true);
 
@@ -304,9 +306,9 @@ const Index = () => {
     return addCalculatedPeriods(compatibleBudgets, activeTemplate);
   }, [allBudgets, periodTemplate, currentTargetYear, currentTargetMonth, getDefaultTemplate]);
 
-  // Fetch transactions
-  const { data: transactions = [], isLoading: transactionsLoading, error: transactionsError } = useQuery({
-    queryKey: ['transactions', user?.id],
+  // Fetch all transactions (for UncategorizedTransactions, BudgetSummary, totals, etc.)
+  const { data: allTransactions = [], isLoading: allTransactionsLoading, error: transactionsError } = useQuery({
+    queryKey: ['transactions', user?.id, 'all'],
     queryFn: async () => {
       if (!user?.id) throw new Error('User ID is required');
 
@@ -327,6 +329,63 @@ const Index = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Fetch paginated transactions for Recent Transactions list
+  const { data: paginatedTransactionsData, isLoading: paginatedTransactionsLoading } = useQuery({
+    queryKey: ['transactions', user?.id, 'paginated', transactionsPage],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User ID is required');
+
+      const response = await apiClient.getTransactions({
+        limit: TRANSACTIONS_PER_PAGE,
+        page: transactionsPage
+      });
+
+      if (response.success && response.data && response.data.transactions) {
+        // Convert to old format for compatibility
+        const transactions = response.data.transactions.map(tx => ({
+          ...tx,
+          user_id: tx.userId,
+          created_at: tx.createdAt.toString(),
+          updated_at: tx.updatedAt.toString(),
+          date: new Date(tx.date).toISOString().split('T')[0] // Convert to YYYY-MM-DD format
+        })) as Transaction[];
+
+        return {
+          transactions,
+          pagination: response.data.pagination
+        };
+      }
+      throw new Error(response.error || 'Failed to fetch transactions');
+    },
+    enabled: !!user?.id,
+  });
+
+  // Extract paginated transactions and pagination info for Recent Transactions list
+  const paginatedTransactions = paginatedTransactionsData?.transactions || [];
+  const transactionsPagination = paginatedTransactionsData?.pagination;
+  const transactionsLoading = allTransactionsLoading || paginatedTransactionsLoading;
+
+  // Use allTransactions for components that need all data
+  const transactions = allTransactions;
+
+  // Auto-navigate to previous page when current page becomes empty after deletions
+  useEffect(() => {
+    // Only act if we have pagination info and we're not on page 1
+    if (transactionsPagination && transactionsPage > 1) {
+      // If current page has no transactions but there are still transactions overall
+      if (paginatedTransactions.length === 0 && transactionsPagination.total > 0) {
+        // Calculate what the new last page should be
+        const newTotalPages = Math.ceil(transactionsPagination.total / TRANSACTIONS_PER_PAGE);
+        // Navigate to the last valid page (or previous page if we were beyond it)
+        setTransactionsPage(Math.min(transactionsPage - 1, Math.max(1, newTotalPages)));
+      }
+      // If there are no transactions at all, go back to page 1
+      else if (transactionsPagination.total === 0) {
+        setTransactionsPage(1);
+      }
+    }
+  }, [paginatedTransactions.length, transactionsPagination, transactionsPage]);
 
   // Log transaction errors for debugging
   if (transactionsError) {
@@ -1446,7 +1505,7 @@ const Index = () => {
             />
           </div>
           <TransactionList
-            transactions={transactions}
+            transactions={paginatedTransactions}
             onDeleteTransaction={(id) => deleteTransactionMutation.mutate(id)}
             onUpdateTransactionCategory={(id, category) => updateTransactionCategoryMutation.mutate({ transactionId: id, category: category || null })}
             onEditTransaction={(id, data) => editTransactionMutation.mutate({ transactionId: id, data })}
@@ -1454,6 +1513,8 @@ const Index = () => {
             availableCategories={budgets.sort((a, b) => (a.category?.sortOrder || 0) - (b.category?.sortOrder || 0)).map(budget => budget.category?.name || '')}
             language={selectedLanguage as 'english' | 'spanish'}
             defaultCurrency={userPreferences?.defaultCurrency}
+            pagination={transactionsPagination}
+            onPageChange={setTransactionsPage}
           />
         </div>
 

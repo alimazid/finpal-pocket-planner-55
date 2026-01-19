@@ -1247,6 +1247,14 @@ const translations: Translations = {
     english: 'Next',
     spanish: 'Siguiente'
   },
+  older: {
+    english: 'Older',
+    spanish: 'Anteriores'
+  },
+  newer: {
+    english: 'Newer',
+    spanish: 'Recientes'
+  },
   finish: {
     english: 'Finish',
     spanish: 'Finalizar'
