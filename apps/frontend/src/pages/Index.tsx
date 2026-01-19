@@ -331,7 +331,7 @@ const Index = () => {
   });
 
   // Fetch paginated transactions for Recent Transactions list
-  const { data: paginatedTransactionsData, isLoading: paginatedTransactionsLoading } = useQuery({
+  const { data: paginatedTransactionsData, isLoading: paginatedTransactionsLoading, isPlaceholderData } = useQuery({
     queryKey: ['transactions', user?.id, 'paginated', transactionsPage],
     queryFn: async () => {
       if (!user?.id) throw new Error('User ID is required');
@@ -359,12 +359,16 @@ const Index = () => {
       throw new Error(response.error || 'Failed to fetch transactions');
     },
     enabled: !!user?.id,
+    // Keep showing previous page data while fetching the new page to prevent flash
+    placeholderData: (previousData) => previousData,
   });
 
   // Extract paginated transactions and pagination info for Recent Transactions list
   const paginatedTransactions = paginatedTransactionsData?.transactions || [];
   const transactionsPagination = paginatedTransactionsData?.pagination;
-  const transactionsLoading = allTransactionsLoading || paginatedTransactionsLoading;
+  // Only use allTransactionsLoading for the main loading check
+  // paginatedTransactionsLoading is handled separately to avoid full-page re-render on pagination
+  const transactionsLoading = allTransactionsLoading;
 
   // Use allTransactions for components that need all data
   const transactions = allTransactions;
