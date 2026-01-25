@@ -34,20 +34,22 @@ async function startServer() {
     console.log('Testing database connection...');
     await prisma.$connect();
     console.log('✅ Database connected successfully');
-    
+
     console.log('=== RUNNING DATABASE SETUP ===');
     console.log('Setting up database schema...');
     console.log('ℹ️  Note: All database operations are SAFE and will NOT delete your data');
-    
-    const { execSync } = await import('child_process');
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
-    const isDevelopmentWatch = process.argv.includes('--watch') || process.env.npm_lifecycle_event === 'dev';
-    
-    // Skip database setup in development watch mode to prevent tsx restart loops
-    if (isDevelopmentWatch) {
-      console.log('🔧 Development watch mode detected - skipping database setup');
-      console.log('Run "npm run db:push" and "npm run db:seed" manually if needed');
-    } else if (isProduction) {
+
+    // Wrap all database setup in try-catch to ensure server always starts
+    try {
+      const { execSync } = await import('child_process');
+      const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+      const isDevelopmentWatch = process.argv.includes('--watch') || process.env.npm_lifecycle_event === 'dev';
+
+      // Skip database setup in development watch mode to prevent tsx restart loops
+      if (isDevelopmentWatch) {
+        console.log('🔧 Development watch mode detected - skipping database setup');
+        console.log('Run "npm run db:push" and "npm run db:seed" manually if needed');
+      } else if (isProduction) {
       console.log('🚀 Production environment detected - using safe migration commands');
       
       // In production, use migrate deploy (safe, no data loss)
@@ -151,7 +153,11 @@ async function startServer() {
         }
       }
     }
-    
+    } catch (setupError) {
+      console.error('❌ Database setup encountered an error:', setupError);
+      console.log('⚠️  Continuing to start server anyway...');
+    }
+
     console.log('=== STARTING SERVER ===');
     
     app.listen(PORT, '0.0.0.0', () => {
