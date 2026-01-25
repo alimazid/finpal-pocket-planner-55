@@ -16,6 +16,9 @@ import featureFlagRoutes from './routes/featureFlag.routes.js';
 
 const app = express();
 
+// Trust proxy - required for apps behind reverse proxies (Railway, etc.)
+app.set('trust proxy', 1);
+
 // Security middleware - configure helmet to allow Google OAuth
 app.use(helmet({
   crossOriginOpenerPolicy: { policy: "unsafe-none" },
