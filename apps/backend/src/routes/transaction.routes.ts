@@ -20,7 +20,8 @@ router.get('/',
         category: req.query.category as string,
         type: req.query.type as 'expense' | 'income',
         page: parseInt(req.query.page as string) || 1,
-        limit: parseInt(req.query.limit as string) || 20
+        limit: parseInt(req.query.limit as string) || 20,
+        searchQuery: req.query.searchQuery as string
       };
       const result = await transactionService.getTransactions(req.userId!, params);
       res.json({

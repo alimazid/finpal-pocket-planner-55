@@ -606,6 +606,66 @@ const translations: Translations = {
     spanish: 'Tipo de Cambio Sincronizado'
   },
 
+  // Exchange Rate Display (Toolbar)
+  exchangeRate: {
+    english: 'Exchange Rate',
+    spanish: 'Tipo de Cambio'
+  },
+  loadingExchangeRate: {
+    english: 'Loading exchange rate...',
+    spanish: 'Cargando tipo de cambio...'
+  },
+  exchangeRateUpdated: {
+    english: 'Updated',
+    spanish: 'Actualizado hace'
+  },
+  exchangeRateJustNow: {
+    english: 'Just updated',
+    spanish: 'Recién actualizado'
+  },
+  minuteAgo: {
+    english: 'minute ago',
+    spanish: 'minuto'
+  },
+  minutesAgo: {
+    english: 'minutes ago',
+    spanish: 'minutos'
+  },
+  hourAgo: {
+    english: 'hour ago',
+    spanish: 'hora'
+  },
+  hoursAgo: {
+    english: 'hours ago',
+    spanish: 'horas'
+  },
+  clickToRefresh: {
+    english: 'Click to refresh rate',
+    spanish: 'Clic para actualizar tasa'
+  },
+
+  // Search functionality
+  searchTransactions: {
+    english: 'Search transactions...',
+    spanish: 'Buscar transacciones...'
+  },
+  noSearchResults: {
+    english: 'No transactions found',
+    spanish: 'No se encontraron transacciones'
+  },
+  tryDifferentSearch: {
+    english: 'Try a different search term or clear the search',
+    spanish: 'Intenta un término de búsqueda diferente o limpia la búsqueda'
+  },
+  clearSearch: {
+    english: 'Clear Search',
+    spanish: 'Limpiar Búsqueda'
+  },
+  searchResults: {
+    english: 'Search results',
+    spanish: 'Resultados de búsqueda'
+  },
+
   // Toast notifications - Error messages
   failedToAddExpense: {
     english: 'Failed to add expense',

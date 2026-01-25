@@ -123,6 +123,7 @@ export interface TransactionQueryParams {
   type?: 'expense' | 'income';
   page?: number;
   limit?: number;
+  searchQuery?: string;
 }
 
 export interface BudgetQueryParams {

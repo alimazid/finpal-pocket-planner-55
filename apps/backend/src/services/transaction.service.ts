@@ -22,6 +22,9 @@ export class TransactionService {
           gte: params.startDate,
           lte: params.endDate
         }
+      }),
+      ...(params.searchQuery && {
+        description: { contains: params.searchQuery, mode: 'insensitive' }
       })
     };
 

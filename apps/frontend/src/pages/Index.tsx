@@ -15,6 +15,7 @@ import { UncategorizedTransactions } from "@/components/transactions/Uncategoriz
 import { AddTransactionButton } from "@/components/transactions/AddTransactionButton";
 import { PeriodSelectionModal } from "@/components/periods/PeriodSelectionModal";
 import { GmailStatusIndicator } from "@/components/gmail/GmailStatusIndicator";
+import { ConversionRateDisplay } from "@/components/toolbar/ConversionRateDisplay";
 import { initiateGmailOAuth } from "@/lib/gmailOAuth";
 
 import { DollarSign, TrendingUp, Target, CreditCard, Calendar, AlertTriangle, Menu, LogOut, Trash2, Languages, Settings, ChevronLeft, ChevronRight, Home, Download, Mail, Sun, Moon } from "lucide-react";
@@ -93,6 +94,7 @@ const Index = () => {
   const [isPeriodSelectionOpen, setIsPeriodSelectionOpen] = useState(false);
   const [isBudgetWizardOpen, setIsBudgetWizardOpen] = useState(false);
   const [transactionsPage, setTransactionsPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const TRANSACTIONS_PER_PAGE = 10;
 
   const [loading, setLoading] = useState(true);
@@ -332,13 +334,14 @@ const Index = () => {
 
   // Fetch paginated transactions for Recent Transactions list
   const { data: paginatedTransactionsData, isLoading: paginatedTransactionsLoading, isPlaceholderData } = useQuery({
-    queryKey: ['transactions', user?.id, 'paginated', transactionsPage],
+    queryKey: ['transactions', user?.id, 'paginated', transactionsPage, searchQuery],
     queryFn: async () => {
       if (!user?.id) throw new Error('User ID is required');
 
       const response = await apiClient.getTransactions({
         limit: TRANSACTIONS_PER_PAGE,
-        page: transactionsPage
+        page: transactionsPage,
+        ...(searchQuery && { searchQuery })
       });
 
       if (response.success && response.data && response.data.transactions) {
@@ -390,6 +393,13 @@ const Index = () => {
       }
     }
   }, [paginatedTransactions.length, transactionsPagination, transactionsPage]);
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    if (searchQuery) {
+      setTransactionsPage(1);
+    }
+  }, [searchQuery]);
 
   // Log transaction errors for debugging
   if (transactionsError) {
@@ -1173,6 +1183,9 @@ const Index = () => {
 
             </div>
             <div className="flex items-center gap-2">
+              <ConversionRateDisplay
+                language={selectedLanguage as 'english' | 'spanish'}
+              />
               <GmailStatusIndicator
                 account={gmailAccount}
                 onConnect={() => initiateGmailOAuth()}
@@ -1519,6 +1532,8 @@ const Index = () => {
             defaultCurrency={userPreferences?.defaultCurrency}
             pagination={transactionsPagination}
             onPageChange={setTransactionsPage}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
         </div>
 

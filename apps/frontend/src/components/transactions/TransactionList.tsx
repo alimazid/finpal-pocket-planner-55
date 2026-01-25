@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, DollarSign, Trash2, Plus, Edit, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, DollarSign, Trash2, Plus, Edit, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
@@ -53,9 +53,11 @@ interface TransactionListProps {
   defaultCurrency?: string;
   pagination?: PaginationInfo;
   onPageChange?: (page: number) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
-export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransactionCategory, onEditTransaction, onCreateBudgetAndAssign, availableCategories, language, defaultCurrency, pagination, onPageChange }: TransactionListProps) {
+export function TransactionList({ transactions, onDeleteTransaction, onUpdateTransactionCategory, onEditTransaction, onCreateBudgetAndAssign, availableCategories, language, defaultCurrency, pagination, onPageChange, searchQuery, onSearchChange }: TransactionListProps) {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [isNewBudgetModalOpen, setIsNewBudgetModalOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -155,7 +157,46 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
 
   return (
     <div className="space-y-2">
-      {transactions.length === 0 ? (
+      {/* Search Input */}
+      {onSearchChange && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder={t('searchTransactions')}
+            value={searchQuery || ''}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10 pr-4"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+              onClick={() => onSearchChange('')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Enhanced Empty States */}
+      {searchQuery && transactions.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground bg-gradient-card rounded-lg">
+          <Search className="h-12 w-12 mx-auto mb-2 opacity-50" />
+          <p className="font-medium">{t('noSearchResults')}</p>
+          <p className="text-sm">{t('tryDifferentSearch')}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => onSearchChange && onSearchChange('')}
+          >
+            {t('clearSearch')}
+          </Button>
+        </div>
+      ) : transactions.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground bg-gradient-card rounded-lg">
           <DollarSign className="h-12 w-12 mx-auto mb-2 opacity-50" />
           <p>{t('noTransactionsYet')}</p>
@@ -311,6 +352,7 @@ export function TransactionList({ transactions, onDeleteTransaction, onUpdateTra
       {pagination && pagination.pages > 1 && onPageChange && (
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
+            {searchQuery && <span className="font-medium">{t('searchResults')}: </span>}
             {t('showing')} {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} {t('of')} {pagination.total}
           </p>
           <div className="flex items-center gap-2">
