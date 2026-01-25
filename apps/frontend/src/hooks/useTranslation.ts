@@ -363,10 +363,6 @@ const translations: Translations = {
     english: 'Add Category',
     spanish: 'Agregar Categoría'
   },
-  totalBudget: {
-    english: 'Total Budget',
-    spanish: 'Presupuesto Total'
-  },
   reviewAndCreate: {
     english: 'Review & Create',
     spanish: 'Revisar y Crear'
@@ -568,10 +564,6 @@ const translations: Translations = {
   enterDescription: {
     english: 'Enter description',
     spanish: 'Ingresa una descripción'
-  },
-  save: {
-    english: 'Save',
-    spanish: 'Guardar'
   },
   categoryUpdated: {
     english: 'Category Updated',
