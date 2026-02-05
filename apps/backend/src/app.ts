@@ -53,7 +53,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ success: true, message: 'Server is healthy' });
+  res.json({ success: true, message: 'Server is healthy v2' });
 });
 
 // API routes
