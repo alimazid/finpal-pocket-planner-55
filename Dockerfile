@@ -104,4 +104,4 @@ echo "Starting Node.js server..."\n\
 node dist/server.js' > /start.sh && chmod +x /start.sh
 
 # Run startup script
-CMD ["/start.sh"]
+CMD ["/start.sh"]# Force rebuild 1770257308
