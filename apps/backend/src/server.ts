@@ -5,6 +5,17 @@ import { prisma } from './config/database.js';
 // Load environment variables
 dotenv.config();
 
+// Global error handlers to catch crashes
+process.on('uncaughtException', (error) => {
+  console.error('💥 UNCAUGHT EXCEPTION:', error);
+  console.error('Stack:', error.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 UNHANDLED REJECTION at:', promise);
+  console.error('Reason:', reason);
+});
+
 // Validate required environment variables
 const requiredEnvVars = [
   'DATABASE_URL',

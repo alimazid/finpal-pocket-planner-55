@@ -31,13 +31,14 @@ export class BudgetService {
       }
     });
 
-    // Recalculate spent amounts for each budget
-    const budgetsWithCalculatedSpent = await Promise.all(
-      budgets.map(async (budget) => {
+    // Recalculate spent amounts for each budget SEQUENTIALLY to avoid connection pool exhaustion
+    const budgetsWithCalculatedSpent = [];
+    for (const budget of budgets) {
+      try {
         const spent = await this.calculateSpent(
-          userId, 
-          budget.categoryId, 
-          budget.targetYear, 
+          userId,
+          budget.categoryId,
+          budget.targetYear,
           budget.targetMonth
         );
 
@@ -47,13 +48,21 @@ export class BudgetService {
           data: { spent }
         });
 
-        return {
+        budgetsWithCalculatedSpent.push({
           ...budget,
           spent: Number(spent),
           amount: Number(budget.amount)
-        };
-      })
-    );
+        });
+      } catch (error) {
+        console.error(`Error calculating spent for budget ${budget.id}:`, error);
+        // Still include budget with existing spent amount
+        budgetsWithCalculatedSpent.push({
+          ...budget,
+          spent: Number(budget.spent),
+          amount: Number(budget.amount)
+        });
+      }
+    }
 
     return budgetsWithCalculatedSpent;
   }
