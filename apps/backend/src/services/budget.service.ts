@@ -15,14 +15,17 @@ export class BudgetService {
   private currencyService = new CurrencyService();
 
   async getBudgetsForPeriod(userId: string, params: BudgetQueryParams) {
+    // Simple query - just return cached spent values from database
+    // Spent amounts are updated when transactions are created/updated/deleted
+    // or via explicit recalculation endpoint
     const budgets = await prisma.budget.findMany({
-      where: { 
-        userId, 
-        targetYear: params.year, 
-        targetMonth: params.month 
+      where: {
+        userId,
+        targetYear: params.year,
+        targetMonth: params.month
       },
-      include: { 
-        category: true 
+      include: {
+        category: true
       },
       orderBy: {
         category: {
@@ -31,40 +34,12 @@ export class BudgetService {
       }
     });
 
-    // Recalculate spent amounts for each budget SEQUENTIALLY to avoid connection pool exhaustion
-    const budgetsWithCalculatedSpent = [];
-    for (const budget of budgets) {
-      try {
-        const spent = await this.calculateSpent(
-          userId,
-          budget.categoryId,
-          budget.targetYear,
-          budget.targetMonth
-        );
-
-        // Update the spent amount in database
-        await prisma.budget.update({
-          where: { id: budget.id },
-          data: { spent }
-        });
-
-        budgetsWithCalculatedSpent.push({
-          ...budget,
-          spent: Number(spent),
-          amount: Number(budget.amount)
-        });
-      } catch (error) {
-        console.error(`Error calculating spent for budget ${budget.id}:`, error);
-        // Still include budget with existing spent amount
-        budgetsWithCalculatedSpent.push({
-          ...budget,
-          spent: Number(budget.spent),
-          amount: Number(budget.amount)
-        });
-      }
-    }
-
-    return budgetsWithCalculatedSpent;
+    // Return budgets with their cached spent values - no recalculation on GET
+    return budgets.map(budget => ({
+      ...budget,
+      spent: Number(budget.spent),
+      amount: Number(budget.amount)
+    }));
   }
 
   async getBudgetById(userId: string, budgetId: string) {
@@ -237,22 +212,22 @@ export class BudgetService {
       return [];
     }
 
-    // Create budgets for missing categories, copying amounts from previous period
-    const newBudgets = await Promise.all(
-      missingBudgets.map(previousBudget =>
-        prisma.budget.create({
-          data: {
-            userId,
-            categoryId: previousBudget.categoryId,
-            amount: previousBudget.amount, // Copy amount from previous period
-            currency: previousBudget.currency,
-            targetYear,
-            targetMonth,
-          },
-          include: { category: true }
-        })
-      )
-    );
+    // Create budgets for missing categories SEQUENTIALLY to avoid connection pool issues
+    const newBudgets = [];
+    for (const previousBudget of missingBudgets) {
+      const budget = await prisma.budget.create({
+        data: {
+          userId,
+          categoryId: previousBudget.categoryId,
+          amount: previousBudget.amount, // Copy amount from previous period
+          currency: previousBudget.currency,
+          targetYear,
+          targetMonth,
+        },
+        include: { category: true }
+      });
+      newBudgets.push(budget);
+    }
 
     return newBudgets.map(budget => ({
       ...budget,
@@ -356,9 +331,10 @@ export class BudgetService {
       where: { userId }
     });
 
-    // Recalculate spent amounts for each budget
-    await Promise.all(
-      budgets.map(async (budget) => {
+    // Recalculate spent amounts SEQUENTIALLY to avoid connection pool exhaustion
+    let recalculated = 0;
+    for (const budget of budgets) {
+      try {
         const spent = await this.calculateSpent(
           userId,
           budget.categoryId,
@@ -370,10 +346,13 @@ export class BudgetService {
           where: { id: budget.id },
           data: { spent }
         });
-      })
-    );
+        recalculated++;
+      } catch (error) {
+        console.error(`Error recalculating budget ${budget.id}:`, error);
+      }
+    }
 
-    return { success: true, recalculated: budgets.length };
+    return { success: true, recalculated };
   }
 
   async recalculateBudgetForCategory(userId: string, categoryName: string, targetYear: number, targetMonth: number) {
