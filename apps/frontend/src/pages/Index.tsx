@@ -1173,7 +1173,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Action Bar */}
-      <div className="bg-gradient-primary border-b border-primary/20">
+      <div className="bg-gradient-primary border-b border-primary/20 pt-[env(safe-area-inset-top)]">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
