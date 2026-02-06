@@ -1183,9 +1183,6 @@ const Index = () => {
 
             </div>
             <div className="flex items-center gap-2">
-              <ConversionRateDisplay
-                language={selectedLanguage as 'english' | 'spanish'}
-              />
               <GmailStatusIndicator
                 account={gmailAccount}
                 onConnect={() => initiateGmailOAuth()}
@@ -1202,6 +1199,9 @@ const Index = () => {
                 onDisconnect={(accountId) => {
                   disconnectGmailAccountMutation.mutate(accountId);
                 }}
+                language={selectedLanguage as 'english' | 'spanish'}
+              />
+              <ConversionRateDisplay
                 language={selectedLanguage as 'english' | 'spanish'}
               />
               <DropdownMenu>
