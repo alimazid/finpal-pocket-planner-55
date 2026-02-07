@@ -1391,6 +1391,18 @@ const translations: Translations = {
     english: 'Your Gmail account has been successfully connected and will now monitor for transaction emails.',
     spanish: 'Tu cuenta de Gmail se ha conectado exitosamente y ahora monitoreará correos de transacciones.'
   },
+  failedToPauseGmailMonitoring: {
+    english: 'Failed to pause Gmail monitoring',
+    spanish: 'Error al pausar el monitoreo de Gmail'
+  },
+  failedToResumeGmailMonitoring: {
+    english: 'Failed to resume Gmail monitoring',
+    spanish: 'Error al reanudar el monitoreo de Gmail'
+  },
+  failedToDisconnectGmailAccount: {
+    english: 'Failed to disconnect Gmail account',
+    spanish: 'Error al desconectar la cuenta de Gmail'
+  },
 
   // Gmail Wizard
   gmailWizard: {
