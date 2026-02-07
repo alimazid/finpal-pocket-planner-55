@@ -1,39 +1,32 @@
 import { Router } from 'express';
 import { FeatureFlagService } from '../services/featureFlag.service.js';
+import { authenticateToken } from '../middleware/auth.middleware.js';
 
 const router = Router();
 const featureFlagService = new FeatureFlagService();
 
-// GET /feature-flags - Get all enabled feature flags for frontend
+// GET /feature-flags — Get all enabled feature flags for frontend (public)
 router.get('/', async (req, res, next) => {
   try {
     const flags = await featureFlagService.getEnabledFlags();
-
-    res.json({
-      success: true,
-      data: flags
-    });
+    res.json({ success: true, data: flags });
   } catch (error) {
     next(error);
   }
 });
 
-// GET /feature-flags/admin - Get all feature flags (admin endpoint)
-router.get('/admin', async (req, res, next) => {
+// GET /feature-flags/admin — Get all feature flags (protected)
+router.get('/admin', authenticateToken, async (req, res, next) => {
   try {
     const flags = await featureFlagService.getAllFlags();
-
-    res.json({
-      success: true,
-      data: flags
-    });
+    res.json({ success: true, data: flags });
   } catch (error) {
     next(error);
   }
 });
 
-// PUT /feature-flags/:key - Update a specific feature flag
-router.put('/:key', async (req, res, next) => {
+// PUT /feature-flags/:key — Update a specific feature flag (protected)
+router.put('/:key', authenticateToken, async (req, res, next) => {
   try {
     const { key } = req.params;
     const { isEnabled } = req.body;
@@ -46,18 +39,14 @@ router.put('/:key', async (req, res, next) => {
     }
 
     const flag = await featureFlagService.updateFlag(key, isEnabled);
-
-    res.json({
-      success: true,
-      data: flag
-    });
+    res.json({ success: true, data: flag });
   } catch (error) {
     next(error);
   }
 });
 
-// POST /feature-flags/bulk - Bulk update feature flags
-router.post('/bulk', async (req, res, next) => {
+// POST /feature-flags/bulk — Bulk update feature flags (protected)
+router.post('/bulk', authenticateToken, async (req, res, next) => {
   try {
     const { updates } = req.body;
 
@@ -68,7 +57,6 @@ router.post('/bulk', async (req, res, next) => {
       });
     }
 
-    // Validate updates format
     const isValidFormat = updates.every(update =>
       typeof update === 'object' &&
       typeof update.key === 'string' &&
@@ -83,11 +71,7 @@ router.post('/bulk', async (req, res, next) => {
     }
 
     const results = await featureFlagService.bulkUpdateFlags(updates);
-
-    res.json({
-      success: true,
-      data: results
-    });
+    res.json({ success: true, data: results });
   } catch (error) {
     next(error);
   }

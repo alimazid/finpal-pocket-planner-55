@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { AuthService } from '../services/auth.service.js';
 import { GoogleAuthService } from '../services/googleAuth.service.js';
 import { validateBody } from '../middleware/validation.middleware.js';
@@ -10,15 +10,44 @@ const router = Router();
 const authService = new AuthService();
 const googleAuthService = new GoogleAuthService();
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+  res.cookie('access_token', accessToken, {
+    httpOnly: true,
+    secure: IS_PROD,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  });
+  res.cookie('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: IS_PROD,
+    sameSite: 'lax',
+    path: '/api/auth',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+}
+
+function clearAuthCookies(res: Response) {
+  res.clearCookie('access_token', { path: '/' });
+  res.clearCookie('refresh_token', { path: '/api/auth' });
+}
+
 // POST /auth/register
-router.post('/register', 
+router.post('/register',
   validateBody(schemas.createUser),
   async (req, res, next) => {
     try {
       const result = await authService.register(req.body);
+      setAuthCookies(res, result.accessToken, result.refreshToken);
       res.status(201).json({
         success: true,
-        data: result
+        data: {
+          user: result.user,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+        }
       });
     } catch (error) {
       next(error);
@@ -32,11 +61,59 @@ router.post('/login',
   async (req, res, next) => {
     try {
       const result = await authService.login(req.body);
+      setAuthCookies(res, result.accessToken, result.refreshToken);
       res.json({
         success: true,
-        data: result
+        data: {
+          user: result.user,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+        }
       });
     } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /auth/logout
+router.post('/logout',
+  async (req, res, next) => {
+    try {
+      const refreshToken = req.cookies?.refresh_token;
+      if (refreshToken) {
+        await authService.revokeRefreshToken(refreshToken);
+      }
+      clearAuthCookies(res);
+      res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /auth/refresh
+router.post('/refresh',
+  async (req, res, next) => {
+    try {
+      const refreshToken = req.cookies?.refresh_token;
+      if (!refreshToken) {
+        return res.status(401).json({
+          success: false,
+          error: 'Refresh token required'
+        });
+      }
+
+      const result = await authService.refreshAccessToken(refreshToken);
+      setAuthCookies(res, result.accessToken, result.refreshToken);
+      res.json({
+        success: true,
+        data: {
+          accessToken: result.accessToken,
+        }
+      });
+    } catch (error) {
+      clearAuthCookies(res);
       next(error);
     }
   }
@@ -75,7 +152,24 @@ router.put('/profile',
   }
 );
 
-// POST /auth/google - Handle Google OAuth login
+// DELETE /auth/profile
+router.delete('/profile',
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      await authService.deleteUser(req.userId!);
+      clearAuthCookies(res);
+      res.json({
+        success: true,
+        message: 'Account deleted successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /auth/google — Handle Google OAuth login
 router.post('/google',
   async (req, res, next) => {
     try {
@@ -89,10 +183,17 @@ router.post('/google',
       }
 
       const result = await googleAuthService.loginWithGoogle(idToken);
+      // Generate refresh token for the Google-auth user
+      const refreshToken = await authService.generateRefreshToken(result.user.id);
+      setAuthCookies(res, result.token, refreshToken);
 
       res.json({
         success: true,
-        data: result
+        data: {
+          ...result,
+          accessToken: result.token,
+          refreshToken,
+        }
       });
     } catch (error) {
       next(error);
@@ -100,7 +201,7 @@ router.post('/google',
   }
 );
 
-// GET /auth/google/url - Generate Google OAuth URL
+// GET /auth/google/url — Generate Google OAuth URL
 router.get('/google/url',
   async (req, res, next) => {
     try {
@@ -117,7 +218,7 @@ router.get('/google/url',
   }
 );
 
-// GET /auth/google/callback - Handle OAuth callback (optional)
+// GET /auth/google/callback — Handle OAuth callback
 router.get('/google/callback',
   async (req, res, next) => {
     try {
@@ -130,25 +231,23 @@ router.get('/google/callback',
         });
       }
 
-      // Exchange code for tokens and get user info
       const googleUser = await googleAuthService.exchangeCodeForTokens(code as string);
-
-      // Use the same login flow as the direct Google OAuth endpoint
       const result = await googleAuthService.loginWithGoogleUserInfo(googleUser);
+      const refreshToken = await authService.generateRefreshToken(result.user.id);
+      setAuthCookies(res, result.token, refreshToken);
 
       res.json({
         success: true,
-        data: result
+        data: {
+          ...result,
+          accessToken: result.token,
+          refreshToken,
+        }
       });
     } catch (error) {
       next(error);
     }
   }
 );
-
-// Simple test route for debugging
-router.get('/test', (req, res) => {
-  res.json({ success: true, message: 'Auth routes are working' });
-});
 
 export default router;

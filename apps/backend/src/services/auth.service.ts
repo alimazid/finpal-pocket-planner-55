@@ -1,13 +1,14 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import axios from 'axios';
 import { prisma } from '../config/database.js';
 import { CreateUserDto, LoginDto, User } from '../types/index.js';
 import { UnauthorizedError, ValidationError } from '../middleware/error.middleware.js';
 
 export class AuthService {
-  
-  async register(userData: CreateUserDto): Promise<{ user: User; token: string }> {
-    // Check if user already exists
+
+  async register(userData: CreateUserDto): Promise<{ user: User; accessToken: string; refreshToken: string }> {
     const existingUser = await prisma.user.findUnique({
       where: { email: userData.email }
     });
@@ -16,10 +17,8 @@ export class AuthService {
       throw new ValidationError('User with this email already exists');
     }
 
-    // Hash password
     const passwordHash = await bcrypt.hash(userData.password, 12);
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         email: userData.email,
@@ -37,7 +36,6 @@ export class AuthService {
       }
     });
 
-    // Create default preferences
     await prisma.userPreference.create({
       data: {
         userId: user.id,
@@ -46,14 +44,13 @@ export class AuthService {
       }
     });
 
-    // Generate JWT token
-    const token = this.generateToken(user);
+    const accessToken = this.generateToken(user);
+    const refreshToken = await this.generateRefreshToken(user.id);
 
-    return { user, token };
+    return { user, accessToken, refreshToken };
   }
 
-  async login(loginData: LoginDto): Promise<{ user: User; token: string }> {
-    // Find user
+  async login(loginData: LoginDto): Promise<{ user: User; accessToken: string; refreshToken: string }> {
     const user = await prisma.user.findUnique({
       where: { email: loginData.email }
     });
@@ -62,19 +59,17 @@ export class AuthService {
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    // Verify password
     const isValidPassword = await bcrypt.compare(loginData.password, user.passwordHash);
     if (!isValidPassword) {
       throw new UnauthorizedError('Invalid email or password');
     }
 
-    // Generate token
-    const token = this.generateToken(user);
+    const accessToken = this.generateToken(user);
+    const refreshToken = await this.generateRefreshToken(user.id);
 
-    // Return user without password hash
     const { passwordHash, ...userWithoutPassword } = user;
 
-    return { user: userWithoutPassword, token };
+    return { user: userWithoutPassword, accessToken, refreshToken };
   }
 
   async getProfile(userId: string): Promise<User> {
@@ -106,7 +101,6 @@ export class AuthService {
     }
 
     if (updateData.email !== undefined) {
-      // Check if email is already taken by another user
       const existingUser = await prisma.user.findFirst({
         where: {
           email: updateData.email,
@@ -150,7 +144,7 @@ export class AuthService {
       },
       process.env.JWT_SECRET!,
       {
-        expiresIn: '30d'
+        expiresIn: '15m'
       }
     );
   }
@@ -165,5 +159,101 @@ export class AuthService {
     } catch (error) {
       throw new UnauthorizedError('Invalid or expired token');
     }
+  }
+
+  async generateRefreshToken(userId: string, deviceInfo?: string): Promise<string> {
+    const rawToken = crypto.randomBytes(64).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    await prisma.refreshToken.create({
+      data: {
+        tokenHash,
+        userId,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        deviceInfo,
+      }
+    });
+
+    return rawToken;
+  }
+
+  async refreshAccessToken(rawToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: true }
+    });
+
+    if (!storedToken || storedToken.isRevoked || storedToken.expiresAt < new Date()) {
+      if (storedToken && !storedToken.isRevoked) {
+        // Token expired — revoke it
+        await prisma.refreshToken.update({
+          where: { id: storedToken.id },
+          data: { isRevoked: true }
+        });
+      }
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+
+    // Revoke old token (rotation)
+    await prisma.refreshToken.update({
+      where: { id: storedToken.id },
+      data: { isRevoked: true }
+    });
+
+    // Issue new pair
+    const accessToken = this.generateToken(storedToken.user);
+    const newRefreshToken = await this.generateRefreshToken(storedToken.userId, storedToken.deviceInfo ?? undefined);
+
+    return { accessToken, refreshToken: newRefreshToken };
+  }
+
+  async revokeRefreshToken(rawToken: string): Promise<void> {
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    await prisma.refreshToken.updateMany({
+      where: { tokenHash, isRevoked: false },
+      data: { isRevoked: true }
+    });
+  }
+
+  async revokeAllUserTokens(userId: string): Promise<void> {
+    await prisma.refreshToken.updateMany({
+      where: { userId, isRevoked: false },
+      data: { isRevoked: true }
+    });
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Delete linked Gmail accounts from Penny first
+    const gmailAccounts = await prisma.gmailAccount.findMany({
+      where: { userId }
+    });
+
+    const pennyApiUrl = process.env.PENNY_API_URL;
+    const pennyApiKey = process.env.PENNY_API_KEY;
+
+    if (pennyApiUrl && pennyApiKey) {
+      for (const account of gmailAccounts) {
+        try {
+          await axios.delete(
+            `${pennyApiUrl}/api/external/accounts/${account.pennyAccountId}`,
+            {
+              headers: { 'X-API-Key': pennyApiKey },
+              timeout: 10000
+            }
+          );
+        } catch (error) {
+          // Log but continue — don't block user deletion
+          console.error(`Failed to remove Gmail account ${account.id} from Penny:`, error);
+        }
+      }
+    }
+
+    // Revoke all refresh tokens
+    await this.revokeAllUserTokens(userId);
+
+    // Delete user — cascading delete handles related records
+    await prisma.user.delete({ where: { id: userId } });
   }
 }

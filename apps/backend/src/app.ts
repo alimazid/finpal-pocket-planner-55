@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import { errorHandler } from './middleware/error.middleware.js';
 
 // Route imports
@@ -19,11 +20,33 @@ const app = express();
 // Trust proxy - required for apps behind reverse proxies (Railway, etc.)
 app.set('trust proxy', 1);
 
-// Security middleware - configure helmet to allow Google OAuth
+// Security middleware
 app.use(helmet({
   crossOriginOpenerPolicy: { policy: "unsafe-none" },
   crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://accounts.google.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com"],
+      frameSrc: ["https://accounts.google.com"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
 }));
+
+// Cookie parser
+app.use(cookieParser());
 
 // Configure CORS to accept multiple origins
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -36,10 +59,10 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Rate limiting
+// Global rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs (increased for development)
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
   message: {
     success: false,
     error: 'Too many requests from this IP, please try again later.'
@@ -47,16 +70,36 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Login rate limiter (5 attempts per 15 minutes)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    error: 'Too many login attempts, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Anti-caching headers on API responses
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Pragma', 'no-cache');
+  next();
+});
 
 // Health check
 app.get('/health', (req, res) => {
   res.json({ success: true, message: 'Server is healthy' });
 });
 
-// API routes
+// API routes — apply login limiter to auth/login specifically
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/transactions', transactionRoutes);

@@ -21,13 +21,14 @@ model User {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  accounts      Account[]
-  sessions      Session[]
-  preferences   UserPreference?
-  categories    BudgetCategory[]
-  budgets       Budget[]
-  transactions  Transaction[]
-  gmailAccounts GmailAccount[]
+  accounts       Account[]
+  sessions       Session[]
+  preferences    UserPreference?
+  categories     BudgetCategory[]
+  budgets        Budget[]
+  transactions   Transaction[]
+  gmailAccounts  GmailAccount[]
+  refreshTokens  RefreshToken[]
 
   @@map("users")
 }
@@ -201,4 +202,31 @@ model FeatureFlag {
   @@index([key])
   @@index([isEnabled])
   @@map("feature_flags")
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  tokenHash   String   @unique @map("token_hash")
+  userId      String   @map("user_id")
+  expiresAt   DateTime @map("expires_at")
+  isRevoked   Boolean  @default(false) @map("is_revoked")
+  deviceInfo  String?  @map("device_info")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model OAuthState {
+  id        String   @id @default(cuid())
+  state     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("oauth_states")
 }

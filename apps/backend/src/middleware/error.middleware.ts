@@ -45,7 +45,7 @@ export function errorHandler(
         return res.status(400).json({
           success: false,
           error: 'Database error',
-          message: error.message
+          message: 'An unexpected database error occurred'
         });
     }
   }
