@@ -39,23 +39,9 @@ const GoogleAuthCallback = () => {
       }
 
       try {
-        // Send code to backend for token exchange
-        const params = new URLSearchParams({ code });
-        if (state) params.append('state', state);
+        const response = await apiClient.googleAuthCallback(code, state ?? undefined);
 
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/google/callback?${params}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.data?.user && data.data?.token) {
-          // Store the token
-          apiClient.setToken(data.data.token);
-
+        if (response.success && response.data) {
           // Track successful Google sign-in
           posthog?.capture('user_signed_in', {
             method: 'google',
@@ -68,7 +54,7 @@ const GoogleAuthCallback = () => {
 
           navigate("/dashboard");
         } else {
-          throw new Error(data.error || 'Authentication failed');
+          throw new Error(response.error || 'Authentication failed');
         }
       } catch (error) {
         toast({

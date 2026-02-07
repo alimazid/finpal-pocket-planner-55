@@ -59,9 +59,9 @@ export const GmailOAuthCallback: React.FC = () => {
             description: `Your Gmail account ${response.data.gmailAddress} has been connected and monitoring has been started.`
           });
 
-          // Redirect to home page after a short delay
+          // Redirect to dashboard after a short delay
           setTimeout(() => {
-            navigate('/', { replace: true });
+            navigate('/dashboard', { replace: true });
           }, 2000);
         } else {
           throw new Error(response.error || 'Failed to connect Gmail account');
@@ -84,11 +84,11 @@ export const GmailOAuthCallback: React.FC = () => {
   }, [searchParams, navigate, toast]);
 
   const handleRetry = () => {
-    navigate('/', { replace: true });
+    navigate('/dashboard', { replace: true });
   };
 
   const handleGoToSettings = () => {
-    navigate('/', { replace: true });
+    navigate('/dashboard', { replace: true });
   };
 
   return (

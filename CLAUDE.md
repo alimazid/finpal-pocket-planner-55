@@ -4,144 +4,83 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FinPal Pocket Planner is a personal finance management application built with React, TypeScript, Express, and Prisma. It features budget tracking with flexible period management, transaction categorization, multi-currency support, and internationalization.
+FinPal Pocket Planner is a personal finance management app. It's a monorepo with an Express/Prisma backend and React/Vite frontend. See `../../DEVELOPER_GUIDE.md` for full ecosystem docs.
 
-## Development Commands
+## Quick Reference
 
-### Core Development
-- `npm run dev` - Start development server on port 8080
-- `npm run build` - Production build
-- `npm run build:dev` - Development build
-- `npm run lint` - Run ESLint
-- `npm run preview` - Preview production build
+### Development Commands
+```bash
+npm run dev              # Run both frontend (8080) + backend (3001)
+npm run dev:frontend     # Frontend only
+npm run dev:backend      # Backend only
+npm run build            # Production build
+npm run db:migrate       # Run Prisma migrations
+npm run db:push          # Push schema changes (dev)
+npm run db:studio        # Prisma Studio GUI
+npm run lint             # ESLint all workspaces
+```
 
-### Linting and Type Checking
-Always run `npm run lint` before committing changes. No separate TypeScript check is configured; type checking is done through the build process.
+### Architecture
+- **Backend**: Express.js + Prisma + PostgreSQL + JWT auth + Google OAuth
+- **Frontend**: React 18 + Vite + TailwindCSS + shadcn/ui + React Query
+- **Pattern**: Routes -> Middleware -> Services -> Prisma -> PostgreSQL
 
-## Architecture Overview
+### Key Files
 
-### Backend: Express + Prisma
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT-based authentication with bcrypt password hashing
-- **API**: RESTful Express.js API with middleware for validation, rate limiting, and CORS
-- **Exchange Rates**: Seeded currency conversion rates with automatic updates
+**Backend** (`apps/backend/src/`):
+- `server.ts` / `app.ts` - Express setup with middleware, CORS, rate limiting
+- `middleware/auth.middleware.ts` - JWT verification (`authenticateToken`)
+- `middleware/validation.middleware.ts` - Zod schema validation
+- `middleware/error.middleware.ts` - Global error handler (Zod, Prisma, custom errors)
+- `services/budget.service.ts` - Budget CRUD + spent calculation with currency conversion
+- `services/transaction.service.ts` - Transaction CRUD + triggers budget recalculation
+- `services/gmail.service.ts` - Penny API integration + webhook processing
+- `utils/periodCalculations.ts` - Period date logic (calendar_month / specific_day)
+- `prisma/schema.prisma` - Database schema
 
-Key tables:
-- `users` - User authentication with password hashing
-- `user_preferences` - Period type settings and language preferences
-- `budget_categories` - User-defined budget categories with sort order
-- `budgets` - Budget allocations with target month/year system
-- `transactions` - Financial transactions with categorization
-- `exchange_rates` - Currency conversion rates
+**Frontend** (`apps/frontend/src/`):
+- `lib/api-client.ts` - Axios client with JWT interceptor, all API endpoints
+- `lib/periodCalculations.ts` - Client-side period calculations (mirrors backend)
+- `lib/budgetTemplates.ts` - Lifestyle-based budget suggestions for wizard
+- `hooks/useTranslation.ts` - EN/ES bilingual hook with 1000+ keys
+- `hooks/useFeatureFlags.ts` - Feature flag conditional rendering
+- `hooks/useBudgetPeriodTemplate.ts` - User period preferences
+- `pages/Index.tsx` - Main dashboard (budgets, transactions, drag-drop)
+- `components/budget/BudgetWizard.tsx` - 9-step guided setup
 
-### Frontend Architecture
+### Database Models
+User, Account, Session, UserPreference, BudgetCategory, Budget, Transaction, ExchangeRate, Currency, GmailAccount, FeatureFlag
 
-**State Management**:
-- React Query (`@tanstack/react-query`) for server state
-- Local React state for UI state
-- Custom hooks for complex logic
+### Budget Period System
+Two modes controlled by UserPreference.periodType:
+- `calendar_month`: 1st to last day of month
+- `specific_day`: Day X of prev month to Day X-1 of target month
 
-**Key Components Structure**:
-- `src/pages/` - Route components (Index, Auth, NotFound)
-- `src/components/` - Feature-specific components organized by domain
-- `src/lib/api-client.ts` - API client for backend communication
-- `src/lib/` - Utility functions and business logic
-- `src/hooks/` - Custom React hooks
+Budget.spent is recalculated when transactions change (create/update/delete). Conversion to budget currency happens during calculation.
 
-**Styling**:
-- Tailwind CSS with shadcn/ui components
-- Theme support via `next-themes`
-- Custom gradient utilities
+### Penny Integration
+- Pocket Planner registers Gmail accounts with Penny via External API
+- Penny monitors Gmail, extracts financial data with AI
+- Penny sends HMAC-SHA256 signed webhooks to `/api/gmail/webhook`
+- `email.extracted` events auto-create transactions
 
-## Budget Period System
+### Environment Variables
+See `apps/backend/.env.example` and `apps/frontend/.env.example`
 
-The app uses a sophisticated period calculation system that supports:
-- **Calendar Month**: Standard monthly periods (1st to last day)
-- **Specific Day**: Custom periods from day X of one month to day X-1 of next month
+Critical: `DATABASE_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PENNY_API_URL`, `PENNY_API_KEY`, `WEBHOOK_SECRET`, `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`
 
-**Key Files**:
-- `src/lib/periodCalculations.ts` - Core period logic
-- `src/hooks/useBudgetPeriodTemplate.ts` - Period preference management
-- `src/components/periods/PeriodSelectionModal.tsx` - Period configuration UI
-
-**Target Month/Year System**: Budgets are created for specific target months, allowing navigation between different periods while maintaining data consistency.
-
-## Database Patterns
-
-### Budget Management
-- Budgets have `target_year` and `target_month` fields
-- Budget categories have `sort_order` for user-defined ordering
-- Automatic spent amount calculation via database triggers
-- Currency support per budget item
-
-### Transactions
-- Type field: 'expense' or 'income'
-- Optional category linking to budget categories
-- Date-based filtering for period calculations
-- Soft category assignment (transactions can exist without budgets)
-
-### User Preferences
-- Language setting ('english' or 'spanish')
-- Period type configuration
-- Specific day setting for custom periods
-
-## Internationalization
-
-Uses custom translation hook (`src/hooks/useTranslation.ts`) with support for English and Spanish. Translations are embedded in the hook rather than external files.
-
-## Key Features to Understand
-
-### Multi-Currency Support
-- Exchange rate fetching via Supabase Edge Functions
-- Rate caching and automatic updates
-- Real-time currency conversion widgets
-
-### Drag & Drop Budget Reordering
-- Uses `@dnd-kit` for budget category ordering
-- Persists order via `sort_order` field
-
-### Uncategorized Transaction Management
-- Transactions can exist without assigned categories
-- UI prompts for categorization of uncategorized transactions
-- Automatic budget spent calculation only for categorized transactions
-
-## Code Conventions
-
-### Imports
-- Absolute imports using `@/` alias (maps to `src/`)
-- Group imports: external libraries, then internal modules
-- Use TypeScript interfaces for data structures
-
-### Components
+### Code Conventions
+- Absolute imports: `@/` maps to `src/`
 - Functional components with hooks
-- Props interfaces defined inline or near component
+- React Query for all server state (never raw fetch/axios in components)
+- Zod for request validation (backend)
 - shadcn/ui components for consistent styling
-
-### Data Fetching
-- React Query for all server state
-- Separate queries for different data concerns
-- Optimistic updates where appropriate
-- Mutation success callbacks invalidate related queries
-
-### Error Handling
 - Toast notifications for user feedback
-- Try-catch in async functions
-- Graceful degradation for optional features
+- Always run `npm run lint` before committing
 
-## Environment Setup
-
-Requires these environment variables:
-- `VITE_SUPABASE_URL` - Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
-
-## Build Configuration
-
-- **Vite**: Build tool with React SWC plugin
-- **TypeScript**: Loose configuration for rapid development
-- **ESLint**: React + TypeScript rules with unused vars disabled
-- **PostCSS**: Tailwind processing
-- **Lovable Integration**: Development tagging for visual building
-
-## Testing
-
-No test framework is currently configured. When adding tests, consider the budget period calculations and currency conversion logic as primary candidates for unit testing.
+### Important Notes
+- Do not touch .env files (they work correctly locally)
+- Make sure solutions compile and run locally before pushing
+- Avoid generating known technical debt
+- Don't push unless told to
+- No test framework configured yet - period calculations and currency conversion are priority candidates

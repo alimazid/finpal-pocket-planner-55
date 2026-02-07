@@ -270,6 +270,16 @@ class ApiClient {
     return response.data;
   }
 
+  async googleAuthCallback(code: string, state?: string) {
+    const params: Record<string, string> = { code };
+    if (state) params.state = state;
+    const response = await this.client.get<ApiResponse<{ user: User; token: string; isNewUser: boolean }>>('/auth/google/callback', { params });
+    if (response.data.success && response.data.data) {
+      this.setToken(response.data.data.token);
+    }
+    return response.data;
+  }
+
   // Budget endpoints
   async getBudgets(params: BudgetQueryParams) {
     const response = await this.client.get<ApiResponse<Budget[]>>('/budgets', { params });
