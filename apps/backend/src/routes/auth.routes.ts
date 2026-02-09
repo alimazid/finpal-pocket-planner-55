@@ -15,23 +15,23 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
   res.cookie('access_token', accessToken, {
     httpOnly: true,
-    secure: IS_PROD,
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     path: '/',
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
-    secure: IS_PROD,
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     path: '/api/auth',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 }
 
 function clearAuthCookies(res: Response) {
-  res.clearCookie('access_token', { path: '/' });
-  res.clearCookie('refresh_token', { path: '/api/auth' });
+  res.clearCookie('access_token', { path: '/', secure: true, sameSite: 'none' });
+  res.clearCookie('refresh_token', { path: '/api/auth', secure: true, sameSite: 'none' });
 }
 
 // POST /auth/register
