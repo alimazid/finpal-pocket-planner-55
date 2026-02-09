@@ -173,7 +173,6 @@ export interface GmailCallbackDto {
 
 class ApiClient {
   private client: AxiosInstance;
-  private token: string | null = null;
 
   constructor(baseURL: string = import.meta.env.VITE_API_URL!) {
     if (!baseURL) {
@@ -184,67 +183,61 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true,
     });
 
-    // Request interceptor to add auth token
-    this.client.interceptors.request.use((config) => {
-      if (this.token) {
-        config.headers.Authorization = `Bearer ${this.token}`;
-      }
-      return config;
-    });
-
-    // Response interceptor for error handling
+    // Response interceptor: auto-refresh on 401
     this.client.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          this.clearToken();
+      async (error) => {
+        const originalRequest = error.config;
+        if (
+          error.response?.status === 401 &&
+          !originalRequest._retry &&
+          !originalRequest.url?.includes('/auth/refresh') &&
+          !originalRequest.url?.includes('/auth/login')
+        ) {
+          originalRequest._retry = true;
+          try {
+            await this.client.post('/auth/refresh');
+            return this.client(originalRequest);
+          } catch (refreshError) {
+            // Refresh failed — clear state and signal logout
+            window.dispatchEvent(new Event('auth:logout'));
+            return Promise.reject(refreshError);
+          }
         }
         return Promise.reject(error);
       }
     );
-
-    // Load token from localStorage
-    this.loadToken();
   }
 
-  setToken(token: string) {
-    this.token = token;
-    localStorage.setItem('api_token', token);
+  // Keep setToken/clearToken as no-ops for backward compatibility
+  setToken(_token: string) {
+    // Tokens are now managed via httpOnly cookies
   }
 
   clearToken() {
-    this.token = null;
-    localStorage.removeItem('api_token');
-  }
-
-  private loadToken() {
-    const token = localStorage.getItem('api_token');
-    if (token) {
-      this.token = token;
-    }
+    // Tokens are now managed via httpOnly cookies
   }
 
   // Auth endpoints
   async register(data: { email: string; password: string; name?: string }) {
-    const response = await this.client.post<ApiResponse<{ user: User; token: string }>>('/auth/register', data);
-    if (response.data.success && response.data.data) {
-      this.setToken(response.data.data.token);
-    }
+    const response = await this.client.post<ApiResponse<{ user: User; accessToken: string; refreshToken: string }>>('/auth/register', data);
     return response.data;
   }
 
   async login(data: { email: string; password: string }) {
-    const response = await this.client.post<ApiResponse<{ user: User; token: string }>>('/auth/login', data);
-    if (response.data.success && response.data.data) {
-      this.setToken(response.data.data.token);
-    }
+    const response = await this.client.post<ApiResponse<{ user: User; accessToken: string; refreshToken: string }>>('/auth/login', data);
     return response.data;
   }
 
   async logout() {
-    this.clearToken();
+    try {
+      await this.client.post('/auth/logout');
+    } catch (error) {
+      // Ignore errors during logout
+    }
   }
 
   async getProfile() {
@@ -259,9 +252,6 @@ class ApiClient {
 
   async loginWithGoogle(idToken: string) {
     const response = await this.client.post<ApiResponse<{ user: User; token: string; isNewUser: boolean }>>('/auth/google', { idToken });
-    if (response.data.success && response.data.data) {
-      this.setToken(response.data.data.token);
-    }
     return response.data;
   }
 
@@ -274,9 +264,6 @@ class ApiClient {
     const params: Record<string, string> = { code };
     if (state) params.state = state;
     const response = await this.client.get<ApiResponse<{ user: User; token: string; isNewUser: boolean }>>('/auth/google/callback', { params });
-    if (response.data.success && response.data.data) {
-      this.setToken(response.data.data.token);
-    }
     return response.data;
   }
 

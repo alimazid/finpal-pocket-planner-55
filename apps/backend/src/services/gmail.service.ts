@@ -71,9 +71,18 @@ export class GmailService {
     this.transactionService = new TransactionService();
   }
 
-  // Generate OAuth authorization URL with state parameter
-  generateAuthUrl(userId: string): { url: string; state: string } {
+  // Generate OAuth authorization URL with state parameter stored in DB
+  async generateAuthUrl(userId: string): Promise<{ url: string; state: string }> {
     const state = randomBytes(32).toString('hex');
+
+    // Store state in database with 10-minute expiry
+    await prisma.oAuthState.create({
+      data: {
+        state,
+        userId,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      }
+    });
 
     const scopes = [
       'https://www.googleapis.com/auth/gmail.readonly'
@@ -327,17 +336,14 @@ export class GmailService {
         }
       );
 
-      if (response.data.success) {
-        await prisma.gmailAccount.update({
-          where: { id: accountId },
-          data: { monitoringActive: false }
-        });
-        return true;
-      }
-
-      return false;
+      // Update local state regardless — if Penny says it's not monitoring, we should reflect that
+      await prisma.gmailAccount.update({
+        where: { id: accountId },
+        data: { monitoringActive: false }
+      });
+      return true;
     } catch (error) {
-      console.error('Stop monitoring error:', error);
+      console.error('Stop monitoring error:', error instanceof Error ? error.message : error);
       return false;
     }
   }
@@ -382,92 +388,50 @@ export class GmailService {
   // Create transaction from extracted email data
   private async createTransactionFromExtractedData(userId: string, extractedData: any): Promise<void> {
     try {
-      // Validate required fields
-      if (!extractedData) {
-        console.log(`   ❌ No extracted data provided`);
-        return;
-      }
+      if (!extractedData) return;
 
       const { type, amount, currency, transactionDate, description, merchant } = extractedData;
-
-      // Use merchant as description if available, fallback to description
       const transactionDescription = merchant || description;
 
-      if (merchant) {
-        console.log(`   💼 Using merchant as description: ${merchant}`);
-      } else {
-        console.log(`   📝 Using description field: ${description}`);
-      }
-
-      // Check required fields
       if (!amount || !transactionDescription || !transactionDate || !type) {
-        console.log(`   ❌ Missing required fields:`);
-        console.log(`      Amount: ${amount || 'missing'}`);
-        console.log(`      Description/Merchant: ${transactionDescription || 'missing'}`);
-        console.log(`      Date: ${transactionDate || 'missing'}`);
-        console.log(`      Type: ${type || 'missing'}`);
+        console.log('Webhook: missing required fields for transaction creation');
         return;
       }
 
-      // Validate transaction type
-      if (type !== 'expense' && type !== 'income') {
-        console.log(`   ⚠️  Invalid transaction type '${type}', defaulting to 'expense'`);
-      }
-
-      // Parse transaction date
       let parsedDate: Date;
       try {
         parsedDate = new Date(transactionDate);
-        if (isNaN(parsedDate.getTime())) {
-          throw new Error('Invalid date');
-        }
+        if (isNaN(parsedDate.getTime())) throw new Error('Invalid date');
       } catch (error) {
-        console.log(`   ❌ Invalid transaction date format: ${transactionDate}`);
+        console.log('Webhook: invalid transaction date format');
         return;
       }
 
-      // Create transaction DTO
       const transactionDto: CreateTransactionDto = {
         amount: Number(amount),
         description: String(transactionDescription),
-        category: null, // Create as uncategorized
+        category: null,
         date: parsedDate,
         type: (type === 'income') ? 'income' : 'expense',
         currency: currency || 'USD'
       };
 
-      // Create transaction
-      const createdTransaction = await this.transactionService.createTransaction(userId, transactionDto);
-
-      console.log(`   ✅ Transaction created successfully:`);
-      console.log(`      ID: ${createdTransaction.id}`);
-      console.log(`      Amount: $${createdTransaction.amount} ${createdTransaction.currency}`);
-      console.log(`      Type: ${createdTransaction.type}`);
-      console.log(`      Description: ${createdTransaction.description}`);
-      console.log(`      Date: ${createdTransaction.date.toISOString().split('T')[0]}`);
+      await this.transactionService.createTransaction(userId, transactionDto);
+      console.log('Webhook: transaction created successfully');
 
     } catch (error) {
-      console.error(`   ❌ Failed to create transaction:`, error);
-      throw error; // Re-throw to be caught by webhook handler
+      console.error('Webhook: failed to create transaction');
+      throw error;
     }
   }
 
   // Process webhook from Penny
   async processWebhook(payload: any): Promise<void> {
-    const timestamp = new Date().toISOString();
-
     try {
-      const { event, accountId: pennyAccountId, externalUserId, data, timestamp: eventTimestamp } = payload;
+      const { event, accountId: pennyAccountId, externalUserId, data } = payload;
 
-      console.log(`\n📧 GMAIL WEBHOOK RECEIVED [${timestamp}]`);
-      console.log(`┌─────────────────────────────────────────────────────────┐`);
-      console.log(`│ Event: ${event.padEnd(47)} │`);
-      console.log(`│ Penny Account ID: ${pennyAccountId.substring(0, 35).padEnd(35)} │`);
-      console.log(`│ User ID: ${externalUserId.substring(0, 43).padEnd(43)} │`);
-      console.log(`│ Event Timestamp: ${(eventTimestamp || 'N/A').padEnd(36)} │`);
-      console.log(`└─────────────────────────────────────────────────────────┘`);
+      console.log(`Webhook received: event=${event}, accountId=${pennyAccountId}`);
 
-      // Find the Gmail account
       const account = await prisma.gmailAccount.findFirst({
         where: {
           pennyAccountId,
@@ -476,36 +440,19 @@ export class GmailService {
       });
 
       if (!account) {
-        console.warn(`❌ WEBHOOK ERROR: Account not found`);
-        console.warn(`   Penny Account ID: ${pennyAccountId}`);
-        console.warn(`   User ID: ${externalUserId}`);
-        console.warn(`   This account may have been removed or never registered.`);
+        console.warn(`Webhook: account not found for pennyAccountId=${pennyAccountId}`);
         return;
       }
 
-      console.log(`✅ Account Found: ${account.gmailAddress}`);
-
-      // Update account status based on event
       switch (event) {
         case 'account.connected':
-          console.log(`🔗 ACCOUNT CONNECTED`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Action: Marking account as connected`);
-
           await prisma.gmailAccount.update({
             where: { id: account.id },
             data: { isConnected: true }
           });
-
-          console.log(`   ✅ Account status updated successfully`);
           break;
 
         case 'account.disconnected':
-          console.log(`💔 ACCOUNT DISCONNECTED`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Reason: ${data?.reason || 'Authentication failure'}`);
-          console.log(`   Action: Marking account as disconnected and stopping monitoring`);
-
           await prisma.gmailAccount.update({
             where: { id: account.id },
             data: {
@@ -513,150 +460,88 @@ export class GmailService {
               monitoringActive: false
             }
           });
-
-          console.log(`   ✅ Account status updated - user may need to reconnect`);
           break;
 
         case 'monitoring.started':
-          console.log(`▶️  MONITORING STARTED`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Action: Email monitoring is now active`);
-
           await prisma.gmailAccount.update({
             where: { id: account.id },
             data: { monitoringActive: true }
           });
-
-          console.log(`   ✅ Monitoring status updated`);
           break;
 
         case 'monitoring.stopped':
-          console.log(`⏸️  MONITORING STOPPED`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Action: Email monitoring has been paused`);
-
           await prisma.gmailAccount.update({
             where: { id: account.id },
             data: { monitoringActive: false }
           });
-
-          console.log(`   ✅ Monitoring status updated`);
           break;
 
         case 'email.received':
-          console.log(`📨 NEW EMAIL RECEIVED`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Subject: ${data?.subject || 'N/A'}`);
-          console.log(`   Sender: ${data?.sender || 'N/A'}`);
-          console.log(`   Email ID: ${data?.emailId || 'N/A'}`);
-          console.log(`   Action: Email detected and queued for processing`);
-
           await prisma.gmailAccount.update({
             where: { id: account.id },
             data: { lastSyncAt: new Date() }
           });
-
-          console.log(`   ✅ Last sync timestamp updated`);
           break;
 
         case 'email.classified':
-          console.log(`🏷️  EMAIL CLASSIFIED`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Subject: ${data?.subject || 'N/A'}`);
-          console.log(`   Sender: ${data?.sender || 'N/A'}`);
-          console.log(`   Classification: ${data?.classification || 'N/A'}`);
-          console.log(`   Is Financial: ${data?.isFinancial ? '✅ YES' : '❌ NO'}`);
-
           await prisma.gmailAccount.update({
             where: { id: account.id },
             data: { lastSyncAt: new Date() }
           });
-
-          console.log(`   ✅ Email classification processed`);
           break;
 
         case 'email.extracted':
-          console.log(`💰 FINANCIAL DATA EXTRACTED`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Subject: ${data?.subject || 'N/A'}`);
-          console.log(`   Sender: ${data?.sender || 'N/A'}`);
-
           if (data?.extractedData) {
-            console.log(`   💵 Extracted Financial Data:`);
-            console.log(`      Amount: ${data.extractedData.amount || 'N/A'}`);
-            console.log(`      Currency: ${data.extractedData.currency || 'N/A'}`);
-            console.log(`      Date: ${data.extractedData.transactionDate || 'N/A'}`);
-            console.log(`      Merchant: ${data.extractedData.merchant || 'N/A'}`);
-            console.log(`      Type: ${data.extractedData.type || 'N/A'}`);
-
-            // Create transaction from extracted data
-            console.log(`   🔄 Creating transaction from extracted data...`);
             await this.createTransactionFromExtractedData(account.userId, data.extractedData);
           }
-
           await prisma.gmailAccount.update({
             where: { id: account.id },
             data: { lastSyncAt: new Date() }
           });
-
-          console.log(`   ✅ Financial data extraction processed`);
           break;
 
         case 'token.refreshed':
-          console.log(`🔄 OAUTH TOKENS REFRESHED`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Action: Gmail OAuth tokens have been automatically refreshed`);
-          console.log(`   New Expiry: ${data?.expiresAt || 'N/A'}`);
-
           await prisma.gmailAccount.update({
             where: { id: account.id },
             data: { lastSyncAt: new Date() }
           });
-
-          console.log(`   ✅ Token refresh logged`);
           break;
 
         case 'error.occurred':
-          console.log(`❌ PROCESSING ERROR`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Error Type: ${data?.errorType || 'Unknown'}`);
-          console.log(`   Error Message: ${data?.message || 'N/A'}`);
-          console.log(`   Error Code: ${data?.code || 'N/A'}`);
-          console.log(`   Action: Logging error for investigation`);
-
-          // Don't update lastSyncAt for errors
-          console.log(`   ⚠️  Error logged - no database update performed`);
+          console.warn(`Webhook error event for account ${account.id}: type=${data?.errorType}`);
           break;
 
         default:
-          console.log(`❓ UNHANDLED WEBHOOK EVENT`);
-          console.log(`   Event Type: ${event}`);
-          console.log(`   Gmail: ${account.gmailAddress}`);
-          console.log(`   Data: ${JSON.stringify(data, null, 2)}`);
-          console.log(`   Action: Event logged but not processed`);
+          console.log(`Unhandled webhook event: ${event}`);
       }
 
-      console.log(`📧 WEBHOOK PROCESSING COMPLETE [${new Date().toISOString()}]\n`);
-
     } catch (error) {
-      console.error(`\n💥 WEBHOOK PROCESSING ERROR [${timestamp}]`);
-      console.error(`┌─────────────────────────────────────────────────────────┐`);
-      console.error(`│ Error occurred while processing webhook                 │`);
-      console.error(`└─────────────────────────────────────────────────────────┘`);
-      console.error(`Event: ${payload?.event || 'Unknown'}`);
-      console.error(`Penny Account ID: ${payload?.accountId || 'Unknown'}`);
-      console.error(`User ID: ${payload?.externalUserId || 'Unknown'}`);
-      console.error(`Error Details:`, error);
-      console.error(`Payload:`, JSON.stringify(payload, null, 2));
-      console.error(`💥 WEBHOOK ERROR COMPLETE [${new Date().toISOString()}]\n`);
+      console.error(`Webhook processing error: event=${payload?.event}`, error instanceof Error ? error.message : error);
       throw error;
     }
   }
 
   // Validate OAuth state parameter
   async validateOAuthState(state: string, userId: string): Promise<boolean> {
-    // In a production environment, you might want to store state temporarily
-    // For now, we'll just check if it's a valid hex string
-    return /^[a-f0-9]{64}$/.test(state);
+    const oauthState = await prisma.oAuthState.findUnique({
+      where: { state }
+    });
+
+    if (!oauthState) {
+      return false;
+    }
+
+    // Delete after use (one-time use)
+    await prisma.oAuthState.delete({ where: { id: oauthState.id } });
+
+    // Verify userId matches and not expired
+    if (oauthState.userId !== userId) {
+      return false;
+    }
+    if (oauthState.expiresAt < new Date()) {
+      return false;
+    }
+
+    return true;
   }
 }

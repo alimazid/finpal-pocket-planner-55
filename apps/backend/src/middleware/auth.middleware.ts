@@ -16,8 +16,12 @@ export async function authenticateToken(
   next: NextFunction
 ) {
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    // Try cookie first, fall back to Bearer header
+    let token = req.cookies?.access_token;
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      token = authHeader && authHeader.split(' ')[1];
+    }
 
     if (!token) {
       return res.status(401).json({
@@ -27,8 +31,7 @@ export async function authenticateToken(
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
-    
-    // Fetch user from database to ensure they still exist
+
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -57,7 +60,7 @@ export async function authenticateToken(
         error: 'Invalid token'
       });
     }
-    
+
     console.error('Auth middleware error:', error);
     return res.status(500).json({
       success: false,
@@ -71,8 +74,11 @@ export function optionalAuth(
   res: Response,
   next: NextFunction
 ) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
+  let token = req.cookies?.access_token;
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    token = authHeader && authHeader.split(' ')[1];
+  }
 
   if (!token) {
     return next();

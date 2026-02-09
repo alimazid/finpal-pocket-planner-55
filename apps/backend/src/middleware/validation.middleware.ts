@@ -50,7 +50,7 @@ export const schemas = {
 
   createUser: z.object({
     email: z.string().email(),
-    password: z.string().min(6),
+    password: z.string().min(12, 'Password must be at least 12 characters').max(128, 'Password must be at most 128 characters'),
     name: z.string().optional()
   }),
 
