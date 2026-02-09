@@ -72,9 +72,10 @@ COPY packages/shared/package.json ./packages/shared/
 # Install production dependencies only
 RUN npm ci --production
 
-# Copy built backend and Prisma files
+# Copy built backend, Prisma files, and deploy scripts
 COPY --from=backend-builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=backend-builder /app/apps/backend/prisma ./apps/backend/prisma
+COPY --from=backend-builder /app/apps/backend/scripts ./apps/backend/scripts
 COPY --from=backend-builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Generate Prisma client in production (ensure it matches production dependencies)
@@ -83,25 +84,21 @@ RUN npx prisma generate
 
 EXPOSE 3001
 
-# Create startup script to handle errors better
+# Create startup script
 RUN echo '#!/bin/sh\n\
 set -e\n\
 echo "=== RAILWAY BACKEND STARTUP ==="\n\
-echo "DATABASE_URL is set: $(if [ -z "$DATABASE_URL" ]; then echo "NO"; else echo "YES"; fi)"\n\
-echo "Current working directory: $(pwd)"\n\
-echo "Checking if schema file exists: $(ls -la prisma/schema.prisma)"\n\
-echo "=== RUNNING DATABASE SETUP ==="\n\
-echo "Running prisma db push..."\n\
-npx prisma db push --accept-data-loss --force-reset && echo "✅ Database push successful" || {\n\
-  echo "❌ Database push failed, trying migrate deploy..."\n\
-  npx prisma migrate deploy && echo "✅ Migration deploy successful" || {\n\
-    echo "❌ Migration deploy also failed, trying to continue anyway..."\n\
-    echo "Database might already be set up or there might be a connection issue"\n\
+echo "=== RUNNING DATABASE MIGRATIONS ==="\n\
+npx prisma migrate deploy && echo "✅ Migrations applied" || {\n\
+  echo "⚠️  migrate deploy failed, trying db push..."\n\
+  npx prisma db push --skip-generate && echo "✅ Schema pushed" || {\n\
+    echo "⚠️  DB setup had issues, continuing anyway..."\n\
   }\n\
 }\n\
+echo "=== RUNNING DEPLOY MIGRATIONS ==="\n\
+node scripts/deploy-migrate.js || echo "⚠️  Deploy migration had issues, continuing..."\n\
 echo "=== STARTING SERVER ==="\n\
-echo "Starting Node.js server..."\n\
 node dist/server.js' > /start.sh && chmod +x /start.sh
 
 # Run startup script
-CMD ["/start.sh"]# Force rebuild 1770257308
+CMD ["/start.sh"]
