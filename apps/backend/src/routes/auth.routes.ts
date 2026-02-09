@@ -10,8 +10,6 @@ const router = Router();
 const authService = new AuthService();
 const googleAuthService = new GoogleAuthService();
 
-const IS_PROD = process.env.NODE_ENV === 'production';
-
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
   res.cookie('access_token', accessToken, {
     httpOnly: true,
@@ -45,8 +43,6 @@ router.post('/register',
         success: true,
         data: {
           user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
         }
       });
     } catch (error) {
@@ -66,8 +62,6 @@ router.post('/login',
         success: true,
         data: {
           user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
         }
       });
     } catch (error) {
@@ -108,9 +102,7 @@ router.post('/refresh',
       setAuthCookies(res, result.accessToken, result.refreshToken);
       res.json({
         success: true,
-        data: {
-          accessToken: result.accessToken,
-        }
+        data: {}
       });
     } catch (error) {
       clearAuthCookies(res);
@@ -138,10 +130,10 @@ router.get('/profile',
 // PUT /auth/profile
 router.put('/profile',
   authenticateToken,
-  validateBody(schemas.createUser.partial()),
+  validateBody(schemas.updateProfile),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const user = await authService.updateProfile(req.userId!, req.body);
+      const user = await authService.updateProfile(req.userId!, req.body, req.body.currentPassword);
       res.json({
         success: true,
         data: user
@@ -190,9 +182,8 @@ router.post('/google',
       res.json({
         success: true,
         data: {
-          ...result,
-          accessToken: result.token,
-          refreshToken,
+          user: result.user,
+          isNewUser: result.isNewUser,
         }
       });
     } catch (error) {
@@ -239,9 +230,8 @@ router.get('/google/callback',
       res.json({
         success: true,
         data: {
-          ...result,
-          accessToken: result.token,
-          refreshToken,
+          user: result.user,
+          isNewUser: result.isNewUser,
         }
       });
     } catch (error) {

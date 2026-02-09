@@ -4,10 +4,13 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
 
-function getEncryptionKey(): Buffer {
+function getEncryptionKey(): Buffer | null {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
-    throw new Error('ENCRYPTION_KEY environment variable is required');
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('ENCRYPTION_KEY environment variable is required in production');
+    }
+    return null;
   }
   if (key.length !== 64) {
     throw new Error('ENCRYPTION_KEY must be a 64-character hex string (32 bytes)');
@@ -21,6 +24,7 @@ function getEncryptionKey(): Buffer {
  */
 export function encrypt(plaintext: string): string {
   const key = getEncryptionKey();
+  if (!key) return plaintext; // Skip encryption in development without ENCRYPTION_KEY
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
 
@@ -36,6 +40,7 @@ export function encrypt(plaintext: string): string {
  */
 export function decrypt(encrypted: string): string {
   const key = getEncryptionKey();
+  if (!key) return encrypted; // Skip decryption in development without ENCRYPTION_KEY
   const parts = encrypted.split(':');
 
   if (parts.length !== 3) {

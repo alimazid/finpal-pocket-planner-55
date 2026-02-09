@@ -5,6 +5,7 @@ import axios from 'axios';
 import { randomBytes } from 'crypto';
 import { TransactionService } from './transaction.service.js';
 import { CreateTransactionDto } from '../types/index.js';
+import { encrypt, decrypt, isEncrypted } from '../utils/crypto.utils.js';
 
 const prisma = new PrismaClient();
 
@@ -141,7 +142,11 @@ export class GmailService {
         throw new Error(`Gmail account ${gmailAddress} is already connected`);
       }
 
-      // Register account with Penny
+      // Encrypt tokens before storing in Account table (if applicable)
+      const encryptedAccessToken = encrypt(tokens.access_token);
+      const encryptedRefreshToken = encrypt(tokens.refresh_token);
+
+      // Register account with Penny using plaintext tokens (Penny needs them to access Gmail)
       const pennyResponse = await this.registerWithPenny({
         gmailAddress,
         accessToken: tokens.access_token,

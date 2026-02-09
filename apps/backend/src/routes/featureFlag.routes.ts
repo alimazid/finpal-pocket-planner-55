@@ -1,9 +1,27 @@
 import { Router } from 'express';
+import express from 'express';
 import { FeatureFlagService } from '../services/featureFlag.service.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
+import { AuthenticatedRequest } from '../types/index.js';
+import { prisma } from '../config/database.js';
 
 const router = Router();
 const featureFlagService = new FeatureFlagService();
+
+// Simple admin check middleware
+const requireAdmin = async (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
+  const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+  if (adminEmails.length === 0) {
+    // If no admin emails configured, deny all admin access
+    return res.status(403).json({ success: false, error: 'Admin access not configured' });
+  }
+  // req.userId is set by authenticateToken
+  const user = await prisma.user.findUnique({ where: { id: req.userId! }, select: { email: true } });
+  if (!user || !adminEmails.includes(user.email)) {
+    return res.status(403).json({ success: false, error: 'Admin access required' });
+  }
+  next();
+};
 
 // GET /feature-flags — Get all enabled feature flags for frontend (public)
 router.get('/', async (req, res, next) => {
@@ -15,8 +33,8 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// GET /feature-flags/admin — Get all feature flags (protected)
-router.get('/admin', authenticateToken, async (req, res, next) => {
+// GET /feature-flags/admin — Get all feature flags (admin only)
+router.get('/admin', authenticateToken, requireAdmin, async (req, res, next) => {
   try {
     const flags = await featureFlagService.getAllFlags();
     res.json({ success: true, data: flags });
@@ -25,8 +43,8 @@ router.get('/admin', authenticateToken, async (req, res, next) => {
   }
 });
 
-// PUT /feature-flags/:key — Update a specific feature flag (protected)
-router.put('/:key', authenticateToken, async (req, res, next) => {
+// PUT /feature-flags/:key — Update a specific feature flag (admin only)
+router.put('/:key', authenticateToken, requireAdmin, async (req, res, next) => {
   try {
     const { key } = req.params;
     const { isEnabled } = req.body;
@@ -45,8 +63,8 @@ router.put('/:key', authenticateToken, async (req, res, next) => {
   }
 });
 
-// POST /feature-flags/bulk — Bulk update feature flags (protected)
-router.post('/bulk', authenticateToken, async (req, res, next) => {
+// POST /feature-flags/bulk — Bulk update feature flags (admin only)
+router.post('/bulk', authenticateToken, requireAdmin, async (req, res, next) => {
   try {
     const { updates } = req.body;
 

@@ -119,6 +119,14 @@ export const schemas = {
     category: z.string().optional(),
     type: z.enum(['expense', 'income']).optional(),
     page: z.coerce.number().min(1).default(1),
-    limit: z.coerce.number().min(1).max(1000).default(20)
+    limit: z.coerce.number().min(1).max(1000).default(20),
+    searchQuery: z.string().max(200).optional(),
+  }),
+
+  updateProfile: z.object({
+    email: z.string().email().optional(),
+    password: z.string().min(12, 'Password must be at least 12 characters').max(128, 'Password must be at most 128 characters').optional(),
+    name: z.string().optional(),
+    currentPassword: z.string().optional(),
   })
 };

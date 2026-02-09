@@ -93,7 +93,7 @@ export class AuthService {
     return user;
   }
 
-  async updateProfile(userId: string, updateData: Partial<CreateUserDto>): Promise<User> {
+  async updateProfile(userId: string, updateData: Partial<CreateUserDto>, currentPassword?: string): Promise<User> {
     const updatePayload: any = {};
 
     if (updateData.name !== undefined) {
@@ -116,6 +116,20 @@ export class AuthService {
     }
 
     if (updateData.password !== undefined) {
+      if (!currentPassword) {
+        throw new ValidationError('Current password is required to change password');
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user || !user.passwordHash) {
+        throw new ValidationError('Cannot change password for this account');
+      }
+
+      const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isValid) {
+        throw new ValidationError('Current password is incorrect');
+      }
+
       updatePayload.passwordHash = await bcrypt.hash(updateData.password, 12);
     }
 

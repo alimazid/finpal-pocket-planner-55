@@ -223,12 +223,12 @@ class ApiClient {
 
   // Auth endpoints
   async register(data: { email: string; password: string; name?: string }) {
-    const response = await this.client.post<ApiResponse<{ user: User; accessToken: string; refreshToken: string }>>('/auth/register', data);
+    const response = await this.client.post<ApiResponse<{ user: User }>>('/auth/register', data);
     return response.data;
   }
 
   async login(data: { email: string; password: string }) {
-    const response = await this.client.post<ApiResponse<{ user: User; accessToken: string; refreshToken: string }>>('/auth/login', data);
+    const response = await this.client.post<ApiResponse<{ user: User }>>('/auth/login', data);
     return response.data;
   }
 
