@@ -336,17 +336,14 @@ export class GmailService {
         }
       );
 
-      if (response.data.success) {
-        await prisma.gmailAccount.update({
-          where: { id: accountId },
-          data: { monitoringActive: false }
-        });
-        return true;
-      }
-
-      return false;
+      // Update local state regardless — if Penny says it's not monitoring, we should reflect that
+      await prisma.gmailAccount.update({
+        where: { id: accountId },
+        data: { monitoringActive: false }
+      });
+      return true;
     } catch (error) {
-      console.error('Stop monitoring error:', error);
+      console.error('Stop monitoring error:', error instanceof Error ? error.message : error);
       return false;
     }
   }
