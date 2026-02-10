@@ -464,8 +464,8 @@ const translations: Translations = {
     spanish: 'Ingresa tu contraseña'
   },
   createPassword: {
-    english: 'Create a password (min 6 characters)',
-    spanish: 'Crear una contraseña (mín. 6 caracteres)'
+    english: 'Create a password (min 12 characters)',
+    spanish: 'Crear una contraseña (mín. 12 caracteres)'
   },
   createAccount: {
     english: 'Create Account',
