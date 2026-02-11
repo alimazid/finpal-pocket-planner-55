@@ -147,6 +147,11 @@ export class AuthService {
       }
     });
 
+    // Revoke all existing sessions when password is changed
+    if (updateData.password !== undefined) {
+      await this.revokeAllUserTokens(userId);
+    }
+
     return user;
   }
 
@@ -165,7 +170,7 @@ export class AuthService {
 
   verifyToken(token: string): { userId: string; email: string } {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }) as any;
       return {
         userId: decoded.userId,
         email: decoded.email

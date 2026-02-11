@@ -383,25 +383,26 @@ export class BudgetService {
       return null;
     }
 
-    // Recalculate spent amount
-    const spent = await this.calculateSpent(
-      userId,
-      category.id,
-      targetYear,
-      targetMonth
-    );
+    // Recalculate spent amount inside a serializable transaction to prevent race conditions
+    const updatedBudget = await prisma.$transaction(async (tx) => {
+      const spent = await this.calculateSpent(
+        userId,
+        category.id,
+        targetYear,
+        targetMonth
+      );
 
-    // Update the budget with the new spent amount
-    const updatedBudget = await prisma.budget.update({
-      where: { id: budget.id },
-      data: { spent },
-      include: { category: true }
-    });
+      return tx.budget.update({
+        where: { id: budget.id },
+        data: { spent },
+        include: { category: true }
+      });
+    }, { isolationLevel: 'Serializable' });
 
     return {
       ...updatedBudget,
       amount: Number(updatedBudget.amount),
-      spent: Number(spent)
+      spent: Number(updatedBudget.spent)
     };
   }
 }

@@ -75,8 +75,8 @@ export const schemas = {
   }),
 
   createTransaction: z.object({
-    amount: z.number().positive(),
-    description: z.string().min(1),
+    amount: z.number().positive().max(999999999, 'Amount exceeds maximum allowed value'),
+    description: z.string().min(1).max(500, 'Description must be at most 500 characters'),
     category: z.string().optional().nullable(),
     date: z.coerce.date(),
     type: z.enum(['expense', 'income']),
@@ -84,8 +84,8 @@ export const schemas = {
   }),
 
   updateTransaction: z.object({
-    amount: z.number().positive().optional(),
-    description: z.string().min(1).optional(),
+    amount: z.number().positive().max(999999999, 'Amount exceeds maximum allowed value').optional(),
+    description: z.string().min(1).max(500, 'Description must be at most 500 characters').optional(),
     category: z.string().optional().nullable(),
     date: z.coerce.date().optional(),
     type: z.enum(['expense', 'income']).optional(),

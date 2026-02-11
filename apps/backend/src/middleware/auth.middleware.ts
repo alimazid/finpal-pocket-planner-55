@@ -30,7 +30,7 @@ export async function authenticateToken(
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }) as JWTPayload;
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },

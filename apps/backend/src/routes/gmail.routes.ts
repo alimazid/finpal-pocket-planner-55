@@ -9,6 +9,18 @@ import crypto from 'crypto';
 const router = Router();
 const gmailService = new GmailService();
 
+// Webhook idempotency: track processed signatures to prevent duplicate transactions
+const processedWebhooks = new Map<string, number>(); // signature -> timestamp
+const WEBHOOK_DEDUP_WINDOW = 10 * 60 * 1000; // 10 minutes
+
+// Clean up old entries periodically
+setInterval(() => {
+  const cutoff = Date.now() - WEBHOOK_DEDUP_WINDOW;
+  for (const [sig, ts] of processedWebhooks) {
+    if (ts < cutoff) processedWebhooks.delete(sig);
+  }
+}, 60 * 1000);
+
 // Helper function to verify webhook signature
 function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
   try {
@@ -244,7 +256,17 @@ router.post('/webhook',
         return res.status(401).json({ success: false, error: 'Invalid webhook signature' });
       }
 
-      console.log(`Webhook: event=${req.body.event}, accountId=${req.body.accountId}, size=${Buffer.byteLength(rawBody)}B`);
+      // Idempotency check: reject duplicate webhooks by signature
+      const signatureKey = receivedSignature.startsWith('sha256=') ? receivedSignature.substring(7) : receivedSignature;
+      if (processedWebhooks.has(signatureKey)) {
+        return res.status(200).json({ success: true, message: 'Webhook already processed (duplicate)' });
+      }
+      processedWebhooks.set(signatureKey, Date.now());
+
+      // Structured logging: sanitize user-controlled values to prevent log injection
+      const safeEvent = String(req.body.event || '').replace(/[\n\r\t]/g, '');
+      const safeAccountId = String(req.body.accountId || '').replace(/[\n\r\t]/g, '');
+      console.log('Webhook received', JSON.stringify({ event: safeEvent, accountId: safeAccountId, size: Buffer.byteLength(rawBody) }));
 
       await gmailService.processWebhook(req.body);
 
@@ -255,7 +277,7 @@ router.post('/webhook',
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error(`Webhook error: event=${req.body?.event}`, error instanceof Error ? error.message : error);
+      console.error('Webhook error', JSON.stringify({ event: String(req.body?.event || '').replace(/[\n\r\t]/g, ''), error: error instanceof Error ? error.message : 'Unknown error' }));
       res.status(500).json({
         success: false,
         error: 'Failed to process webhook',

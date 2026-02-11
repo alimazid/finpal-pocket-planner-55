@@ -5,6 +5,7 @@ import { validateBody } from '../middleware/validation.middleware.js';
 import { schemas } from '../middleware/validation.middleware.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { AuthenticatedRequest } from '../types/index.js';
+import { prisma } from '../config/database.js';
 
 const router = Router();
 const authService = new AuthService();
@@ -144,11 +145,31 @@ router.put('/profile',
   }
 );
 
-// DELETE /auth/profile
+// DELETE /auth/profile (requires current password for re-authentication)
 router.delete('/profile',
   authenticateToken,
   async (req: AuthenticatedRequest, res, next) => {
     try {
+      const { currentPassword } = req.body || {};
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          error: 'Current password is required to delete your account'
+        });
+      }
+
+      // Re-authenticate before destructive action
+      const user = await prisma.user.findUnique({ where: { id: req.userId! } });
+      if (!user || !user.passwordHash) {
+        return res.status(400).json({ success: false, error: 'Cannot verify password for this account' });
+      }
+
+      const bcrypt = await import('bcryptjs');
+      const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ success: false, error: 'Current password is incorrect' });
+      }
+
       await authService.deleteUser(req.userId!);
       clearAuthCookies(res);
       res.json({

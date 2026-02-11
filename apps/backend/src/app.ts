@@ -97,6 +97,12 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// Permissions-Policy header
+app.use((_req, res, next) => {
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  next();
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ success: true, message: 'Server is healthy' });
