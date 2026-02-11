@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import { errorHandler } from './middleware/error.middleware.js';
+import { csrfProtection } from './middleware/csrf.middleware.js';
 
 // Route imports
 import authRoutes from './routes/auth.routes.js';
@@ -59,6 +60,9 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
+// CSRF protection
+app.use(csrfProtection(allowedOrigins));
+
 // Global rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -83,7 +87,7 @@ const loginLimiter = rateLimit({
 });
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Anti-caching headers on API responses

@@ -54,6 +54,8 @@ COPY apps/frontend/Caddyfile /etc/caddy/Caddyfile
 
 EXPOSE 80
 
+USER 1000
+
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
 
 # Backend production image
@@ -99,6 +101,9 @@ echo "=== RUNNING DEPLOY MIGRATIONS ==="\n\
 node scripts/deploy-migrate.js || echo "⚠️  Deploy migration had issues, continuing..."\n\
 echo "=== STARTING SERVER ==="\n\
 node dist/server.js' > /start.sh && chmod +x /start.sh
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
 
 # Run startup script
 CMD ["/start.sh"]

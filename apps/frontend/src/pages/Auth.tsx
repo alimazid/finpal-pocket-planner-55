@@ -294,7 +294,7 @@ const Auth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={12}
                   />
                 </div>
                 <Button type="submit" variant="outline" className="w-full" disabled={loading}>
