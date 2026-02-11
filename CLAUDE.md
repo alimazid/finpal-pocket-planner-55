@@ -67,7 +67,43 @@ Budget.spent is recalculated when transactions change (create/update/delete). Co
 ### Environment Variables
 See `apps/backend/.env.example` and `apps/frontend/.env.example`
 
-Critical: `DATABASE_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PENNY_API_URL`, `PENNY_API_KEY`, `WEBHOOK_SECRET`, `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`
+Critical: `DATABASE_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `PENNY_API_URL`, `PENNY_API_KEY`, `WEBHOOK_SECRET`, `ENCRYPTION_KEY`, `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`
+
+- `ENCRYPTION_KEY` - 64-char hex for AES-256-GCM OAuth token encryption (CASA Tier 2)
+
+### Deployment (Railway)
+
+**Project**: "Pocket Penny" | **Service**: `finpal-backend-dev` | **Env**: `development`
+**CLI linked in**: `finpal-pocket-planner-55/` (main project dir, not worktrees)
+**Backend URL**: `https://finpal-backend-dev-development.up.railway.app`
+**Frontend URL**: `https://pocketpenny.site` (Caddy, separate deployment)
+**Penny API**: `https://penny-prototype-new-development.up.railway.app`
+
+**Deploy trigger**: Push to `dev` branch → Railway auto-builds and deploys
+**Build**: Multi-stage Dockerfile (monorepo)
+- Frontend: Vite build → Caddy 2 (port 80), deployed separately via `apps/frontend/railway.toml` (nixpacks)
+- Backend: TypeScript build → Node 20-alpine (port 3001), non-root `appuser`
+
+**Backend startup** (inline `/start.sh` in Dockerfile):
+1. `npx prisma migrate deploy` (falls back to `db push` on failure)
+2. `node scripts/deploy-migrate.js` (non-blocking)
+3. `node dist/server.js`
+
+**Railway CLI** (run from `finpal-pocket-planner-55/`, not worktrees):
+```bash
+railway status                     # Show linked project/service/env
+railway variables                  # List all env vars
+railway variables --kv             # List in KEY=VALUE format
+railway variables --set "KEY=val"  # Set env var (triggers redeploy)
+railway variables --set "KEY=val" --skip-deploys  # Set without redeploy
+railway logs                       # Stream live logs
+railway run <cmd>                  # Run command with prod env/DB access
+```
+
+### Git Branching
+- `main` - stable release
+- `dev` - Railway auto-deploys from this branch
+- Feature/security branches merge into `dev` for deployment
 
 ### Code Conventions
 - Absolute imports: `@/` maps to `src/`
