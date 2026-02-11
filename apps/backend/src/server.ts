@@ -9,6 +9,8 @@ dotenv.config();
 process.on('uncaughtException', (error) => {
   console.error('💥 UNCAUGHT EXCEPTION:', error);
   console.error('Stack:', error.stack);
+  // Graceful shutdown: allow pending I/O to flush, then exit
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {

@@ -6,7 +6,35 @@ import { prisma } from '../config/database.js';
 import { CreateUserDto, LoginDto, User } from '../types/index.js';
 import { UnauthorizedError, ValidationError } from '../middleware/error.middleware.js';
 
+// Per-account login attempt tracking (M-3)
+const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+
 export class AuthService {
+
+  private checkAccountLockout(email: string): void {
+    const attempts = loginAttempts.get(email);
+    if (attempts && attempts.lockedUntil > Date.now()) {
+      const remainingMs = attempts.lockedUntil - Date.now();
+      const remainingMin = Math.ceil(remainingMs / 60000);
+      throw new UnauthorizedError(`Account temporarily locked. Try again in ${remainingMin} minutes`);
+    }
+  }
+
+  private recordFailedLogin(email: string): void {
+    const attempts = loginAttempts.get(email) || { count: 0, lockedUntil: 0 };
+    attempts.count++;
+    if (attempts.count >= MAX_LOGIN_ATTEMPTS) {
+      attempts.lockedUntil = Date.now() + LOCKOUT_DURATION;
+      attempts.count = 0;
+    }
+    loginAttempts.set(email, attempts);
+  }
+
+  private clearLoginAttempts(email: string): void {
+    loginAttempts.delete(email);
+  }
 
   async register(userData: CreateUserDto): Promise<{ user: User; accessToken: string; refreshToken: string }> {
     const existingUser = await prisma.user.findUnique({
@@ -51,18 +79,26 @@ export class AuthService {
   }
 
   async login(loginData: LoginDto): Promise<{ user: User; accessToken: string; refreshToken: string }> {
+    // Check per-account lockout before processing
+    this.checkAccountLockout(loginData.email);
+
     const user = await prisma.user.findUnique({
       where: { email: loginData.email }
     });
 
     if (!user || !user.passwordHash) {
+      this.recordFailedLogin(loginData.email);
       throw new UnauthorizedError('Invalid email or password');
     }
 
     const isValidPassword = await bcrypt.compare(loginData.password, user.passwordHash);
     if (!isValidPassword) {
+      this.recordFailedLogin(loginData.email);
       throw new UnauthorizedError('Invalid email or password');
     }
+
+    // Clear attempts on successful login
+    this.clearLoginAttempts(loginData.email);
 
     const accessToken = this.generateToken(user);
     const refreshToken = await this.generateRefreshToken(user.id);

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { randomUUID } from 'crypto';
 
 export interface ApiErrorInterface extends Error {
   statusCode?: number;
@@ -12,13 +13,15 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error('Error:', error);
+  const errorId = randomUUID();
+  console.error(`Error [${errorId}]:`, error);
 
   // Zod validation errors
   if (error instanceof ZodError) {
     return res.status(400).json({
       success: false,
       error: 'Validation error',
+      errorId,
       details: error.errors.map(err => ({
         field: err.path.join('.'),
         message: err.message
@@ -33,18 +36,21 @@ export function errorHandler(
         return res.status(409).json({
           success: false,
           error: 'Unique constraint violation',
+          errorId,
           message: 'A record with this data already exists'
         });
       case 'P2025':
         return res.status(404).json({
           success: false,
           error: 'Record not found',
+          errorId,
           message: 'The requested record was not found'
         });
       default:
         return res.status(400).json({
           success: false,
           error: 'Database error',
+          errorId,
           message: 'An unexpected database error occurred'
         });
     }
@@ -54,7 +60,8 @@ export function errorHandler(
   if ('statusCode' in error && error.statusCode) {
     return res.status(error.statusCode).json({
       success: false,
-      error: error.message || 'An error occurred'
+      error: error.message || 'An error occurred',
+      errorId,
     });
   }
 
@@ -62,6 +69,7 @@ export function errorHandler(
   return res.status(500).json({
     success: false,
     error: 'Internal server error',
+    errorId,
     ...(process.env.NODE_ENV === 'development' && { details: error.message })
   });
 }
