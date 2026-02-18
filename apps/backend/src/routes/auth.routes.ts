@@ -11,26 +11,28 @@ const router = Router();
 const authService = new AuthService();
 const googleAuthService = new GoogleAuthService();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
   res.cookie('access_token', accessToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: isProduction,
+    sameSite: 'lax',
     path: '/',
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
   res.cookie('refresh_token', refreshToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: isProduction,
+    sameSite: 'lax',
     path: '/api/auth',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 }
 
 function clearAuthCookies(res: Response) {
-  res.clearCookie('access_token', { path: '/', secure: true, sameSite: 'none' });
-  res.clearCookie('refresh_token', { path: '/api/auth', secure: true, sameSite: 'none' });
+  res.clearCookie('access_token', { path: '/', secure: isProduction, sameSite: 'lax' });
+  res.clearCookie('refresh_token', { path: '/api/auth', secure: isProduction, sameSite: 'lax' });
 }
 
 // POST /auth/register
