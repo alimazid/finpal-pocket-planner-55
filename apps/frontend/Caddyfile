@@ -5,7 +5,7 @@
     auto_https off # railway handles https for us, this would cause issues if left enabled
     # runtime logs
     log {
-        format json # set runtime log format to json mode
+        format json # set runtime log format to json mode 
     }
     # server options
     servers {
@@ -20,38 +20,29 @@
         format json # set access log format to json mode
     }
 
+    # health check for railway
+    rewrite /health /*
+
+    # serve from the 'srv' folder (copied from Vite's dist folder)
+    root * /srv
+
     # enable gzipping responses
     encode gzip
 
-    # Proxy API requests to the backend — keeps cookies same-origin (fixes mobile Safari ITP)
-    # Must be in its own handle block so it doesn't fall through to the file server
-    handle /api/* {
-        reverse_proxy {$BACKEND_URL}
+    # Security headers
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-XSS-Protection "0"
+        Content-Security-Policy "default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://finpal-backend-dev-development.up.railway.app https://accounts.google.com https://oauth2.googleapis.com https://*.posthog.com; frame-src https://accounts.google.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
     }
 
-    # Serve SPA for all other requests
-    handle {
-        # health check for railway
-        rewrite /health /index.html
+    # serve files from '/srv'
+    file_server
 
-        # serve from the 'srv' folder (copied from Vite's dist folder)
-        root * /srv
-
-        # Security headers
-        header {
-            X-Frame-Options "DENY"
-            X-Content-Type-Options "nosniff"
-            Referrer-Policy "strict-origin-when-cross-origin"
-            Permissions-Policy "camera=(), microphone=(), geolocation=()"
-            Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-            X-XSS-Protection "0"
-            Content-Security-Policy "default-src 'self'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://*.posthog.com; frame-src https://accounts.google.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
-        }
-
-        # if path doesn't exist, redirect it to 'index.html' for client side routing
-        try_files {path} /index.html
-
-        # serve files from '/srv'
-        file_server
-    }
+    # if path doesn't exist, redirect it to 'index.html' for client side routing
+    try_files {path} /index.html
 }
