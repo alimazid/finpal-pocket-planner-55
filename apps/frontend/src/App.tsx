@@ -16,7 +16,22 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { GmailOAuthCallback } from "./components/gmail";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error: any) => {
+        // Never retry auth errors — they are not transient
+        if (error?.response?.status === 401 || error?.response?.status === 403) {
+          return false;
+        }
+        return failureCount < 2;
+      },
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
 
 // Initialize PostHog
 initializePostHog();

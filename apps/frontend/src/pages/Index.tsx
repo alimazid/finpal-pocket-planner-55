@@ -1075,6 +1075,18 @@ const Index = () => {
     checkAuth();
   }, [posthog]);
 
+  // Handle auth:logout events dispatched by the API client when token refresh fails
+  useEffect(() => {
+    const handleAuthLogout = () => {
+      setUser(null);
+      setIsAuthenticated(false);
+      queryClient.clear();
+      navigate("/auth");
+    };
+    window.addEventListener('auth:logout', handleAuthLogout);
+    return () => window.removeEventListener('auth:logout', handleAuthLogout);
+  }, [navigate, queryClient]);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");

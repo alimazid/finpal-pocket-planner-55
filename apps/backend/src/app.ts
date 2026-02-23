@@ -86,6 +86,19 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Refresh token rate limiter — tighter than global, looser than login.
+// A single session needs at most 1 refresh per 15 min; allow 10 for multi-tab use.
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: {
+    success: false,
+    error: 'Too many token refresh attempts, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Body parsing middleware
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -110,6 +123,7 @@ app.get('/health', (req, res) => {
 
 // API routes — apply login limiter to auth/login specifically
 app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/refresh', refreshLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/transactions', transactionRoutes);

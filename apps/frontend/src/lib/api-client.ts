@@ -171,6 +171,11 @@ export interface GmailCallbackDto {
   webhookUrl?: string;
 }
 
+// Module-level promise to deduplicate concurrent token refresh calls.
+// All concurrent 401 errors share this single promise so only one
+// POST /auth/refresh is ever in-flight at a time.
+let refreshPromise: Promise<void> | null = null;
+
 class ApiClient {
   private client: AxiosInstance;
 
@@ -199,7 +204,15 @@ class ApiClient {
         ) {
           originalRequest._retry = true;
           try {
-            await this.client.post('/auth/refresh');
+            // If a refresh is already in-flight, wait for it instead of
+            // starting a new one — prevents concurrent token rotation storms.
+            if (!refreshPromise) {
+              refreshPromise = this.client
+                .post('/auth/refresh')
+                .then(() => { refreshPromise = null; })
+                .catch((err) => { refreshPromise = null; throw err; });
+            }
+            await refreshPromise;
             return this.client(originalRequest);
           } catch (refreshError) {
             // Refresh failed — clear state and signal logout
