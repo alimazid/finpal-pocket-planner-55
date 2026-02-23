@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import { errorHandler } from './middleware/error.middleware.js';
 import { csrfProtection } from './middleware/csrf.middleware.js';
 
+// build trigger
 // Route imports
 import authRoutes from './routes/auth.routes.js';
 import budgetRoutes from './routes/budget.routes.js';
