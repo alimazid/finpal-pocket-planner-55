@@ -15,9 +15,13 @@ const WEBHOOK_DEDUP_WINDOW = 10 * 60 * 1000; // 10 minutes
 
 // Clean up old entries periodically
 setInterval(() => {
-  const cutoff = Date.now() - WEBHOOK_DEDUP_WINDOW;
-  for (const [sig, ts] of processedWebhooks) {
-    if (ts < cutoff) processedWebhooks.delete(sig);
+  try {
+    const cutoff = Date.now() - WEBHOOK_DEDUP_WINDOW;
+    for (const [sig, ts] of processedWebhooks) {
+      if (ts < cutoff) processedWebhooks.delete(sig);
+    }
+  } catch (e) {
+    console.error('Webhook dedup cleanup error:', e);
   }
 }, 60 * 1000);
 

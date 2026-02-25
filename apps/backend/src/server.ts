@@ -7,15 +7,31 @@ dotenv.config();
 
 // Global error handlers to catch crashes
 process.on('uncaughtException', (error) => {
-  console.error('💥 UNCAUGHT EXCEPTION:', error);
+  const mem = process.memoryUsage();
+  console.error('💥 UNCAUGHT EXCEPTION:', error.message);
   console.error('Stack:', error.stack);
-  // Graceful shutdown: allow pending I/O to flush, then exit
+  console.error(
+    `Memory at crash: RSS=${(mem.rss / 1024 / 1024).toFixed(1)}MB, ` +
+    `Heap=${(mem.heapUsed / 1024 / 1024).toFixed(1)}/${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB`
+  );
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('💥 UNHANDLED REJECTION at:', promise);
   console.error('Reason:', reason);
+});
+
+// Detect Railway-initiated kills (OOM, restart policy, scale-down).
+// Railway sends SIGTERM before SIGKILL — logging here tells us if Railway is killing us.
+process.on('SIGTERM', () => {
+  const mem = process.memoryUsage();
+  console.error(
+    `💥 SIGTERM received (Railway kill). ` +
+    `RSS=${(mem.rss / 1024 / 1024).toFixed(1)}MB, ` +
+    `Heap=${(mem.heapUsed / 1024 / 1024).toFixed(1)}/${(mem.heapTotal / 1024 / 1024).toFixed(1)}MB`
+  );
+  process.exit(0);
 });
 
 // Validate required environment variables

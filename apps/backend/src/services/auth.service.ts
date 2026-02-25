@@ -235,27 +235,27 @@ export class AuthService {
   async refreshAccessToken(rawToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-    const storedToken = await prisma.refreshToken.findUnique({
-      where: { tokenHash },
-      include: { user: true }
+    // Atomically claim (revoke) the token in a single DB round-trip.
+    // Only the first concurrent caller succeeds (count=1); all others get count=0.
+    // Mirrors the pattern used in revokeRefreshToken() below.
+    const revokeResult = await prisma.refreshToken.updateMany({
+      where: { tokenHash, isRevoked: false, expiresAt: { gt: new Date() } },
+      data: { isRevoked: true },
     });
 
-    if (!storedToken || storedToken.isRevoked || storedToken.expiresAt < new Date()) {
-      if (storedToken && !storedToken.isRevoked) {
-        // Token expired — revoke it
-        await prisma.refreshToken.update({
-          where: { id: storedToken.id },
-          data: { isRevoked: true }
-        });
-      }
+    if (revokeResult.count === 0) {
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
 
-    // Revoke old token (rotation)
-    await prisma.refreshToken.update({
-      where: { id: storedToken.id },
-      data: { isRevoked: true }
+    // Read back to get user info (token is revoked but the record still exists).
+    const storedToken = await prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
     });
+
+    if (!storedToken?.user) {
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
 
     // Issue new pair
     const accessToken = this.generateToken(storedToken.user);
