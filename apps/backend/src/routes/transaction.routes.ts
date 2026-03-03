@@ -4,9 +4,16 @@ import { validateBody, validateQuery, validateParams } from '../middleware/valid
 import { schemas } from '../middleware/validation.middleware.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { AuthenticatedRequest } from '../types/index.js';
+import { z } from 'zod';
 
 const router = Router();
 const transactionService = new TransactionService();
+
+// Date range query schema for summary endpoints
+const summaryQuerySchema = z.object({
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+});
 
 // GET /transactions
 router.get('/',
@@ -106,6 +113,7 @@ router.delete('/:id',
 // GET /transactions/summary
 router.get('/summary',
   authenticateToken,
+  validateQuery(summaryQuerySchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { startDate, endDate } = req.query;
@@ -127,6 +135,7 @@ router.get('/summary',
 // GET /transactions/category-summary
 router.get('/category-summary',
   authenticateToken,
+  validateQuery(summaryQuerySchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { startDate, endDate } = req.query;

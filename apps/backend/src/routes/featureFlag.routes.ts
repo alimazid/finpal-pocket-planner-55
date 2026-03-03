@@ -2,11 +2,29 @@ import { Router } from 'express';
 import express from 'express';
 import { FeatureFlagService } from '../services/featureFlag.service.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
+import { validateBody, validateParams } from '../middleware/validation.middleware.js';
 import { AuthenticatedRequest } from '../types/index.js';
 import { prisma } from '../config/database.js';
+import { z } from 'zod';
 
 const router = Router();
 const featureFlagService = new FeatureFlagService();
+
+// Validation schemas
+const flagKeySchema = z.object({
+  key: z.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+$/, 'Invalid flag key format')
+});
+
+const updateFlagSchema = z.object({
+  isEnabled: z.boolean()
+});
+
+const bulkUpdateSchema = z.object({
+  updates: z.array(z.object({
+    key: z.string().min(1).max(100).regex(/^[a-zA-Z0-9_.-]+$/),
+    isEnabled: z.boolean()
+  })).min(1).max(50)
+});
 
 // Simple admin check middleware
 const requireAdmin = async (req: AuthenticatedRequest, res: express.Response, next: express.NextFunction) => {
@@ -44,18 +62,10 @@ router.get('/admin', authenticateToken, requireAdmin, async (req, res, next) => 
 });
 
 // PUT /feature-flags/:key — Update a specific feature flag (admin only)
-router.put('/:key', authenticateToken, requireAdmin, async (req, res, next) => {
+router.put('/:key', authenticateToken, requireAdmin, validateParams(flagKeySchema), validateBody(updateFlagSchema), async (req, res, next) => {
   try {
     const { key } = req.params;
     const { isEnabled } = req.body;
-
-    if (typeof isEnabled !== 'boolean') {
-      return res.status(400).json({
-        success: false,
-        error: 'isEnabled must be a boolean value'
-      });
-    }
-
     const flag = await featureFlagService.updateFlag(key, isEnabled);
     res.json({ success: true, data: flag });
   } catch (error) {
@@ -64,30 +74,9 @@ router.put('/:key', authenticateToken, requireAdmin, async (req, res, next) => {
 });
 
 // POST /feature-flags/bulk — Bulk update feature flags (admin only)
-router.post('/bulk', authenticateToken, requireAdmin, async (req, res, next) => {
+router.post('/bulk', authenticateToken, requireAdmin, validateBody(bulkUpdateSchema), async (req, res, next) => {
   try {
     const { updates } = req.body;
-
-    if (!Array.isArray(updates)) {
-      return res.status(400).json({
-        success: false,
-        error: 'updates must be an array'
-      });
-    }
-
-    const isValidFormat = updates.every(update =>
-      typeof update === 'object' &&
-      typeof update.key === 'string' &&
-      typeof update.isEnabled === 'boolean'
-    );
-
-    if (!isValidFormat) {
-      return res.status(400).json({
-        success: false,
-        error: 'Each update must have key (string) and isEnabled (boolean) properties'
-      });
-    }
-
     const results = await featureFlagService.bulkUpdateFlags(updates);
     res.json({ success: true, data: results });
   } catch (error) {

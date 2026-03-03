@@ -5,6 +5,7 @@ import axios from 'axios';
 import { prisma } from '../config/database.js';
 import { CreateUserDto, LoginDto, User } from '../types/index.js';
 import { UnauthorizedError, ValidationError } from '../middleware/error.middleware.js';
+import { securityAudit } from './securityAudit.service.js';
 
 // Per-account login attempt tracking (M-3)
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
@@ -16,9 +17,9 @@ export class AuthService {
   private checkAccountLockout(email: string): void {
     const attempts = loginAttempts.get(email);
     if (attempts && attempts.lockedUntil > Date.now()) {
-      const remainingMs = attempts.lockedUntil - Date.now();
-      const remainingMin = Math.ceil(remainingMs / 60000);
-      throw new UnauthorizedError(`Account temporarily locked. Try again in ${remainingMin} minutes`);
+      securityAudit.log('ACCOUNT_LOCKED', { severity: 'WARN', metadata: { email } }).catch(() => {});
+      // Generic message to prevent account enumeration via lockout timing (ASVS V2.2.1)
+      throw new UnauthorizedError('Invalid email or password');
     }
   }
 
@@ -42,7 +43,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ValidationError('User with this email already exists');
+      throw new ValidationError('Unable to create account. Please try a different email or log in.');
     }
 
     const passwordHash = await bcrypt.hash(userData.password, 12);
@@ -75,6 +76,8 @@ export class AuthService {
     const accessToken = this.generateToken(user);
     const refreshToken = await this.generateRefreshToken(user.id);
 
+    await securityAudit.log('REGISTER', { userId: user.id });
+
     return { user, accessToken, refreshToken };
   }
 
@@ -88,12 +91,14 @@ export class AuthService {
 
     if (!user || !user.passwordHash) {
       this.recordFailedLogin(loginData.email);
+      await securityAudit.log('LOGIN_FAILED', { metadata: { email: loginData.email } });
       throw new UnauthorizedError('Invalid email or password');
     }
 
     const isValidPassword = await bcrypt.compare(loginData.password, user.passwordHash);
     if (!isValidPassword) {
       this.recordFailedLogin(loginData.email);
+      await securityAudit.log('LOGIN_FAILED', { metadata: { email: loginData.email } });
       throw new UnauthorizedError('Invalid email or password');
     }
 
@@ -104,6 +109,8 @@ export class AuthService {
     const refreshToken = await this.generateRefreshToken(user.id);
 
     const { passwordHash, ...userWithoutPassword } = user;
+
+    await securityAudit.log('LOGIN_SUCCESS', { userId: user.id });
 
     return { user: userWithoutPassword, accessToken, refreshToken };
   }
@@ -167,6 +174,8 @@ export class AuthService {
       }
 
       updatePayload.passwordHash = await bcrypt.hash(updateData.password, 12);
+
+      await securityAudit.log('PASSWORD_CHANGE', { userId });
     }
 
     const user = await prisma.user.update({
@@ -244,6 +253,7 @@ export class AuthService {
     });
 
     if (revokeResult.count === 0) {
+      await securityAudit.log('TOKEN_REFRESH_FAILED', { severity: 'WARN' });
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
 
@@ -260,6 +270,8 @@ export class AuthService {
     // Issue new pair
     const accessToken = this.generateToken(storedToken.user);
     const newRefreshToken = await this.generateRefreshToken(storedToken.userId, storedToken.deviceInfo ?? undefined);
+
+    await securityAudit.log('TOKEN_REFRESH', { userId: storedToken.userId });
 
     return { accessToken, refreshToken: newRefreshToken };
   }
@@ -280,6 +292,8 @@ export class AuthService {
   }
 
   async deleteUser(userId: string): Promise<void> {
+    await securityAudit.log('ACCOUNT_DELETED', { userId, severity: 'WARN' });
+
     // Delete linked Gmail accounts from Penny first
     const gmailAccounts = await prisma.gmailAccount.findMany({
       where: { userId }
@@ -300,7 +314,7 @@ export class AuthService {
           );
         } catch (error) {
           // Log but continue — don't block user deletion
-          console.error(`Failed to remove Gmail account ${account.id} from Penny:`, error);
+          console.error('Failed to remove Gmail account from Penny:', error instanceof Error ? error.message : 'Unknown error');
         }
       }
     }

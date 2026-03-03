@@ -1,7 +1,20 @@
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
+import crypto from 'crypto';
 import { prisma } from '../config/database.js';
 import { User } from '../types/index.js';
 import { UnauthorizedError, ValidationError } from '../middleware/error.middleware.js';
+
+// Server-side OAuth state store for CSRF protection (ASVS V3.5)
+const oauthStates = new Map<string, number>(); // state -> timestamp
+const OAUTH_STATE_TTL = 10 * 60 * 1000; // 10 minutes
+
+// Periodic cleanup of expired states
+setInterval(() => {
+  const cutoff = Date.now() - OAUTH_STATE_TTL;
+  for (const [state, ts] of oauthStates) {
+    if (ts < cutoff) oauthStates.delete(state);
+  }
+}, 60 * 1000);
 
 export interface GoogleAuthResult {
   user: User;
@@ -192,21 +205,40 @@ export class GoogleAuthService {
   }
 
   /**
-   * Generate Google OAuth authorization URL
+   * Generate Google OAuth authorization URL with server-side CSRF state token
    */
-  generateAuthUrl(state?: string): string {
+  generateAuthUrl(): { url: string; state: string } {
+    const state = crypto.randomBytes(32).toString('hex');
+    oauthStates.set(state, Date.now());
+
     const scopes = [
       'openid',
       'https://www.googleapis.com/auth/userinfo.profile',
       'https://www.googleapis.com/auth/userinfo.email',
     ];
 
-    return this.oauth2Client.generateAuthUrl({
+    const url = this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
       state,
       prompt: 'select_account',
     });
+
+    return { url, state };
+  }
+
+  /**
+   * Validate and consume an OAuth state token (one-time use)
+   */
+  validateOAuthState(state: string): boolean {
+    const timestamp = oauthStates.get(state);
+    if (!timestamp) return false;
+    if (Date.now() - timestamp > OAUTH_STATE_TTL) {
+      oauthStates.delete(state);
+      return false;
+    }
+    oauthStates.delete(state); // one-time use
+    return true;
   }
 
   /**

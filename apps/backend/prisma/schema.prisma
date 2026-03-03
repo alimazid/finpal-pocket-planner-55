@@ -27,8 +27,9 @@ model User {
   categories     BudgetCategory[]
   budgets        Budget[]
   transactions   Transaction[]
-  gmailAccounts  GmailAccount[]
-  refreshTokens  RefreshToken[]
+  gmailAccounts        GmailAccount[]
+  refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
 
   @@map("users")
 }
@@ -229,4 +230,36 @@ model OAuthState {
 
   @@index([expiresAt])
   @@map("oauth_states")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  eventType String   @map("event_type")
+  severity  String   @default("INFO")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([severity])
+  @@map("security_events")
 }

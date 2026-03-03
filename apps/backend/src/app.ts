@@ -44,6 +44,7 @@ app.use(helmet({
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
+      frameAncestors: ["'none'"],
     },
   },
 }));
@@ -59,6 +60,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   optionsSuccessStatus: 200
 }));
 
@@ -101,8 +104,49 @@ const refreshLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Body parsing middleware
-app.use(express.json({ limit: '1mb' }));
+// Registration rate limiter (10 attempts per 15 minutes per IP)
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: {
+    success: false,
+    error: 'Too many registration attempts, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Google auth rate limiter (20 attempts per 15 minutes per IP)
+const googleAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: {
+    success: false,
+    error: 'Too many authentication attempts, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Password reset rate limiter (3 attempts per 15 minutes per IP)
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: {
+    success: false,
+    error: 'Too many password reset attempts, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Body parsing middleware — capture raw body buffer for HMAC webhook verification (ASVS V11.1.1)
+app.use(express.json({
+  limit: '1mb',
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // Anti-caching headers on API responses
@@ -123,9 +167,13 @@ app.get('/health', (req, res) => {
   res.json({ success: true, message: 'Server is healthy' });
 });
 
-// API routes — apply login limiter to auth/login specifically
+// API routes — apply rate limiters to auth endpoints
 app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/register', registerLimiter);
 app.use('/api/auth/refresh', refreshLimiter);
+app.use('/api/auth/google', googleAuthLimiter);
+app.use('/api/auth/forgot-password', passwordResetLimiter);
+app.use('/api/auth/reset-password', passwordResetLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/transactions', transactionRoutes);

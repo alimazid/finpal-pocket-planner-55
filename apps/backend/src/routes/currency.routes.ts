@@ -1,10 +1,30 @@
 import { Router } from 'express';
 import { CurrencyService } from '../services/currency.service.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
+import { validateParams, validateBody } from '../middleware/validation.middleware.js';
 import { AuthenticatedRequest } from '../types/index.js';
+import { z } from 'zod';
 
 const router = Router();
 const currencyService = new CurrencyService();
+
+// Currency code validation schema
+const currencyCodeSchema = z.object({
+  code: z.string().regex(/^[A-Z]{3}$/, 'Currency code must be 3 uppercase letters')
+});
+
+const currencyPairSchema = z.object({
+  from: z.string().regex(/^[A-Za-z]{3}$/, 'Currency code must be 3 letters'),
+  to: z.string().regex(/^[A-Za-z]{3}$/, 'Currency code must be 3 letters')
+});
+
+const currencyBaseSchema = z.object({
+  base: z.string().regex(/^[A-Za-z]{3}$/, 'Currency code must be 3 letters')
+});
+
+const convertBodySchema = z.object({
+  amount: z.number().positive().max(999999999)
+});
 
 // GET /currencies - Get all supported currencies
 router.get('/',
@@ -25,6 +45,7 @@ router.get('/',
 // GET /currencies/:code - Get a specific currency by code
 router.get('/:code',
   authenticateToken,
+  validateParams(currencyCodeSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const currency = await currencyService.getCurrencyByCode(req.params.code.toUpperCase());
@@ -49,6 +70,7 @@ router.get('/:code',
 // GET /currencies/:from/:to/rate - Get exchange rate between two currencies
 router.get('/:from/:to/rate',
   authenticateToken,
+  validateParams(currencyPairSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const fromCurrency = req.params.from.toUpperCase();
@@ -74,6 +96,7 @@ router.get('/:from/:to/rate',
 // GET /currencies/:base/rates - Get all exchange rates for a base currency
 router.get('/:base/rates',
   authenticateToken,
+  validateParams(currencyBaseSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const baseCurrency = req.params.base.toUpperCase();
@@ -92,18 +115,13 @@ router.get('/:base/rates',
 // POST /currencies/:from/:to/convert - Convert amount between currencies
 router.post('/:from/:to/convert',
   authenticateToken,
+  validateParams(currencyPairSchema),
+  validateBody(convertBodySchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const fromCurrency = req.params.from.toUpperCase();
       const toCurrency = req.params.to.toUpperCase();
       const { amount } = req.body;
-
-      if (!amount || typeof amount !== 'number' || amount < 0) {
-        return res.status(400).json({
-          success: false,
-          error: 'Valid amount is required'
-        });
-      }
 
       const convertedAmount = await currencyService.convertAmount(
         amount, 

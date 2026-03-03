@@ -179,7 +179,7 @@ export class GmailService {
 
       return gmailAccount;
     } catch (error) {
-      console.error('OAuth callback error:', error);
+      console.error('OAuth callback error:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }
@@ -213,7 +213,7 @@ export class GmailService {
 
       return response.data;
     } catch (error) {
-      console.error('Penny registration error:', error);
+      console.error('Penny registration error:', error instanceof Error ? error.message : 'Unknown error');
       if (axios.isAxiosError(error)) {
         return {
           success: false,
@@ -271,7 +271,7 @@ export class GmailService {
 
       return response.data;
     } catch (error) {
-      console.error('Get account status error:', error);
+      console.error('Account status error:', error instanceof Error ? error.message : 'Unknown error');
       return null;
     }
   }
@@ -311,7 +311,7 @@ export class GmailService {
 
       return false;
     } catch (error) {
-      console.error('Start monitoring error:', error);
+      console.error('Monitoring start error:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -348,7 +348,7 @@ export class GmailService {
       });
       return true;
     } catch (error) {
-      console.error('Stop monitoring error:', error instanceof Error ? error.message : error);
+      console.error('Stop monitoring error:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -385,7 +385,7 @@ export class GmailService {
 
       return true;
     } catch (error) {
-      console.error('Remove account error:', error);
+      console.error('Account removal error:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
@@ -399,7 +399,7 @@ export class GmailService {
       const transactionDescription = merchant || description;
 
       if (!amount || !transactionDescription || !transactionDate || !type) {
-        console.log('Webhook: missing required fields for transaction creation');
+        console.log('Webhook: missing required fields for transaction');
         return;
       }
 
@@ -408,7 +408,7 @@ export class GmailService {
         parsedDate = new Date(transactionDate);
         if (isNaN(parsedDate.getTime())) throw new Error('Invalid date');
       } catch (error) {
-        console.log('Webhook: invalid transaction date format');
+        console.log('Webhook: invalid date format');
         return;
       }
 
@@ -422,7 +422,7 @@ export class GmailService {
       };
 
       await this.transactionService.createTransaction(userId, transactionDto);
-      console.log('Webhook: transaction created successfully');
+      console.log('Webhook: transaction created');
 
     } catch (error) {
       console.error('Webhook: failed to create transaction');
@@ -435,7 +435,7 @@ export class GmailService {
     try {
       const { event, accountId: pennyAccountId, externalUserId, data } = payload;
 
-      console.log(`Webhook received: event=${event}, accountId=${pennyAccountId}`);
+      console.log('Webhook received:', JSON.stringify({ event: String(event).replace(/[\n\r\t]/g, '') }));
 
       const account = await prisma.gmailAccount.findFirst({
         where: {
@@ -445,7 +445,7 @@ export class GmailService {
       });
 
       if (!account) {
-        console.warn(`Webhook: account not found for pennyAccountId=${pennyAccountId}`);
+        console.warn('Webhook: account not found');
         return;
       }
 
@@ -513,15 +513,15 @@ export class GmailService {
           break;
 
         case 'error.occurred':
-          console.warn(`Webhook error event for account ${account.id}: type=${data?.errorType}`);
+          console.warn('Webhook: error event received');
           break;
 
         default:
-          console.log(`Unhandled webhook event: ${event}`);
+          console.log('Webhook: unhandled event type');
       }
 
     } catch (error) {
-      console.error(`Webhook processing error: event=${payload?.event}`, error instanceof Error ? error.message : error);
+      console.error('Webhook processing error:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   }

@@ -1,15 +1,19 @@
 import { Router, Response } from 'express';
+import { z } from 'zod';
 import { AuthService } from '../services/auth.service.js';
 import { GoogleAuthService } from '../services/googleAuth.service.js';
-import { validateBody } from '../middleware/validation.middleware.js';
+import { PasswordResetService } from '../services/passwordReset.service.js';
+import { validateBody, validateQuery } from '../middleware/validation.middleware.js';
 import { schemas } from '../middleware/validation.middleware.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { AuthenticatedRequest } from '../types/index.js';
 import { prisma } from '../config/database.js';
+import { securityAudit } from '../services/securityAudit.service.js';
 
 const router = Router();
 const authService = new AuthService();
 const googleAuthService = new GoogleAuthService();
+const passwordResetService = new PasswordResetService();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -81,6 +85,7 @@ router.post('/logout',
       if (refreshToken) {
         await authService.revokeRefreshToken(refreshToken);
       }
+      await securityAudit.log('LOGOUT', { req });
       clearAuthCookies(res);
       res.json({ success: true, message: 'Logged out successfully' });
     } catch (error) {
@@ -150,15 +155,10 @@ router.put('/profile',
 // DELETE /auth/profile (requires current password for re-authentication)
 router.delete('/profile',
   authenticateToken,
+  validateBody(z.object({ currentPassword: z.string().min(1) })),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { currentPassword } = req.body || {};
-      if (!currentPassword) {
-        return res.status(400).json({
-          success: false,
-          error: 'Current password is required to delete your account'
-        });
-      }
+      const { currentPassword } = req.body;
 
       // Re-authenticate before destructive action
       const user = await prisma.user.findUnique({ where: { id: req.userId! } });
@@ -186,21 +186,16 @@ router.delete('/profile',
 
 // POST /auth/google — Handle Google OAuth login
 router.post('/google',
+  validateBody(z.object({ idToken: z.string().min(1) })),
   async (req, res, next) => {
     try {
       const { idToken } = req.body;
-
-      if (!idToken) {
-        return res.status(400).json({
-          success: false,
-          error: 'Google ID token is required'
-        });
-      }
-
       const result = await googleAuthService.loginWithGoogle(idToken);
       // Generate refresh token for the Google-auth user
       const refreshToken = await authService.generateRefreshToken(result.user.id);
       setAuthCookies(res, result.token, refreshToken);
+
+      await securityAudit.log('GOOGLE_AUTH_SUCCESS', { userId: result.user.id, req });
 
       res.json({
         success: true,
@@ -215,16 +210,15 @@ router.post('/google',
   }
 );
 
-// GET /auth/google/url — Generate Google OAuth URL
+// GET /auth/google/url — Generate Google OAuth URL with server-side CSRF state
 router.get('/google/url',
   async (req, res, next) => {
     try {
-      const { state } = req.query;
-      const authUrl = googleAuthService.generateAuthUrl(state as string);
+      const { url, state } = googleAuthService.generateAuthUrl();
 
       res.json({
         success: true,
-        data: { authUrl }
+        data: { authUrl: url, state }
       });
     } catch (error) {
       next(error);
@@ -234,14 +228,19 @@ router.get('/google/url',
 
 // GET /auth/google/callback — Handle OAuth callback
 router.get('/google/callback',
+  validateQuery(z.object({
+    code: z.string().min(1),
+    state: z.string().min(1).optional()
+  })),
   async (req, res, next) => {
     try {
       const { code, state } = req.query;
 
-      if (!code) {
+      // Validate OAuth CSRF state token (ASVS V3.5)
+      if (state && !googleAuthService.validateOAuthState(state as string)) {
         return res.status(400).json({
           success: false,
-          error: 'Authorization code is required'
+          error: 'Invalid or expired OAuth state parameter'
         });
       }
 
@@ -250,12 +249,52 @@ router.get('/google/callback',
       const refreshToken = await authService.generateRefreshToken(result.user.id);
       setAuthCookies(res, result.token, refreshToken);
 
+      await securityAudit.log('GOOGLE_AUTH_SUCCESS', { userId: result.user.id, req });
+
       res.json({
         success: true,
         data: {
           user: result.user,
           isNewUser: result.isNewUser,
         }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /auth/forgot-password
+router.post('/forgot-password',
+  validateBody(z.object({
+    email: z.string().email()
+  })),
+  async (req, res, next) => {
+    try {
+      await passwordResetService.requestPasswordReset(req.body.email);
+      // Always return success to prevent email enumeration
+      res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// POST /auth/reset-password
+router.post('/reset-password',
+  validateBody(z.object({
+    token: z.string().min(1),
+    password: z.string().min(12).max(128)
+  })),
+  async (req, res, next) => {
+    try {
+      await passwordResetService.resetPassword(req.body.token, req.body.password);
+      res.json({
+        success: true,
+        message: 'Password has been reset successfully. Please log in with your new password.'
       });
     } catch (error) {
       next(error);

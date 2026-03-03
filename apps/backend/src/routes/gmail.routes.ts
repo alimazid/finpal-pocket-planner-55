@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { GmailService } from '../services/gmail.service.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
-import { validateBody } from '../middleware/validation.middleware.js';
+import { validateBody, validateParams } from '../middleware/validation.middleware.js';
+import { schemas } from '../middleware/validation.middleware.js';
 import { AuthenticatedRequest } from '../types/index.js';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { securityAudit } from '../services/securityAudit.service.js';
 
 const router = Router();
 const gmailService = new GmailService();
@@ -56,12 +58,30 @@ const callbackSchema = z.object({
   state: z.string().min(1, 'State parameter is required')
 });
 
+// Strict webhook data schemas per event type (replaces z.any() — ASVS V5.2.6)
+const extractedDataSchema = z.object({
+  type: z.enum(['income', 'expense', 'debit', 'credit', 'payment', 'transfer', 'fee', 'interest']).optional(),
+  amount: z.number().positive().max(999999999).optional(),
+  currency: z.string().max(10).optional(),
+  transactionDate: z.string().max(50).optional(),
+  description: z.string().max(500).optional(),
+  merchant: z.string().max(200).optional(),
+  category: z.string().max(100).optional(),
+}).strict();
+
+const webhookDataSchema = z.object({
+  extractedData: extractedDataSchema.optional(),
+  emailId: z.string().max(200).optional(),
+  errorType: z.string().max(100).optional(),
+  errorMessage: z.string().max(500).optional(),
+}).strict().optional();
+
 const webhookSchema = z.object({
-  event: z.string(),
-  timestamp: z.string(),
-  accountId: z.string(),
-  externalUserId: z.string(),
-  data: z.any().optional()
+  event: z.string().min(1).max(100),
+  timestamp: z.string().min(1).max(50),
+  accountId: z.string().min(1).max(200),
+  externalUserId: z.string().min(1).max(200),
+  data: webhookDataSchema,
 });
 
 // GET /api/gmail/auth — Generate OAuth authorization URL
@@ -144,6 +164,7 @@ router.get('/accounts',
 // GET /api/gmail/accounts/:id/status
 router.get('/accounts/:id/status',
   authenticateToken,
+  validateParams(schemas.id),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const userId = req.userId!;
@@ -167,6 +188,7 @@ router.get('/accounts/:id/status',
 // POST /api/gmail/accounts/:id/start-monitoring
 router.post('/accounts/:id/start-monitoring',
   authenticateToken,
+  validateParams(schemas.id),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const userId = req.userId!;
@@ -187,6 +209,7 @@ router.post('/accounts/:id/start-monitoring',
 // POST /api/gmail/accounts/:id/stop-monitoring
 router.post('/accounts/:id/stop-monitoring',
   authenticateToken,
+  validateParams(schemas.id),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const userId = req.userId!;
@@ -207,6 +230,7 @@ router.post('/accounts/:id/stop-monitoring',
 // DELETE /api/gmail/accounts/:id
 router.delete('/accounts/:id',
   authenticateToken,
+  validateParams(schemas.id),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const userId = req.userId!;
@@ -228,7 +252,8 @@ router.delete('/accounts/:id',
 router.post('/webhook',
   validateBody(webhookSchema),
   async (req, res, next) => {
-    const rawBody = JSON.stringify(req.body);
+    // Use the raw body buffer captured by express.json verify callback (ASVS V11.1.1)
+    const rawBody = (req as any).rawBody ? (req as any).rawBody.toString('utf8') : JSON.stringify(req.body);
 
     try {
       // Webhook replay protection: reject timestamps older than 5 minutes
@@ -257,35 +282,34 @@ router.post('/webhook',
 
       const isValidSignature = verifyWebhookSignature(rawBody, receivedSignature, webhookSecret);
       if (!isValidSignature) {
+        await securityAudit.log('WEBHOOK_SIGNATURE_INVALID', { severity: 'WARN', req });
         return res.status(401).json({ success: false, error: 'Invalid webhook signature' });
       }
 
       // Idempotency check: reject duplicate webhooks by signature
       const signatureKey = receivedSignature.startsWith('sha256=') ? receivedSignature.substring(7) : receivedSignature;
       if (processedWebhooks.has(signatureKey)) {
+        await securityAudit.log('WEBHOOK_REPLAY_DETECTED', { severity: 'WARN', req });
         return res.status(200).json({ success: true, message: 'Webhook already processed (duplicate)' });
       }
       processedWebhooks.set(signatureKey, Date.now());
 
       // Structured logging: sanitize user-controlled values to prevent log injection
       const safeEvent = String(req.body.event || '').replace(/[\n\r\t]/g, '');
-      const safeAccountId = String(req.body.accountId || '').replace(/[\n\r\t]/g, '');
-      console.log('Webhook received', JSON.stringify({ event: safeEvent, accountId: safeAccountId, size: Buffer.byteLength(rawBody) }));
+      console.log('Webhook received', JSON.stringify({ event: safeEvent, size: Buffer.byteLength(rawBody) }));
 
       await gmailService.processWebhook(req.body);
 
       res.status(200).json({
         success: true,
         message: 'Webhook processed successfully',
-        processedEvent: req.body.event,
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Webhook error', JSON.stringify({ event: String(req.body?.event || '').replace(/[\n\r\t]/g, ''), error: error instanceof Error ? error.message : 'Unknown error' }));
+      console.error('Webhook error:', error instanceof Error ? error.message : 'Unknown error');
       res.status(500).json({
         success: false,
         error: 'Failed to process webhook',
-        event: req.body?.event || 'unknown',
         timestamp: new Date().toISOString()
       });
     }
