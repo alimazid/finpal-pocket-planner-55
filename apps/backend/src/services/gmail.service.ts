@@ -437,7 +437,8 @@ export class GmailService {
 
       console.log('Webhook received:', JSON.stringify({ event: String(event).replace(/[\n\r\t]/g, '') }));
 
-      const account = await prisma.gmailAccount.findFirst({
+      // Try matching by pennyAccountId + externalUserId first, then fallback to pennyAccountId only
+      let account = await prisma.gmailAccount.findFirst({
         where: {
           pennyAccountId,
           userId: externalUserId
@@ -445,7 +446,13 @@ export class GmailService {
       });
 
       if (!account) {
-        console.warn('Webhook: account not found');
+        account = await prisma.gmailAccount.findFirst({
+          where: { pennyAccountId }
+        });
+      }
+
+      if (!account) {
+        console.warn('Webhook: account not found', JSON.stringify({ pennyAccountId, externalUserId }));
         return;
       }
 

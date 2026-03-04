@@ -58,7 +58,8 @@ const callbackSchema = z.object({
   state: z.string().min(1, 'State parameter is required')
 });
 
-// Strict webhook data schemas per event type (replaces z.any() — ASVS V5.2.6)
+// Webhook data schemas per event type (ASVS V5.2.6)
+// Use .passthrough() to allow extra fields from Penny (suggestedCategory, confidence, etc.)
 const extractedDataSchema = z.object({
   type: z.enum(['income', 'expense', 'debit', 'credit', 'payment', 'transfer', 'fee', 'interest']).optional(),
   amount: z.number().positive().max(999999999).optional(),
@@ -67,14 +68,14 @@ const extractedDataSchema = z.object({
   description: z.string().max(500).optional(),
   merchant: z.string().max(200).optional(),
   category: z.string().max(100).optional(),
-}).strict();
+}).passthrough();
 
 const webhookDataSchema = z.object({
   extractedData: extractedDataSchema.optional(),
   emailId: z.string().max(200).optional(),
   errorType: z.string().max(100).optional(),
   errorMessage: z.string().max(500).optional(),
-}).strict().optional();
+}).passthrough().optional();
 
 const webhookSchema = z.object({
   event: z.string().min(1).max(100),
