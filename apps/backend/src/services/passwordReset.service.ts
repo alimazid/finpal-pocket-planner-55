@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../config/database.js';
 import { ValidationError } from '../middleware/error.middleware.js';
+import { emailService } from './email.service.js';
 
 export class PasswordResetService {
 
@@ -43,14 +44,8 @@ export class PasswordResetService {
       }
     });
 
-    // In production, send email with reset link containing rawToken
-    // For now, log it in development only
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[DEV] Password reset token for ${email}: ${rawToken}`);
-    }
-
-    // TODO: Integrate email sending service (SendGrid, etc.)
-    // await emailService.sendPasswordResetEmail(email, rawToken);
+    // Send password reset email (fails silently to prevent enumeration)
+    await emailService.sendPasswordResetEmail(email, rawToken);
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
