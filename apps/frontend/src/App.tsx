@@ -10,6 +10,8 @@ import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import GmailSettings from "./pages/GmailSettings";
 import GoogleAuthCallback from "./pages/GoogleAuthCallback";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -48,6 +50,8 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
               <Route path="/gmail-settings" element={<GmailSettings />} />
               <Route path="/gmail/callback" element={<GmailOAuthCallback />} />

@@ -273,6 +273,16 @@ class ApiClient {
     return response.data;
   }
 
+  async forgotPassword(email: string) {
+    const response = await this.client.post<ApiResponse>('/auth/forgot-password', { email });
+    return response.data;
+  }
+
+  async resetPassword(token: string, password: string) {
+    const response = await this.client.post<ApiResponse>('/auth/reset-password', { token, password });
+    return response.data;
+  }
+
   async googleAuthCallback(code: string, state?: string) {
     const params: Record<string, string> = { code };
     if (state) params.state = state;

@@ -228,6 +228,15 @@ const Auth = () => {
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t('signIn')}
                 </Button>
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/auth/forgot-password")}
+                    className="text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline"
+                  >
+                    {t('forgotPassword')}
+                  </button>
+                </div>
               </form>
             </TabsContent>
             

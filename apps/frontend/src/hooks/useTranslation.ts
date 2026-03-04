@@ -500,6 +500,76 @@ const translations: Translations = {
     spanish: 'O usar correo electrónico'
   },
 
+  // Password reset
+  forgotPassword: {
+    english: 'Forgot password?',
+    spanish: '¿Olvidaste tu contraseña?'
+  },
+  forgotPasswordTitle: {
+    english: 'Reset Password',
+    spanish: 'Restablecer Contraseña'
+  },
+  forgotPasswordDescription: {
+    english: 'Enter your email and we\'ll send you a link to reset your password.',
+    spanish: 'Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.'
+  },
+  sendResetLink: {
+    english: 'Send Reset Link',
+    spanish: 'Enviar Enlace'
+  },
+  resetLinkSent: {
+    english: 'Reset Link Sent',
+    spanish: 'Enlace Enviado'
+  },
+  resetLinkSentDescription: {
+    english: 'If an account with that email exists, a password reset link has been sent.',
+    spanish: 'Si existe una cuenta con ese correo, se ha enviado un enlace para restablecer la contraseña.'
+  },
+  backToSignIn: {
+    english: 'Back to Sign In',
+    spanish: 'Volver a Iniciar Sesión'
+  },
+  resetPasswordTitle: {
+    english: 'Set New Password',
+    spanish: 'Establecer Nueva Contraseña'
+  },
+  resetPasswordDescription: {
+    english: 'Enter your new password below.',
+    spanish: 'Ingresa tu nueva contraseña a continuación.'
+  },
+  newPassword: {
+    english: 'New Password',
+    spanish: 'Nueva Contraseña'
+  },
+  confirmPassword: {
+    english: 'Confirm Password',
+    spanish: 'Confirmar Contraseña'
+  },
+  resetPassword: {
+    english: 'Reset Password',
+    spanish: 'Restablecer Contraseña'
+  },
+  passwordResetSuccess: {
+    english: 'Password Reset Successfully',
+    spanish: 'Contraseña Restablecida Exitosamente'
+  },
+  passwordResetSuccessDescription: {
+    english: 'Your password has been reset. You can now sign in with your new password.',
+    spanish: 'Tu contraseña ha sido restablecida. Ahora puedes iniciar sesión con tu nueva contraseña.'
+  },
+  passwordsDoNotMatch: {
+    english: 'Passwords do not match',
+    spanish: 'Las contraseñas no coinciden'
+  },
+  invalidResetToken: {
+    english: 'Invalid or Expired Link',
+    spanish: 'Enlace Inválido o Expirado'
+  },
+  invalidResetTokenDescription: {
+    english: 'This password reset link is invalid or has expired. Please request a new one.',
+    spanish: 'Este enlace de restablecimiento es inválido o ha expirado. Por favor solicita uno nuevo.'
+  },
+
   // Loading and status
   loading: {
     english: 'Loading...',
