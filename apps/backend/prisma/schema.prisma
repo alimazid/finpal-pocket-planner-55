@@ -247,6 +247,25 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model WebhookLog {
+  id            String   @id @default(uuid())
+  webhookId     String   @unique @map("webhook_id")
+  pennyAccountId String  @map("penny_account_id")
+  eventType     String   @map("event_type")
+  status        String   // "processed", "failed", "duplicate"
+  transactionId String?  @map("transaction_id")
+  errorMessage  String?  @map("error_message")
+  rawPayload    Json?    @map("raw_payload")
+  receivedAt    DateTime @default(now()) @map("received_at")
+  processedAt   DateTime? @map("processed_at")
+
+  @@index([webhookId])
+  @@index([pennyAccountId])
+  @@index([receivedAt])
+  @@index([status])
+  @@map("webhook_logs")
+}
+
 model SecurityEvent {
   id        String   @id @default(cuid())
   userId    String?  @map("user_id")

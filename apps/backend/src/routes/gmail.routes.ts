@@ -7,25 +7,25 @@ import { AuthenticatedRequest } from '../types/index.js';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { securityAudit } from '../services/securityAudit.service.js';
+import { prisma } from '../config/database.js';
 
 const router = Router();
 const gmailService = new GmailService();
 
-// Webhook idempotency: track processed signatures to prevent duplicate transactions
-const processedWebhooks = new Map<string, number>(); // signature -> timestamp
-const WEBHOOK_DEDUP_WINDOW = 10 * 60 * 1000; // 10 minutes
-
-// Clean up old entries periodically
-setInterval(() => {
+// Clean up webhook logs older than 30 days periodically (every hour)
+setInterval(async () => {
   try {
-    const cutoff = Date.now() - WEBHOOK_DEDUP_WINDOW;
-    for (const [sig, ts] of processedWebhooks) {
-      if (ts < cutoff) processedWebhooks.delete(sig);
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const { count } = await prisma.webhookLog.deleteMany({
+      where: { receivedAt: { lt: cutoff } }
+    });
+    if (count > 0) {
+      console.log(`Cleaned up ${count} webhook log entries older than 30 days`);
     }
   } catch (e) {
-    console.error('Webhook dedup cleanup error:', e);
+    console.error('Webhook log cleanup error:', e);
   }
-}, 60 * 1000);
+}, 60 * 60 * 1000);
 
 // Helper function to verify webhook signature
 function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
@@ -186,6 +186,29 @@ router.get('/accounts/:id/status',
   }
 );
 
+// GET /api/gmail/accounts/:id/health
+router.get('/accounts/:id/health',
+  authenticateToken,
+  validateParams(schemas.id),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const userId = req.userId!;
+      const accountId = req.params.id;
+      const health = await gmailService.checkAccountHealth(accountId, userId);
+
+      res.json({ success: true, data: health });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Account not found') {
+        return res.status(404).json({
+          success: false,
+          error: 'Account not found'
+        });
+      }
+      next(error);
+    }
+  }
+);
+
 // POST /api/gmail/accounts/:id/start-monitoring
 router.post('/accounts/:id/start-monitoring',
   authenticateToken,
@@ -257,11 +280,11 @@ router.post('/webhook',
     const rawBody = (req as any).rawBody ? (req as any).rawBody.toString('utf8') : JSON.stringify(req.body);
 
     try {
-      // Webhook replay protection: reject timestamps older than 5 minutes
+      // Webhook replay protection: reject timestamps older than 15 minutes
       const webhookTimestamp = req.headers['x-webhook-timestamp'] as string || req.body.timestamp;
       if (webhookTimestamp) {
         const timestampAge = Date.now() - new Date(webhookTimestamp).getTime();
-        if (timestampAge > 5 * 60 * 1000) {
+        if (timestampAge > 15 * 60 * 1000) {
           return res.status(401).json({
             success: false,
             error: 'Webhook timestamp too old'
@@ -287,19 +310,61 @@ router.post('/webhook',
         return res.status(401).json({ success: false, error: 'Invalid webhook signature' });
       }
 
-      // Idempotency check: reject duplicate webhooks by signature
+      // Idempotency check: DB-backed dedup using WebhookLog table
       const signatureKey = receivedSignature.startsWith('sha256=') ? receivedSignature.substring(7) : receivedSignature;
-      if (processedWebhooks.has(signatureKey)) {
+      const existingLog = await prisma.webhookLog.findUnique({
+        where: { webhookId: signatureKey }
+      });
+      if (existingLog) {
         await securityAudit.log('WEBHOOK_REPLAY_DETECTED', { severity: 'WARN', req });
         return res.status(200).json({ success: true, message: 'Webhook already processed (duplicate)' });
       }
-      processedWebhooks.set(signatureKey, Date.now());
 
       // Structured logging: sanitize user-controlled values to prevent log injection
       const safeEvent = String(req.body.event || '').replace(/[\n\r\t]/g, '');
       console.log('Webhook received', JSON.stringify({ event: safeEvent, size: Buffer.byteLength(rawBody) }));
 
-      await gmailService.processWebhook(req.body);
+      // Log the webhook receipt before processing
+      await prisma.webhookLog.create({
+        data: {
+          webhookId: signatureKey,
+          pennyAccountId: req.body.accountId,
+          eventType: req.body.event,
+          status: 'processing',
+          rawPayload: req.body,
+        }
+      });
+
+      const result = await gmailService.processWebhook(req.body);
+
+      // Update webhook log with result
+      await prisma.webhookLog.update({
+        where: { webhookId: signatureKey },
+        data: {
+          status: result.success ? 'processed' : 'failed',
+          errorMessage: result.error || null,
+          processedAt: new Date()
+        }
+      });
+
+      if (!result.success) {
+        // Map error codes to HTTP status codes (R2, R3, R4 fixes)
+        const statusMap: Record<string, number> = {
+          'ACCOUNT_NOT_FOUND': 404,
+          'MISSING_FIELDS': 400,
+          'INVALID_DATE': 400,
+          'INVALID_AMOUNT': 400,
+          'INTERNAL_ERROR': 500,
+        };
+        const httpStatus = (result.errorCode && statusMap[result.errorCode]) || 500;
+
+        return res.status(httpStatus).json({
+          success: false,
+          error: result.error,
+          errorCode: result.errorCode,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       res.status(200).json({
         success: true,

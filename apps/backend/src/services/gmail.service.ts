@@ -46,6 +46,12 @@ export interface PennyRegistrationResponse {
   error?: string;
 }
 
+export interface WebhookResult {
+  success: boolean;
+  error?: string;
+  errorCode?: 'ACCOUNT_NOT_FOUND' | 'MISSING_FIELDS' | 'INVALID_DATE' | 'INVALID_AMOUNT' | 'INTERNAL_ERROR';
+}
+
 export class GmailService {
   private oauth2Client: OAuth2Client;
   private pennyApiUrl: string;
@@ -390,17 +396,57 @@ export class GmailService {
     }
   }
 
-  // Create transaction from extracted email data
-  private async createTransactionFromExtractedData(userId: string, extractedData: any): Promise<void> {
+  // Map Penny transaction types to Planner transaction types (R8 fix)
+  private mapTransactionType(type: string): 'income' | 'expense' {
+    switch (type) {
+      case 'credit':
+      case 'income':
+        return 'income';
+      case 'debit':
+      case 'payment':
+      case 'transfer':
+      case 'fee':
+      case 'interest':
+      case 'expense':
+      default:
+        return 'expense';
+    }
+  }
+
+  // Get user's preferred currency instead of hardcoding USD (R9 fix)
+  private async getUserDefaultCurrency(userId: string): Promise<string> {
+    const pref = await prisma.userPreference.findUnique({
+      where: { userId },
+      select: { defaultCurrency: true }
+    });
+    return pref?.defaultCurrency || 'USD';
+  }
+
+  // Create transaction from extracted email data (R1, R3, R4 fixes)
+  private async createTransactionFromExtractedData(userId: string, extractedData: any): Promise<WebhookResult> {
     try {
-      if (!extractedData) return;
+      if (!extractedData) {
+        return { success: false, error: 'No extracted data provided', errorCode: 'MISSING_FIELDS' };
+      }
 
       const { type, amount, currency, transactionDate, description, merchant } = extractedData;
       const transactionDescription = merchant || description;
 
       if (!amount || !transactionDescription || !transactionDate || !type) {
-        console.log('Webhook: missing required fields for transaction');
-        return;
+        const missing = [
+          !amount && 'amount',
+          !transactionDescription && 'description/merchant',
+          !transactionDate && 'transactionDate',
+          !type && 'type'
+        ].filter(Boolean).join(', ');
+        console.log('Webhook: missing required fields for transaction:', missing);
+        return { success: false, error: `Missing required fields: ${missing}`, errorCode: 'MISSING_FIELDS' };
+      }
+
+      const numericAmount = Number(amount);
+      if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+        console.log('Webhook: invalid amount:', amount);
+        return { success: false, error: `Invalid amount: ${amount} (must be positive)`, errorCode: 'INVALID_AMOUNT' };
       }
 
       let parsedDate: Date;
@@ -408,30 +454,33 @@ export class GmailService {
         parsedDate = new Date(transactionDate);
         if (isNaN(parsedDate.getTime())) throw new Error('Invalid date');
       } catch (error) {
-        console.log('Webhook: invalid date format');
-        return;
+        console.log('Webhook: invalid date format:', transactionDate);
+        return { success: false, error: `Invalid date format: ${transactionDate}`, errorCode: 'INVALID_DATE' };
       }
 
+      const defaultCurrency = await this.getUserDefaultCurrency(userId);
+
       const transactionDto: CreateTransactionDto = {
-        amount: Number(amount),
+        amount: numericAmount,
         description: String(transactionDescription),
         category: null,
         date: parsedDate,
-        type: (type === 'income') ? 'income' : 'expense',
-        currency: currency || 'USD'
+        type: this.mapTransactionType(type),
+        currency: currency || defaultCurrency
       };
 
       await this.transactionService.createTransaction(userId, transactionDto);
       console.log('Webhook: transaction created');
+      return { success: true };
 
     } catch (error) {
-      console.error('Webhook: failed to create transaction');
-      throw error;
+      console.error('Webhook: failed to create transaction:', error instanceof Error ? error.message : 'Unknown error');
+      return { success: false, error: 'Internal error creating transaction', errorCode: 'INTERNAL_ERROR' };
     }
   }
 
-  // Process webhook from Penny
-  async processWebhook(payload: any): Promise<void> {
+  // Process webhook from Penny (R2 fix: returns WebhookResult instead of void)
+  async processWebhook(payload: any): Promise<WebhookResult> {
     try {
       const { event, accountId: pennyAccountId, externalUserId, data } = payload;
 
@@ -453,7 +502,7 @@ export class GmailService {
 
       if (!account) {
         console.warn('Webhook: account not found', JSON.stringify({ pennyAccountId, externalUserId }));
-        return;
+        return { success: false, error: 'Account not found for pennyAccountId', errorCode: 'ACCOUNT_NOT_FOUND' };
       }
 
       switch (event) {
@@ -504,12 +553,21 @@ export class GmailService {
 
         case 'email.extracted':
           if (data?.extractedData) {
-            await this.createTransactionFromExtractedData(account.userId, data.extractedData);
+            const result = await this.createTransactionFromExtractedData(account.userId, data.extractedData);
+            // Update lastSyncAt regardless of transaction creation result
+            await prisma.gmailAccount.update({
+              where: { id: account.id },
+              data: { lastSyncAt: new Date() }
+            });
+            if (!result.success) {
+              return result;
+            }
+          } else {
+            await prisma.gmailAccount.update({
+              where: { id: account.id },
+              data: { lastSyncAt: new Date() }
+            });
           }
-          await prisma.gmailAccount.update({
-            where: { id: account.id },
-            data: { lastSyncAt: new Date() }
-          });
           break;
 
         case 'token.refreshed':
@@ -527,10 +585,82 @@ export class GmailService {
           console.log('Webhook: unhandled event type');
       }
 
+      return { success: true };
+
     } catch (error) {
       console.error('Webhook processing error:', error instanceof Error ? error.message : 'Unknown error');
-      throw error;
+      return { success: false, error: 'Internal webhook processing error', errorCode: 'INTERNAL_ERROR' };
     }
+  }
+
+  // Check account health by comparing local and remote (Penny) state
+  async checkAccountHealth(accountId: string, userId: string): Promise<{
+    healthy: boolean;
+    localState: { isConnected: boolean; monitoringActive: boolean };
+    remoteState: { isConnected: boolean; monitoringActive: boolean } | null;
+    mismatches: string[];
+  }> {
+    // Get local GmailAccount state
+    const account = await prisma.gmailAccount.findFirst({
+      where: {
+        id: accountId,
+        userId,
+      },
+    });
+
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    const localState = {
+      isConnected: account.isConnected,
+      monitoringActive: account.monitoringActive,
+    };
+
+    // Call Penny's health endpoint
+    let remoteState: { isConnected: boolean; monitoringActive: boolean } | null = null;
+    const mismatches: string[] = [];
+
+    try {
+      const response = await axios.get(
+        `${this.pennyApiUrl}/api/external/accounts/${account.pennyAccountId}/health`,
+        {
+          headers: {
+            'X-API-Key': this.pennyApiKey,
+          },
+          timeout: 10000,
+        }
+      );
+
+      remoteState = {
+        isConnected: response.data.isConnected,
+        monitoringActive: response.data.monitoringActive,
+      };
+
+      // Compare states and detect mismatches
+      if (localState.isConnected && !remoteState.isConnected) {
+        mismatches.push('Planner shows connected but Penny shows disconnected');
+      }
+      if (!localState.isConnected && remoteState.isConnected) {
+        mismatches.push('Planner shows disconnected but Penny shows connected');
+      }
+      if (localState.monitoringActive && !remoteState.monitoringActive) {
+        mismatches.push('Planner shows monitoring active but Penny shows monitoring inactive');
+      }
+      if (!localState.monitoringActive && remoteState.monitoringActive) {
+        mismatches.push('Planner shows monitoring inactive but Penny shows monitoring active');
+      }
+    } catch (error) {
+      console.error('Health check error: failed to reach Penny:', error instanceof Error ? error.message : 'Unknown error');
+      mismatches.push('Unable to reach Penny API for health check');
+    }
+
+    return {
+      healthy: mismatches.length === 0 && remoteState !== null,
+      localState,
+      remoteState,
+      mismatches,
+    };
   }
 
   // Validate OAuth state parameter
