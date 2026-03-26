@@ -1,6 +1,8 @@
 import { Resend } from 'resend';
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:8080';
+// For mobile app: use deep link scheme. Falls back to web URL for web clients.
+// pocketpenny://reset-password?token=XXX opens directly in Expo Go / production app
+const FRONTEND_URL = process.env.FRONTEND_URL || 'pocketpenny://';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@pocketpenny.site';
 const IS_DEV = process.env.NODE_ENV !== 'production';
 
@@ -13,7 +15,12 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const resetLink = `${FRONTEND_URL}/auth/reset-password?token=${token}`;
+    // Deep link for mobile: pocketpenny://reset-password?token=XXX
+    // Web fallback: https://example.com/auth/reset-password?token=XXX
+    const base = FRONTEND_URL.endsWith('/') ? FRONTEND_URL.slice(0, -1) : FRONTEND_URL;
+    const resetLink = FRONTEND_URL.startsWith('pocketpenny')
+      ? `${base}/reset-password?token=${token}`
+      : `${base}/auth/reset-password?token=${token}`;
 
     if (IS_DEV && !this.resend) {
       console.log(`[DEV] Password reset email for ${email}`);
