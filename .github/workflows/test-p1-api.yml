@@ -61,6 +61,18 @@ jobs:
           LOGIN_LOCKOUT_SECONDS=60
           GOOGLE_CLIENT_ID=ci-dummy-google-client-id
           GOOGLE_CLIENT_SECRET=ci-dummy-google-client-secret
+          GOOGLE_AUTH_REDIRECT_URI=http://localhost:3002/api/auth/google/callback
+          GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3002/api/gmail/callback
+          PENNY_CLIENT_ID=ci-dummy-penny-client-id
+          PENNY_CLIENT_SECRET=ci-dummy-penny-client-secret
+          PENNY_API_URL=http://localhost:9999
+          PENNY_API_KEY=ci-dummy-penny-api-key
+          RESEND_API_KEY=ci-dummy-resend-key
+          WEBHOOK_SECRET=ci-dummy-webhook-secret
+          ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
+          ALLOWED_ORIGINS=http://localhost:3000
+          FROM_EMAIL=ci@pocketpenny.test
+          ADMIN_EMAILS=ci@pocketpenny.test
           EOF
 
       - name: Generate Prisma client
