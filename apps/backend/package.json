@@ -16,7 +16,7 @@
     "db:seed": "node prisma/seed.js",
     "db:seed:dev": "tsx prisma/seed.ts",
     "test": "jest",
-    "test:api": "jest --runInBand --testPathPattern=\"__tests__/p1-api\""
+    "test:api": "jest --runInBand --testPathPatterns=\"__tests__/p1-api\""
   },
   "prisma": {
     "seed": "node prisma/seed.js"
