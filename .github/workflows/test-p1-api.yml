@@ -93,7 +93,7 @@ jobs:
           npm run dev &
           # Wait for backend to be ready (up to 60s)
           for i in $(seq 1 30); do
-            curl -sf http://localhost:3002/api/health && echo "Backend ready!" && break
+            curl -sf http://localhost:3002/health && echo "Backend ready!" && break
             echo "Waiting for backend... ($i/30)"
             sleep 2
           done
