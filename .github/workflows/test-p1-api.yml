@@ -59,6 +59,8 @@ jobs:
           FRONTEND_URL=pocketpenny://
           LOGIN_MAX_ATTEMPTS=5
           LOGIN_LOCKOUT_SECONDS=60
+          GOOGLE_CLIENT_ID=ci-dummy-google-client-id
+          GOOGLE_CLIENT_SECRET=ci-dummy-google-client-secret
           EOF
 
       - name: Generate Prisma client
