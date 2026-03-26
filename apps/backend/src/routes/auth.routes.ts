@@ -50,6 +50,7 @@ router.post('/register',
         success: true,
         data: {
           user: result.user,
+          accessToken: result.accessToken,
         }
       });
     } catch (error) {
@@ -69,6 +70,7 @@ router.post('/login',
         success: true,
         data: {
           user: result.user,
+          accessToken: result.accessToken,
         }
       });
     } catch (error) {
@@ -110,7 +112,7 @@ router.post('/refresh',
       setAuthCookies(res, result.accessToken, result.refreshToken);
       res.json({
         success: true,
-        data: {}
+        data: { accessToken: result.accessToken } // included for mobile clients (web uses httpOnly cookie)
       });
     } catch (error) {
       clearAuthCookies(res);
