@@ -39,6 +39,55 @@ export class EmailService {
     }
   }
 
+  async sendOAuthAccountEmail(email: string): Promise<void> {
+    if (!this.resend) {
+      console.log(`[DEV] OAuth account info email for: ${email}`);
+      return;
+    }
+    try {
+      await this.resend.emails.send({
+        from: `Pocket Penny <${FROM_EMAIL}>`,
+        to: email,
+        subject: 'Información sobre tu cuenta - Pocket Penny',
+        html: this.buildOAuthAccountHtml(),
+      });
+    } catch (error) {
+      console.error('[EMAIL] Failed to send OAuth account email:', error);
+    }
+  }
+
+  private buildOAuthAccountHtml(): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+        <tr><td style="padding:32px 32px 24px;text-align:center;">
+          <h1 style="margin:0 0 8px;font-size:22px;color:#18181b;">Información sobre tu cuenta</h1>
+          <p style="margin:0;color:#71717a;font-size:14px;">Pocket Penny</p>
+        </td></tr>
+        <tr><td style="padding:0 32px 32px;">
+          <p style="color:#3f3f46;font-size:15px;line-height:1.6;">
+            Tu cuenta de Pocket Penny está vinculada a <strong>Google</strong>.
+            No tienes una contraseña tradicional configurada.
+          </p>
+          <p style="color:#3f3f46;font-size:15px;line-height:1.6;">
+            Para iniciar sesión, usa el botón <strong>"Continuar con Google"</strong> en la pantalla de acceso.
+          </p>
+        </td></tr>
+        <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
+          <p style="margin:0;color:#a1a1aa;font-size:12px;text-align:center;">&copy; Pocket Penny</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
+  }
+
   private buildPasswordResetHtml(resetLink: string): string {
     return `
 <!DOCTYPE html>

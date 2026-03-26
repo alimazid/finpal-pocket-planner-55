@@ -9,8 +9,14 @@ export class PasswordResetService {
   async requestPasswordReset(email: string): Promise<void> {
     // Always return success to prevent account enumeration
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.passwordHash) {
-      // Silently return - don't reveal if email exists or is OAuth-only
+    if (!user) {
+      // Silently return - don't reveal if account exists (prevent enumeration)
+      return;
+    }
+    if (!user.passwordHash) {
+      // OAuth-only account — send a helpful email instead of silently failing
+      console.log(`[PASSWORD_RESET] OAuth-only account, sending info email to: ${email}`);
+      await emailService.sendOAuthAccountEmail(email);
       return;
     }
 
