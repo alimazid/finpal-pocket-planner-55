@@ -5,10 +5,12 @@ on:
     branches: [main]
     paths:
       - 'apps/backend/**'
+      - '.github/workflows/test-p1-api.yml'
   pull_request:
     branches: [main]
     paths:
       - 'apps/backend/**'
+  workflow_dispatch:
 
 jobs:
   api-tests:
