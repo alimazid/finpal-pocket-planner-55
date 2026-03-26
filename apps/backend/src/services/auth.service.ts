@@ -8,9 +8,12 @@ import { UnauthorizedError, ValidationError } from '../middleware/error.middlewa
 import { securityAudit } from './securityAudit.service.js';
 
 // Per-account login attempt tracking (M-3)
+// Configurable via env: LOGIN_MAX_ATTEMPTS, LOGIN_LOCKOUT_SECONDS
+// Defaults: 5 attempts / 15 min (prod) — set LOGIN_LOCKOUT_SECONDS=60 for dev
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+const MAX_LOGIN_ATTEMPTS = parseInt(process.env.LOGIN_MAX_ATTEMPTS ?? '5', 10);
+const LOCKOUT_DURATION =
+  parseInt(process.env.LOGIN_LOCKOUT_SECONDS ?? String(15 * 60), 10) * 1000;
 
 export class AuthService {
 
